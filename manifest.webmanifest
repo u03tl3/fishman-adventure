@@ -1,0 +1,10 @@
+{
+  "name": "Fishman Adventure — McTreeFace Boss Trilogy",
+  "short_name": "Fishman",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#061827",
+  "theme_color": "#062a41",
+  "description": "Ten-chapter Fishman adventure for iPhone and iPad with a touch joystick and three difficulty levels."
+}
