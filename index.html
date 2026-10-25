@@ -100,6 +100,7 @@
 @media (orientation:landscape) and (pointer:coarse){.difficulty-picks{gap:4px;margin:4px auto 5px;max-width:640px}.diff-card{padding:3px 5px;border-radius:9px}.diff-card strong{font-size:clamp(10px,1.8vw,13px);margin:0}.diff-card small{font-size:clamp(8px,1.35vw,10px)}.screen .chaptergrid{margin-top:3px}}
 @media(max-width:530px) and (orientation:portrait){.difficulty-picks{gap:4px}.diff-card{padding:7px 4px}.diff-card strong{font-size:11px}.diff-card small{font-size:9px}}
 
+</style>
 <style>
 /* V9: five selectable heroes, legible while playing in landscape */
 .hero-switch{flex-wrap:wrap;gap:4px;max-width:96%;}
@@ -446,7 +447,12 @@ function tickProjectiles(dt){if(!g||level===4)return;
 }
 function drawRewardsAndShots(){if(!g)return;c.save();for(const v of g.stars||[]){if(v.got)continue;glow(v.x,v.y,43,'#ffda6454');c.save();c.translate(v.x,v.y);c.rotate(t*.65);c.beginPath();for(let j=0;j<10;j++){const a=j*Math.PI/5-Math.PI/2,r=j%2===0?20:8;c.lineTo(Math.cos(a)*r,Math.sin(a)*r);}c.closePath();c.fillStyle='#ffd35a';c.fill();c.strokeStyle='#34292c';c.lineWidth=3;c.stroke();c.restore();}
  for(const a of g.awards||[]){if(a.got)continue;glow(a.x,a.y,58,'#d8ffac66');circle(a.x,a.y,27,'#fff4b1');txt(awardIcon(a.hero),a.x,a.y+12,30,'#ffffff','center',900);txt(heroNames[a.hero].toUpperCase(),a.x,a.y-39,12,'#ffe6a7','center',950);}
- for(const p of g.proj||[]){glow(p.x,p.y,p.kind==='gozilla'?58:32,p.kind==='roxy'?'#ff945d8e':p.kind==='gozilla'?'#80f9fc9e':'#a4fcff77');circle(p.x,p.y,p.r,p.kind==='roxy'?'#ff9b45':p.kind==='kai'?'#a77cff':p.kind==='humpty'?'#ffec9c':p.kind==='gozilla'?'#7afbff':p.kind==='sub'?'#ffcf71':'#6af1ff');}
+ for(const p of g.proj||[]){glow(p.x,p.y,p.kind==='gozilla'?58:32,p.kind==='roxy'?'#ff945d8e':p.kind==='gozilla'?'#80f9fc9e':'#a4fcff77');
+ if(p.kind==='gozilla'){c.save();c.strokeStyle='#80fcff99';c.lineWidth=17;c.beginPath();c.moveTo(g.x,g.y-12);c.lineTo(p.x,p.y);c.stroke();c.strokeStyle='#eaffff';c.lineWidth=5;c.stroke();c.restore();circle(p.x,p.y,9,'#b6ffff');}
+ else if(p.kind==='roxy'){c.save();c.translate(p.x,p.y);c.rotate(Math.atan2(p.vy,p.vx));ellipse(-10,0,23,9,'#ff7b3c');ellipse(3,-1,13,8,'#ffed8d');c.restore();}
+ else if(p.kind==='humpty'){c.save();c.translate(p.x,p.y);c.rotate(p.age*13);ellipse(0,0,17,13,'#fff0bc');line(-9,-2,8,4,'#a06a3a',3);c.restore();}
+ else if(p.kind==='kai'){circle(p.x,p.y,14,'#a883ff');circle(p.x-3,p.y-5,6,'#e4c7ff');}
+ else circle(p.x,p.y,p.r,p.kind==='sub'?'#ffcf71':'#6af1ff');}
  if(scene==='playing'&&g.hero!=='sub'){
  const v=aimVector(),x=clamp(g.x+v.x*127,45,955),y=clamp(g.y+v.y*127,168,534);c.strokeStyle='#fff29a';c.lineWidth=2.5;c.beginPath();c.arc(x,y,15,0,TAU);c.moveTo(x-24,y);c.lineTo(x-8,y);c.moveTo(x+8,y);c.lineTo(x+24,y);c.moveTo(x,y-24);c.lineTo(x,y-8);c.moveTo(x,y+8);c.lineTo(x,y+24);c.stroke();
  }
@@ -782,7 +788,12 @@ function drawBoss(){const a=g.arena;if(!a)return;
  }
  if(a.shield>0){glow(a.bossX,a.bossY,158,'#ffe79055');c.strokeStyle='#ffe691';c.lineWidth=7;c.beginPath();c.arc(a.bossX,a.bossY,105,0,TAU);c.stroke();txt('SHIELD '+a.shield,a.bossX,a.bossY+140,19,'#ffe18b','center',1000);}
  roundRect(692,119,244,45,12,'#0b233ddd');txt(['TRIAL I · BARKSHIP','TRIAL II · PORTAL TREE','TRIAL III · THORN CROWN'][phase],814,148,16,colors[phase],'center',950);
- for(const s of g.shots){glow(s.x,s.y,28,s.kind==='roxy'?'#ff77774c':'#8cfcff55');circle(s.x,s.y,s.kind==='roxy'?18:12,s.kind==='fish'?'#8cf7ff':s.kind==='kai'?'#ffec81':'#ff8783');circle(s.x-4,s.y-4,4,'#fff');}
+ for(const s of g.shots){glow(s.x,s.y,s.kind==='gozilla'?70:28,s.kind==='roxy'?'#ff77774c':'#8cfcff55');
+ if(s.kind==='gozilla'){c.save();c.lineWidth=19;c.strokeStyle='#6fefff81';c.beginPath();c.moveTo(g.x,g.y-17);c.lineTo(s.x,s.y);c.stroke();c.lineWidth=5;c.strokeStyle='#eeffff';c.stroke();c.restore();circle(s.x,s.y,12,'#d1ffff');}
+ else if(s.kind==='humpty'){ellipse(s.x,s.y,20,15,'#fff1c2');line(s.x-8,s.y,s.x+8,s.y+3,'#ba8853',3);}
+ else if(s.kind==='roxy'){ellipse(s.x,s.y,25,13,'#ff9951');circle(s.x+10,s.y-4,8,'#fff2a1');}
+ else{circle(s.x,s.y,12,s.kind==='fish'?'#8cf7ff':'#ffec81');circle(s.x-4,s.y-4,4,'#fff');}
+ }
  if(phase===2){for(let i=0;i<6;i++){const x=150+i*75,y=210+Math.sin(t*2+i)*13;shark(x,y,.28,'#e1c38f');}txt('PUFFER-FISH ALLIES!',347,174,13,'#ffe9b4','center');}
 }
 function objective(){let message='';
