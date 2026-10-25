@@ -144,6 +144,38 @@ html,body{background:#072a56}
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+/* v10: true twin-stick play, with both Joy-Cons visible on one screen. */
+.touch-right{display:flex;align-items:center;justify-content:center;flex-direction:row!important;gap:7px;padding:0!important;min-width:0}
+.aim-stick{position:relative;border-color:#e8be6c;background:radial-gradient(circle at 40% 35%,#3e587a,#14263c 73%);flex:none;touch-action:none}
+.aim-stick.active{border-color:#ffe389}
+.aim-stick .stick-knob{background:radial-gradient(circle at 30% 22%,#fff1a4,#d79d54 55%,#77503b)}
+.aim-mark{position:absolute;bottom:-17px;left:0;width:100%;text-align:center;font-weight:900;font-size:9px;letter-spacing:.06em;color:#ffda8e;pointer-events:none}
+.action-pair{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-width:0;flex:none}
+.touch-right .action-pair .joy-button{width:clamp(42px,5.4vw,62px);height:clamp(42px,5.4vw,62px);min-width:42px;min-height:42px;border-width:3px;flex:none}
+.touch-right .action-pair .joy-button .button-letter{font-size:20px}
+.touch-right .action-pair .joy-button .button-name{font-size:8px}
+@media (orientation:landscape) and (pointer:coarse),(orientation:landscape) and (any-pointer:coarse){
+.shell{grid-template-columns:clamp(74px,12.4vw,165px) minmax(0,1fr) clamp(121px,19.5vw,225px);gap:2px}
+#touchControl .touch-right{grid-column:3;grid-row:1;align-self:center;justify-self:center;flex-direction:row!important;gap:5px;padding:0!important}
+#aimStick{width:clamp(69px,10.8vw,128px);height:clamp(69px,10.8vw,128px)}
+.action-pair{gap:9px}
+#heroSwitch{left:clamp(88px,15vw,174px)!important;right:auto!important;top:calc(env(safe-area-inset-top,0px) + 6px)!important;bottom:auto!important;width:auto!important;max-width:58vw!important;flex-direction:row!important;flex-wrap:wrap;gap:3px!important;transform:none!important;justify-content:flex-start}
+#heroSwitch button{width:auto!important;min-height:20px;font-size:clamp(9px,1.12vw,12px)!important;padding:3px 6px!important;background:#17415de8}
+}
+@media (orientation:landscape) and (max-height:365px) and (pointer:coarse){
+#aimStick{width:clamp(64px,9.6vw,85px);height:clamp(64px,9.6vw,85px)}
+.action-pair{gap:5px}
+.touch-right .action-pair .joy-button{width:42px;height:42px}
+}
+@media (orientation:portrait) and (pointer:coarse),(orientation:portrait) and (any-pointer:coarse){
+#touchControl .touch-right{display:flex;flex-direction:row!important;gap:5px;min-width:0;padding:0!important}
+#aimStick{width:min(27vw,14dvh,115px);height:min(27vw,14dvh,115px);min-width:66px;min-height:66px}
+.touch-right .action-pair .joy-button{width:clamp(42px,10vw,55px);height:clamp(42px,10vw,55px)}
+#heroSwitch{max-width:98vw!important;right:2px!important}
+}
+@media (pointer:fine) and (hover:hover){.aim-stick{width:116px;height:116px}}
+</style>
 </head>
 <body>
 <main class="shell">
@@ -158,7 +190,10 @@ html,body{background:#072a56}
  <div id="heroSwitch" class="hero-switch" aria-label="Choose a character"><button data-hero="fish">1 · 🐟 Fishman</button><button data-hero="kai">2 · 🧪 Kai</button><button data-hero="roxy">3 · 🦖 Roxy</button><button data-hero="humpty">4 · 🥚 Humpty</button><button data-hero="gozilla">5 · 🐲 Gozilla</button></div>
  <div class="touch" id="touchControl" aria-label="Touch game controls">
   <div class="stick-unit"><div id="joystick" class="stick-base" role="group" tabindex="0" aria-label="Move: drag the thumbstick in any direction"><div class="stick-arrows" aria-hidden="true"><span class="up">▲</span><span class="left">◀</span><span class="right">▶</span><span class="down">▼</span></div><div id="stickKnob" class="stick-knob"><span class="stick-grip"></span></div></div><span class="stick-caption">LEFT STICK<small>Slide your thumb<br>to move freely</small></span></div>
-  <div class="touch-right"><button class="joy-button" data-key="interact" aria-label="B button: interact"><span class="button-letter">B</span><span class="button-name">USE ✦</span></button><button class="joy-button action" data-key="action" aria-label="A button: special power"><span class="button-letter">A</span><span class="button-name">🎯 AIM</span></button></div>
+  <div class="touch-right" aria-label="Right joystick aims and fires">
+  <div id="aimStick" class="stick-base aim-stick" role="group" tabindex="0" aria-label="Right thumbstick: aim and shoot in any direction"><div class="stick-arrows" aria-hidden="true"><span class="up">▲</span><span class="left">◀</span><span class="right">▶</span><span class="down">▼</span></div><div id="aimKnob" class="stick-knob"><span class="stick-grip"></span></div><span class="aim-mark">AIM · FIRE</span></div>
+  <div class="action-pair"><button class="joy-button" data-key="interact" aria-label="B button: use or dodge"><span class="button-letter">B</span><span class="button-name">USE</span></button><button class="joy-button action" data-key="action" aria-label="A button: fire toward target"><span class="button-letter">A</span><span class="button-name">FIRE</span></button></div>
+ </div>
  </div>
  <div class="under"><p>For the easiest play, turn your phone sideways. Left stick = move · Hold A = attack · B = interact · Keyboard controls also work.</p><div class="keys"><span class="key">W A S D / ↑ ↓ ← →</span><span class="key">SPACE Power</span><span class="key">E Interact</span><span class="key">1 2 3 Swap hero</span><span class="key">P Pause</span></div></div>
 </main>
@@ -325,10 +360,10 @@ window.FishmanMusic={toggle,update,status};
 (()=>{'use strict';
 const cv=document.getElementById('game'),c=cv.getContext('2d'),W=1000,H=620,overlay=document.getElementById('overlay'),screen=document.getElementById('screen'),switchEl=document.getElementById('heroSwitch');
 const chapters=[
- {title:'The Fishman Experiment',short:'The Experiment',icon:'🧪',lead:'Something extraordinary is brewing.',story:'Kai experiments with an aquatic formula. Search two laboratory wings for ingredients, then complete the mixture that will turn Finn into Fishman.',task:'Explore BOTH laboratory areas. Collect four ingredients in each, then press B at the mixer.',ending:'The glowing fish gulps down the mixture and bites Finn. WHOOSH! Finn transforms into Fishman!'},
+ {title:'The Fishman Experiment',short:'The Experiment',icon:'🧪',lead:'Something extraordinary is brewing.',story:'Kai experiments with an aquatic formula. Explore a continuous laboratory run with four zones in each of two wings for ingredients, then complete the mixture that will turn Finn into Fishman.',task:'Travel through two long laboratory runs, each with four scrolling zones. Collect four ingredients in each, then press B at the mixer.',ending:'The glowing fish gulps down the mixture and bites Finn. WHOOSH! Finn transforms into Fishman!'},
  {title:'Naughty’s Secret Power',short:'Forest Escape',icon:'🌳',lead:'The forest has come alive.',story:'Naughty McTreeFace steals Kai’s potion to rescue Barky, and his roots take over the forest. Collect anti-root seeds to escape the tangled glades.',task:'Explore two forest clearings, collecting four seeds in each. Shield with A; escape at the golden gate with B.',ending:'Kai escapes the roots. Naughty is stronger than ever, and his next target is the city.'},
  {title:'Underwater Allies',short:'Shark Family',icon:'🦈',lead:'Recruit the ocean heroes.',story:'Fishman enters the coral reef to find the Shark Family and gather bubble pearls for their journey. Watch out for jellyfish!',task:'Recruit four sharks in Area 1, then collect four pearls in Area 2. Aim the bubble blaster with A; collect stars and upgrade treats. Press B at the coral arch.',ending:'The Shark Family is reunited! They race toward the city after hearing Naughty’s dangerous threat.'},
- {title:'Roxy’s City Battle',short:'City Rescue',icon:'🦖',lead:'The countdown is ticking.',story:'Roxy and Kai must disarm dangerous devices across TWO city districts before Naughty can damage the city.',task:'Disarm four devices in each district (eight total) by pressing B near them. Switch between Roxy and Humpty. Use A to aim fire breath or roll into roots. Beat the timer!',ending:'Eight devices disabled! Humpty Dumpty cracks open and transforms into tiny GOZILLA, whose powerful laser can fight Naughty at the fortress!'},
+ {title:'Roxy’s City Battle',short:'City Rescue',icon:'🦖',lead:'The countdown is ticking.',story:'Roxy and Kai must disarm dangerous devices across TWO long city districts, each containing four connected zones before Naughty can damage the city.',task:'Disarm four devices in each district (eight total) by pressing B near them. Switch between Roxy and Humpty. Use A to aim fire breath or roll into roots. Beat the timer!',ending:'Eight devices disabled! Humpty Dumpty cracks open and transforms into tiny GOZILLA, whose powerful laser can fight Naughty at the fortress!'},
  {title:'McTreeFace: The Three Trials',short:'McTreeFace Boss',icon:'⚡',lead:'A spectacular three-act showdown!',story:'Trial I: Fight Naughty’s flying BARKSHIP and dodge its leaf blades and seed volleys. Trial II: Naughty opens portals and summons giant roots. Trial III: He wears a crackling THORN CROWN and unleashes cannons and gravity vortices.',task:'Move with the joystick. HOLD A to attack and drag A or tap the battlefield to AIM. TAP B for a short invincible dodge, then wait for it to recharge. Watch the RED telegraphs, swap heroes automatically at phase transitions, and break the crown shield in the final act.',ending:'Fishman, Kai and Roxy shatter the Thorn Crown! The puffer-fish army arrives, and Naughty tumbles into a heap of bandages.'},
  {title:'The Yellow Submarine',short:'Submarine Rescue',icon:'🚤',lead:'YOU pilot the BRIGHT YELLOW SUBMARINE!',story:'The large, glowing yellow submarine marked YOU is your character. Steer it with the left thumbstick, approach bandaged Naughty, and press B to capture him. Collect two yellow passes, then dock at the prison. In Part 2, collect four power cells to open his cell.',task:'FOLLOW THE YELLOW SUBMARINE MARKED YOU. PART 1: Approach Naughty and press B, collect two passes, then press B at the prison dock. PART 2: Collect four cells and press B at the dock.',ending:'The cell locks shut with Naughty McTreeFace safely inside. But his father Barky has vanished into the depths…'},
  {title:'The Sunken Library',short:'Sunken Library',icon:'📚',lead:'An ancient secret beneath the waves.',story:'The old ocean library may reveal where Barky has gone. Find four lost scrolls in each of its two chambers.',task:'Explore both library chambers. Collect eight ancient scrolls and activate the glowing archive with B.',ending:'A magical map reveals Barky’s hidden route through the dangerous Whirlpool Caverns.'},
@@ -350,13 +385,13 @@ try{const old=JSON.parse(localStorage.getItem('fishmanV9')||'null');if(old&&type
  for(const hero of Object.keys(progress.upgrades))progress.upgrades[hero]=Math.max(1,Math.min(5,Number(old.upgrades?.[hero])||1));
  if(old.picked&&typeof old.picked==='object')progress.picked=old.picked;
 }}catch{}
-const aim={manual:false,point:null,vx:1,vy:0,pointer:null};
+const aim={manual:false,point:null,vx:1,vy:0,pointer:null};const rightStick={x:0,y:0,pointerId:null};let cameraX=0;
 function saveProgress(){try{localStorage.setItem('fishmanV9',JSON.stringify(progress));}catch{}}
 function heroUpgrade(hero){return Math.max(1,progress.upgrades[hero]||1);}
 function maySelect(hero){if(!g||scene!=='playing')return false;if(level===5)return hero==='sub';if(level===3)return hero==='roxy'||hero==='humpty';if(level>=4)return ['fish','kai','roxy','humpty'].includes(hero)||(hero==='gozilla'&&progress.godzilla);return hero===g.hero;}
 function unlockGozilla(){if(!progress.godzilla){progress.godzilla=true;saveProgress();} }
 
-const joystickEl=document.getElementById('joystick'),stickKnob=document.getElementById('stickKnob'),stick={x:0,y:0,pointerId:null};
+const joystickEl=document.getElementById('joystick'),stickKnob=document.getElementById('stickKnob'),stick={x:0,y:0,pointerId:null};const aimStickEl=document.getElementById('aimStick'),aimKnob=document.getElementById('aimKnob');
 const TAU=Math.PI*2,clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),rand=(a,b)=>Math.random()*(b-a)+a,dst=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const areaA=[[218,267],[429,453],[618,240],[778,447]],areaB=[[195,448],[385,265],[608,445],[759,263]];
 const gates={0:{x:849,y:252,type:'mixer'},1:{x:895,y:245,type:'gate'},2:{x:876,y:300,type:'arch'},3:{x:883,y:296,type:'gate'},5:{x:883,y:268,type:'gate'},6:{x:875,y:302,type:'arch'},7:{x:876,y:298,type:'arch'},8:{x:882,y:291,type:'gate'},9:{x:875,y:304,type:'arch'}};
@@ -369,7 +404,7 @@ function menu(){scene='menu';switchEl.style.display='none';keys={};held={};reset
  const picks=chapters.map((ch,i)=>`<button class="chapterpick" data-start="${i}" ${i>=unlock?'disabled':''}><b>${i<unlock?'CHAPTER '+(i+1):'🔒 LOCKED'}</b><span>${ch.icon} ${ch.short}</span></button>`).join('');
  const rule=difficulty==='nightmare'?'☠ NIGHTMARE · 3 hearts in stages, 5 boss hearts, frantic volleys, extra trackers, fastest attacks and limited time.':difficulty==='expert'?'⚔ HERO · 6 items per area, chasers, tighter dodge timing, 7 boss hearts and timed objectives.':'🌟 EASY · 4 items per area, longer warnings, extra hearts, forgiving attacks and no boss timer.';
  const diffButtons=[['classic','🌟 EASY','Gentle · learn'],['expert','⚔ HERO','Tough · tactical'],['nightmare','☠ NIGHTMARE','Brutal · intense']].map(([key,name,desc])=>`<button class="diff-card ${difficulty===key?'active':''}" data-diff="${key}" aria-pressed="${difficulty===key}"><strong>${name}</strong><small>${desc}</small></button>`).join('');
- showScreen(`<span class="tag">10 CHAPTERS • 3 MODES • 3-ACT SHOWDOWN</span><h1><span>FISHMAN</span><br>THE UNDERWATER<br>ADVENTURE</h1><p>${rule}<br>Face McTreeFace’s Barkship, Portals and Thorn Crown. Hold/drag A to aim, or tap the battlefield to lock aim. Collect ★ stars and character food! Tilt your phone sideways for Joy-Con-style play.</p><div class="difficulty-picks" aria-label="Choose one of three difficulty levels">${diffButtons}</div><div class="buttonrow">${button(unlock>1?'Continue Story':'Start Adventure','continue')}${button('⚡ Boss Practice','boss','secondary')}${button('🚤 Submarine Practice','submarine','secondary')}</div><div class="chaptergrid">${picks}</div><p class="tip">HOLD A = fire • TAP B = dodge in boss fights • LEFT STICK = move • Beware glowing RED warning zones.</p>`);
+ showScreen(`<span class="tag">10 CHAPTERS • LONG SCROLLING RUNS • TWIN-STICK CONTROLS</span><h1><span>FISHMAN</span><br>THE UNDERWATER<br>ADVENTURE</h1><p>${rule}<br>Face McTreeFace’s Barkship, Portals and Thorn Crown. LEFT STICK moves; RIGHT STICK aims and fires. A also fires and B interacts or dodges. Collect ★ stars and character food! Tilt your phone sideways for Joy-Con-style play.</p><div class="difficulty-picks" aria-label="Choose one of three difficulty levels">${diffButtons}</div><div class="buttonrow">${button(unlock>1?'Continue Story':'Start Adventure','continue')}${button('⚡ Boss Practice','boss','secondary')}${button('🚤 Submarine Practice','submarine','secondary')}</div><div class="chaptergrid">${picks}</div><p class="tip">RIGHT STICK = AIM + FIRE • LEFT STICK = MOVE • B = DODGE / USE • Beware glowing RED warning zones.</p>`);
 }
 function intro(n){level=n;scene='intro';keys={};held={};resetStick();const d=chapters[n];switchEl.style.display='none';
  const goal=n===4?'THREE TRIALS: I · BARKSHIP: dodge wing boomerangs, storm seeds and a charge. II · PORTAL TREE: evade crossfire, spirals and emerging roots. III · THORN CROWN: break its shield and escape huge laser beams, root cages and gravity vortices. HOLD A to fire, TAP B to dodge; the correct hero switches automatically. Each form must complete 1 attack pattern on Easy, 2 on Hero or 3 on Nightmare before its guard breaks.':nightmare()? n===5?'PART 1: Capture Naughty and find SIX passes. PART 2: Collect EIGHT cells. Avoid tracking shockwaves!':n===3?'Disarm EIGHT devices in EACH district, then escape before the timer expires.':'Collect EIGHT objects in EACH area. Evade targeting strikes before the timer expires.':hardMode?d.task.replace(/four/gi,'SIX').replace(/eight/gi,'TWELVE').replace(/two yellow passes/gi,'FOUR yellow passes').replace(/four power cells/gi,'SIX power cells'):d.task;
@@ -400,15 +435,16 @@ function initRewards(w){
 function awardIcon(hero){return ({roxy:'🌶️',fish:'🫧',kai:'🧪',humpty:'🥚',gozilla:'⚡',sub:'🚀'})[hero]||'⭐';}
 function levelUp(hero,reason){const previous=heroUpgrade(hero);progress.upgrades[hero]=Math.min(5,previous+1);saveProgress();sfx('win');burst(g.x,g.y,'#ffe16a',34);say(progress.upgrades[hero]>previous?'UPGRADE! '+heroNames[hero]+' LEVEL '+progress.upgrades[hero]+' ('+reason+')':heroNames[hero]+' MAX LEVEL — '+reason,3.3);}
 function collectRewards(){if(!g)return;
- for(const s of g.stars){if(s.got||Math.hypot(g.x-s.x,g.y-s.y)>43)continue;s.got=true;progress.picked[s.key]=true;progress.stars++;burst(s.x,s.y,'#ffe685',16);sfx('collect');saveProgress();
+ for(const s of g.stars){if(s.got||Math.hypot(g.x-s.x,g.y-s.y)>43)continue;s.got=true;if(progress.picked[s.key])continue;progress.picked[s.key]=true;progress.stars++;burst(s.x,s.y,'#ffe685',16);sfx('collect');saveProgress();
  if(progress.stars%5===0){g.hp=Math.min(g.maxHp,g.hp+2);levelUp(g.hero,'5-STAR BONUS · +2 HP');}else say('★ '+progress.stars+' STARS — '+(5-progress.stars%5)+' TO NEXT REWARD!',1.8);
  }
- for(const a of g.awards){if(a.got||Math.hypot(g.x-a.x,g.y-a.y)>46)continue;
+ for(const a of g.awards){if(a.got||Math.hypot(g.x-a.x,g.y-a.y)>46)continue;if(progress.picked[a.key]){a.got=true;continue;}
  if(a.hero!==g.hero){if(g.notice!==a.key){say('EAT '+awardIcon(a.hero)+' WITH '+a.hero.toUpperCase()+' TO UPGRADE!',1.3);g.notice=a.key;}continue;}
  a.got=true;progress.picked[a.key]=true;levelUp(a.hero,'SPECIAL FOOD '+awardIcon(a.hero));
  }
 }
 function aimVector(){let dx=1,dy=0,tar=null;
+ if(rightStick.pointerId!==null&&Math.hypot(rightStick.x,rightStick.y)>.11){return {x:rightStick.x/Math.hypot(rightStick.x,rightStick.y),y:rightStick.y/Math.hypot(rightStick.x,rightStick.y)};}
  if(aim.manual){if(aim.point){dx=aim.point.x-g.x;dy=aim.point.y-g.y;}else {dx=aim.vx;dy=aim.vy;}}
  else if(level===4&&g.arena){tar={x:g.arena.bossX,y:g.arena.bossY};}
  else {let nearest=Infinity;for(const h of g.hazards){if(h.stun>0)continue;const d=Math.hypot(g.x-h.x,g.y-h.y);if(d<nearest){nearest=d;tar=h;}}}
@@ -430,13 +466,13 @@ function weaponFire(){if(!g||scene!=='playing'||g.cool>0)return;
  g.shots.push({x:proj.x,y:proj.y,sx:proj.x,sy:proj.y,tx:proj.x+v.x*travel,ty:proj.y+v.y*travel,life:0,kind:h,damage:proj.damage,aimed:aim.manual});
  }else g.proj.push(proj);
  }
- if(h==='humpty'){g.inv=Math.max(g.inv,.35);g.x=clamp(g.x+v.x*62,62,level===4?673:935);g.y=clamp(g.y+v.y*62,170,540);}
+ if(h==='humpty'){g.inv=Math.max(g.inv,.35);g.x=clamp(g.x+v.x*62,62,level===4?673:((g.runLength||W)-65));g.y=clamp(g.y+v.y*62,170,540);}
  if(h==='gozilla'&&L>=2)burst(g.x+v.x*36,g.y+v.y*36,'#a6faff',6);
  sfx(h==='gozilla'?'power':'attack');
 }
 function tickProjectiles(dt){if(!g||level===4)return;
  for(let i=g.proj.length-1;i>=0;i--){const p=g.proj[i];p.age+=dt;p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;
- if(p.life<=0||p.x<20||p.x>980||p.y<110||p.y>557){g.proj.splice(i,1);continue;}
+ if(p.life<=0||p.x<20||p.x>(g.runLength||W)-20||p.y<110||p.y>557){g.proj.splice(i,1);continue;}
  let landed=false;
  for(const h of g.hazards){if(Math.hypot(p.x-h.x,p.y-h.y) < p.r+30){h.stun=Math.max(h.stun,1.2+p.damage/15);h.hp=(h.hp??Math.max(2,hardMode?4:3))-1;burst(h.x,h.y,p.kind==='roxy'?'#ffa55a':'#9defff',9);
  if(h.hp<=0){h.stun=10;h.hp=Math.max(2,hardMode?4:3);}
@@ -454,14 +490,58 @@ function drawRewardsAndShots(){if(!g)return;c.save();for(const v of g.stars||[])
  else if(p.kind==='kai'){circle(p.x,p.y,14,'#a883ff');circle(p.x-3,p.y-5,6,'#e4c7ff');}
  else circle(p.x,p.y,p.r,p.kind==='sub'?'#ffcf71':'#6af1ff');}
  if(scene==='playing'&&g.hero!=='sub'){
- const v=aimVector(),x=clamp(g.x+v.x*127,45,955),y=clamp(g.y+v.y*127,168,534);c.strokeStyle='#fff29a';c.lineWidth=2.5;c.beginPath();c.arc(x,y,15,0,TAU);c.moveTo(x-24,y);c.lineTo(x-8,y);c.moveTo(x+8,y);c.lineTo(x+24,y);c.moveTo(x,y-24);c.lineTo(x,y-8);c.moveTo(x,y+8);c.lineTo(x,y+24);c.stroke();
+ const v=aimVector(),x=clamp(g.x+v.x*127,45,(g.runLength||W)-45),y=clamp(g.y+v.y*127,168,534);c.strokeStyle='#fff29a';c.lineWidth=2.5;c.beginPath();c.arc(x,y,15,0,TAU);c.moveTo(x-24,y);c.lineTo(x-8,y);c.moveTo(x+8,y);c.lineTo(x+24,y);c.moveTo(x,y-24);c.lineTo(x,y-8);c.moveTo(x,y+8);c.lineTo(x,y+24);c.stroke();
  }
  c.restore();}
 function humptyArt(x,y,scale=1){c.save();c.translate(x,y);c.scale(scale,scale);ellipse(0,29,29,8,'#102a45a0');ellipse(0,-2,27,36,'#fff0c2');ellipse(-8,-14,13,12,'#fff9df');circle(-9,-5,5,'#193442');circle(10,-5,5,'#193442');line(-10,12,8,14,'#9a6445',3);line(-18,30,-27,43,'#e6b675',8);line(17,30,24,43,'#e6b675',8);txt('🥚',0,-44,15,'#fff0a3','center');c.restore();}
 function gozillaArt(x,y,scale=1){c.save();c.translate(x,y);c.scale(scale,scale);ellipse(-12,27,32,10,'#082f3da0');ellipse(-12,0,31,33,'#12758d');ellipse(8,-15,30,24,'#1faac2');ellipse(-9,7,19,23,'#65d3c0');for(let j=0;j<4;j++){const xx=-37+j*14;line(xx,-17,xx-5,-39-j%2*7,'#94f5eb',11);}circle(18,-23,8,'#fff8e4');circle(20,-23,3,'#162537');ellipse(32,-3,14,7,'#1590a5');line(-23,25,-31,40,'#167d89',9);line(0,23,5,41,'#167d89',9);line(-35,6,-57,23,'#146981',15);txt('⚡',35,-43,16,'#c0ffff','center');c.restore();}
 function setAimFromCanvas(e){const rect=cv.getBoundingClientRect(),scale=Math.min(rect.width/W,rect.height/H),padX=(rect.width-scale*W)/2,padY=(rect.height-scale*H)/2;
- aim.point={x:clamp((e.clientX-rect.left-padX)/scale,0,W),y:clamp((e.clientY-rect.top-padY)/scale,0,H)};aim.manual=true;}
+ aim.point={x:clamp((e.clientX-rect.left-padX)/scale+(level===4?0:cameraX),0,g?.runLength||W),y:clamp((e.clientY-rect.top-padY)/scale,0,H)};aim.manual=true;}
 
+const RUN_SECTORS=4;
+function worldGate(){const b=gates[level];if(!b)return null;return (g&&g.runLength&&level!==4)?{x:g.runLength-135,y:b.y,type:b.type}:b;}
+function makeLongRun(){
+ if(level===4)return;
+ const oldItems=g.items.slice(),oldHazards=g.hazards.slice(),oldStars=g.stars.slice(),oldAwards=g.awards.slice();
+ g.runLength=RUN_SECTORS*W;
+ for(let sector=1;sector<RUN_SECTORS;sector++){
+  for(const it of oldItems){if(it.type==='naughty')continue;
+   g.items.push({...it,x:it.x+sector*W,got:false});}
+  for(const h of oldHazards){g.hazards.push({...h,x:h.x+sector*W,bx:h.bx+sector*W,stun:0});}
+  for(const st of oldStars){const key=st.key+'-run'+sector;
+   if(!progress.picked[key])g.stars.push({...st,x:st.x+sector*W,key,got:false});}
+  for(const aw of oldAwards){const key=aw.key+'-run'+sector;
+   if(!progress.picked[key])g.awards.push({...aw,x:aw.x+sector*W,key,got:false});}
+ }
+ g.total=g.items.length;
+ // Extra ambushes in the middle of the journey; all can be stunned with weapons.
+ const type=level===5?'mine':level===2||level>=6&&level!==8?'jelly':'root';
+ for(let sector=1;sector<RUN_SECTORS;sector++){
+  g.hazards.push(hazard(sector*W+860,370,65,85,nightmare()?2.6:1.7,sector,type,hardMode));
+ }
+ g.checkpointIndex=0;g.checkpointState=null;
+ if(hardMode){g.timer*=RUN_SECTORS;g.maxTimer=g.timer;}
+ if(level===3&&!hardMode){g.deadline=RUN_SECTORS*80;}
+ say('LONG RUN '+(g.wave+1)+'/2 — FOUR SCROLLING ZONES! COLLECT '+g.total+' OBJECTIVES.',4);
+}
+function saveRunCheckpoint(){
+ if(!g?.runLength)return;
+ const next=(g.checkpointIndex+1)*W+85;
+ if(g.x<next||g.checkpointIndex>=RUN_SECTORS-1)return;
+ g.checkpointIndex++;
+ g.checkpointState=JSON.parse(JSON.stringify({x:g.x,y:g.y,hp:g.hp,inv:2,collect:g.collect,items:g.items,
+ hazards:g.hazards,stars:g.stars,awards:g.awards,captured:g.captured,timer:g.timer,deadline:g.deadline}));
+ say('★ CHECKPOINT '+g.checkpointIndex+'/'+(RUN_SECTORS-1)+' SAVED! CONTINUE THE RUN!',2.6);sfx('win');
+}
+function restoreRunCheckpoint(){
+ if(!g?.checkpointState){start(g?.wave||0);return;}
+ const snap=JSON.parse(JSON.stringify(g.checkpointState));
+ for(const k of Object.keys(snap))g[k]=snap[k];
+ g.hp=Math.max(1,Math.min(g.maxHp,g.hp));g.inv=2;g.proj=[];g.shots=[];g.cool=0;
+ scene='playing';keys={};held={};resetStick();hideScreen();
+ switchEl.style.display=level>=3&&level!==5?'flex':'none';updateHeroSwitch();
+ say('CHECKPOINT RESTORED. KEEP MOVING RIGHT!',3);
+}
 function setupArea(w){g.wave=w;g.collect=0;g.total=nightmare()?8:hardMode?6:4;g.x=116;g.y=425;g.hp=Math.min(g.maxHp,g.hp+1);g.inv=nightmare()?1.8:1.4;
  const positions=(w?areaB:areaA).concat(hardMode?(w?extraB:extraA):[],nightmare()?(w?lastB:lastA):[]);
  g.items=positions.map(([x,y])=>item(x,y,itemType(level,w)));
@@ -474,7 +554,7 @@ function setupArea(w){g.wave=w;g.collect=0;g.total=nightmare()?8:hardMode?6:4;g.
  if(level===8)g.hazards.push(hazard(810,444,49,64,hardMode?2.4:1.7,0,'root'));
  if(level===9)g.hazards.push(hazard(850,420,40,62,hardMode?2.3:1.6,0,'jelly'));
  if(hardMode){g.timer=nightmare()?(level===3?72:level===0?78:level===7?77:75):(level===3?72:level===0?90:level===7?85:83);g.maxTimer=g.timer;}
- resetStrikes();initRewards(w);g.notice=null;
+ resetStrikes();initRewards(w);g.notice=null;makeLongRun();
  if(w)say('CHECKPOINT! AREA 2/2 — '+g.total+' OBJECTIVES. '+(nightmare()?'DODGE THE RED WARNING CIRCLES!':hardMode?'Beat the clock!':''),4);
 }
 function setupSub(w){g.wave=w;g.collect=0;g.x=167;g.y=455;g.hp=Math.min(g.maxHp,g.hp+1);g.inv=nightmare()?2.2:1.4;
@@ -489,18 +569,18 @@ function setupSub(w){g.wave=w;g.collect=0;g.x=167;g.y=455;g.hp=Math.min(g.maxHp,
  if(hardMode){g.hazards.push(hazard(515,355,45,90,2.2,w+4,'mine',true));g.hazards.push(hazard(695,463,37,42,2.3,w+1,'mine'));}
  if(nightmare()){g.hazards.push(hazard(379,415,35,20,2.8,w+1,'mine',true));g.hazards.push(hazard(809,273,33,22,3.4,w+2,'mine'));}
  if(hardMode){g.timer=nightmare()?(w?88:93):(w?90:93);g.maxTimer=g.timer;}
- resetStrikes();initRewards(w);g.notice=null;
+ resetStrikes();initRewards(w);g.notice=null;makeLongRun();
 }
 function start(checkpoint=0){scene='playing';aim.manual=false;aim.point=null;resetStick();held={};keys={};hideScreen();t=0;particles=[];toastLife=0;const bbtn=document.querySelector('[data-key=interact]');bbtn.querySelector('.button-name').textContent=level===4?'◌ DODGE':'USE ✦';bbtn.setAttribute('aria-label',level===4?'B button: dodge attacks':'B button: interact');
  const boss=level===4,sub=level===5; if(level>3)unlockGozilla();BOSS_MAX=nightmare()?660:hardMode?420:240;
  const hearts=nightmare()?(boss?5:sub?4:3):hardMode?(boss?7:sub?5:4):(boss?12:sub?7:6);
- g={hero:heroFor(level),x:116,y:425,hp:hearts,maxHp:hearts,inv:0,cool:0,shield:0,items:[],hazards:[],proj:[],shots:[],stars:[],awards:[],collect:0,total:nightmare()?8:hardMode?6:4,deadline:level===3&&!hardMode?190:0,timer:hardMode?(boss?(nightmare()?195:165):85):0,maxTimer:0,boss:BOSS_MAX,bossAtt:nightmare()?1.3:hardMode?1.3:2.3,captured:false,actionWave:0,wave:0,dodge:0,dodgeCool:0,strike:null,strikeClock:3.8};
+ g={runLength:0,hero:heroFor(level),x:116,y:425,hp:hearts,maxHp:hearts,inv:0,cool:0,shield:0,items:[],hazards:[],proj:[],shots:[],stars:[],awards:[],collect:0,total:nightmare()?8:hardMode?6:4,deadline:level===3&&!hardMode?190:0,timer:hardMode?(boss?(nightmare()?195:165):85):0,maxTimer:0,boss:BOSS_MAX,bossAtt:nightmare()?1.3:hardMode?1.3:2.3,captured:false,actionWave:0,wave:0,dodge:0,dodgeCool:0,strike:null,strikeClock:3.8};
  if(boss){g.x=155;g.y=355;g.boss=BOSS_MAX;g.hazards=[];initRewards(0);
   g.arena={phase:0,attack:null,attackIndex:0,rest:2.6,orbs:[],bossX:807,bossY:342,shield:0,shieldMax:0,clearedCount:0,required:nightmare()?3:hardMode?2:1,phaseClock:0,combo:0,beamFlash:0,dodgeFlash:0};
   g.maxTimer=g.timer;g.dodgeCool=0;g.dodge=0;resetStrikes();}
  else if(sub)setupSub(checkpoint);
  else setupArea(checkpoint);
- switchEl.style.display=(level>=3&&!sub)?'flex':'none';updateHeroSwitch();say(boss?'TRIAL 1/3: FLYING BARKSHIP! SURVIVE ITS ATTACK PATTERNS, HOLD/DRAG A TO AIM, TAP B TO DODGE.':sub?'YOU ARE THE GIANT YELLOW SUBMARINE! '+(g.wave?'Find the power cells.':'Capture Naughty with B, then gather passes!'):'AREA '+(g.wave+1)+'/2 — '+g.total+' objectives. '+(nightmare()?'RED RINGS = RUN AWAY!':hardMode?'HUNTERS + TIME LIMIT!':''),5);
+ switchEl.style.display=(level>=3&&!sub)?'flex':'none';updateHeroSwitch();say(boss?'TRIAL 1/3: FLYING BARKSHIP! SURVIVE ITS ATTACK PATTERNS, RIGHT STICK TO AIM, TAP B TO DODGE.':sub?'YOU ARE THE GIANT YELLOW SUBMARINE! '+(g.wave?'Find the power cells.':'Capture Naughty with B, then gather passes!'):'AREA '+(g.wave+1)+'/2 — '+g.total+' objectives. '+(nightmare()?'RED RINGS = RUN AWAY!':hardMode?'HUNTERS + TIME LIMIT!':''),5);
 }
 function say(message,seconds=2.4){toast=message;toastLife=seconds;}
 function burst(x,y,color='#82f4e6',n=15){for(let i=0;i<n;i++)particles.push({x,y,vx:rand(-140,140),vy:rand(-150,90),life:rand(.35,.9),color,r:rand(2,6)});}
@@ -511,7 +591,7 @@ function interact(){if(scene!=='playing')return;
  
 if(level===5&&g.wave===0&&!g.captured){if(near(g.items[0],135)){g.captured=true;g.items[0].got=true;g.collect=1;g.shield=1.4;burst(g.items[0].x,g.items[0].y,'#ffd465',25);sfx('collect');say('NAUGHTY CAPTURED! Collect '+(g.total-1)+' yellow passes!',3);}else say('YOU are the big yellow submarine! Steer to bandaged Naughty and press B.',2);return;}
  if(level===3){const b=g.items.find(i=>!i.got&&near(i,87));if(b){b.got=true;g.collect++;sfx('collect');burst(b.x,b.y,'#ffca61',22);say('Device disabled! '+g.collect+'/'+g.total+' in this district.',1.6);if(g.collect===g.total)say('DISTRICT CLEAR! Get to the EXIT GATE and press B.',4);return;}}
- const gate=gates[level];if(gate&&near(gate,125)){
+ const gate=worldGate();if(gate&&near(gate,125)){
   if(gateReady()){
    burst(gate.x,gate.y,'#ffe8a3',31);sfx('win');
    if(level===5){if(g.wave===0){setupSub(1);return;}chapterDone();return;}
@@ -636,13 +716,13 @@ function drawBossCombat(){const a=g.arena,k=a?.attack;
 
 function tick(dt){t+=dt;if(toastLife>0)toastLife-=dt;for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=240*dt;p.life-=dt;if(p.life<=0)particles.splice(i,1);}if(scene!=='playing'||!g)return;
  g.inv=Math.max(0,g.inv-dt);g.cool=Math.max(0,g.cool-dt);g.shield=Math.max(0,g.shield-dt);g.actionWave=Math.max(0,g.actionWave-dt);
- if((held.action||keys.action)&&g.cool<=0)attack();
+ if((held.action||keys.action||(rightStick.pointerId!==null&&Math.hypot(rightStick.x,rightStick.y)>.13))&&g.cool<=0)attack();
  const kx=(keys.right||held.right?1:0)-(keys.left||held.left?1:0),ky=(keys.down||held.down?1:0)-(keys.up||held.up?1:0),kb=kx!==0||ky!==0,dx=kb?kx:stick.x,dy=kb?ky:stick.y,mag=Math.max(1,Math.hypot(dx,dy)),speed=g.hero==='sub'?235:g.hero==='roxy'?219:242;
  // The larger submarine stays completely within the playfield, including its propeller and periscope.
- g.x=clamp(g.x+dx/mag*speed*dt,g.hero==='sub'?160:62,g.hero==='sub'?859:level===4?673:934);g.y=clamp(g.y+dy/mag*speed*dt,g.hero==='sub'?205:162,g.hero==='sub'?511:548);
+ g.x=clamp(g.x+dx/mag*speed*dt,g.hero==='sub'?160:62,level===4?673:(g.runLength-(g.hero==='sub'?150:65)));g.y=clamp(g.y+dy/mag*speed*dt,g.hero==='sub'?205:162,g.hero==='sub'?511:548);if(g.runLength)saveRunCheckpoint();
  if(hardMode){g.timer-=dt;if(g.timer<=0){die('TIME IS UP! Retry this checkpoint, move faster and use your powers.');return;}}else if(level===3){g.deadline-=dt;if(g.deadline<=0){die('The countdown reached zero. Restart from your latest checkpoint.');return;}}
  for(const h of g.hazards){h.stun=Math.max(0,h.stun-dt);if(h.stun<=0){
- if(h.hunter&&Math.hypot(g.x-h.x,g.y-h.y)<(nightmare()?360:285)){const angle=Math.atan2(g.y-h.y,g.x-h.x);const chase=nightmare()?171:115;h.x=clamp(h.x+Math.cos(angle)*chase*dt,95,899);h.y=clamp(h.y+Math.sin(angle)*chase*dt,170,540);}
+ if(h.hunter&&Math.hypot(g.x-h.x,g.y-h.y)<(nightmare()?360:285)){const angle=Math.atan2(g.y-h.y,g.x-h.x);const chase=nightmare()?171:115;h.x=clamp(h.x+Math.cos(angle)*chase*dt,95,(g.runLength||W)-95);h.y=clamp(h.y+Math.sin(angle)*chase*dt,170,540);}
  else if(h.hunter){const tx=h.bx+Math.sin(t*h.rate+h.phase)*h.ax,ty=h.by+Math.cos(t*h.rate*.83+h.phase)*h.ay;h.x+=(tx-h.x)*Math.min(1,dt*1.3);h.y+=(ty-h.y)*Math.min(1,dt*1.3);}
  else{h.x=h.bx+Math.sin(t*h.rate+h.phase)*h.ax;h.y=h.by+Math.cos(t*h.rate*.83+h.phase)*h.ay;}}if(Math.hypot(g.x-h.x,g.y-h.y)<(g.hero==='sub'?46:38))hit();if(scene!=='playing')return;}
  if(level!==3&&level!==4){for(const i of g.items){if(i.got||i.type==='naughty'||(i.type==='pass'&&!g.captured))continue;if(near(i,g.hero==='sub'?65:54)){i.got=true;g.collect++;sfx('collect');burst(i.x,i.y,'#b4f6c3',17);
@@ -797,38 +877,72 @@ function drawBoss(){const a=g.arena;if(!a)return;
  if(phase===2){for(let i=0;i<6;i++){const x=150+i*75,y=210+Math.sin(t*2+i)*13;shark(x,y,.28,'#e1c38f');}txt('PUFFER-FISH ALLIES!',347,174,13,'#ffe9b4','center');}
 }
 function objective(){let message='';
- if(level===4)message=`${difficultyTitle()} · TRIAL ${bossPhase()+1}/3 · ${['BARKSHIP','PORTALS','CROWN'][bossPhase()]} · PATTERNS ${g.arena.clearedCount}/${g.arena.required} · ${Math.ceil(g.boss)} HP · HOLD/DRAG A TO AIM · B DODGE ${g.dodgeCool>0?'('+g.dodgeCool.toFixed(1)+'s)':'READY'}`;
- else if(level===5){message=g.wave===0?(!g.captured?'YOU = HUGE YELLOW SUB ★  Find NAUGHTY · PRESS B':g.collect<g.total?`COLLECT ${g.total-1} SECURITY PASSES (${g.collect-1}/${g.total-1}) · A AIM TORPEDOES`:'PASSES DONE! YELLOW SUB TO PRISON DOCK RIGHT · PRESS B'):g.collect<g.total?`PRISON CHECKPOINT · POWER CELLS ${g.collect}/${g.total} · DODGE RED RINGS`:'ALL CELLS! PRISON DOCK ON RIGHT · PRESS B';}
- else if(level===3)message=g.collect<g.total?`DISTRICT ${g.wave+1}/2 · DISARM BOMBS ${g.collect}/${g.total} · PRESS B · A FIRE BREATH · AIM`:`DISTRICT CLEAR! EXIT GATE ON RIGHT · PRESS B`;
- else message=g.collect<g.total?`AREA ${g.wave+1}/2 · ${g.collect}/${g.total} ${itemType(level,g.wave)==='shark'?'ALLIES':'ITEMS'} · ${nightmare()?'💀 ESCAPE TRACKING STRIKES!':hardMode?'WATCH RED HUNTERS!':'A = AIM + FIRE'}`:`ALL OBJECTIVES COMPLETE! EXIT GATE ON RIGHT · PRESS B`;
+ if(level===4)message=`${difficultyTitle()} · TRIAL ${bossPhase()+1}/3 · ${['BARKSHIP','PORTALS','CROWN'][bossPhase()]} · PATTERNS ${g.arena.clearedCount}/${g.arena.required} · ${Math.ceil(g.boss)} HP · RIGHT STICK TO AIM · B DODGE ${g.dodgeCool>0?'('+g.dodgeCool.toFixed(1)+'s)':'READY'}`;
+ else if(level===5){message=g.wave===0?(!g.captured?'YOU = HUGE YELLOW SUB ★  Find NAUGHTY · PRESS B':g.collect<g.total?`COLLECT ${g.total-1} SECURITY PASSES (${g.collect-1}/${g.total-1}) · RIGHT STICK = TORPEDOES`:'PASSES DONE! YELLOW SUB TO PRISON DOCK RIGHT · PRESS B'):g.collect<g.total?`PRISON CHECKPOINT · POWER CELLS ${g.collect}/${g.total} · DODGE RED RINGS`:'ALL CELLS! PRISON DOCK ON RIGHT · PRESS B';}
+ else if(level===3)message=g.collect<g.total?`LONG CITY RUN ${g.wave+1}/2 · DISARM BOMBS ${g.collect}/${g.total} · PRESS B · RIGHT STICK = FIRE BREATH`:`DISTRICT CLEAR! EXIT GATE ON RIGHT · PRESS B`;
+ else message=g.collect<g.total?`LONG RUN ${g.wave+1}/2 · ${g.collect}/${g.total} ${itemType(level,g.wave)==='shark'?'ALLIES':'ITEMS'} · ${nightmare()?'💀 ESCAPE TRACKING STRIKES!':hardMode?'WATCH RED HUNTERS!':'RIGHT STICK = AIM + FIRE'}`:`ALL OBJECTIVES COMPLETE! EXIT GATE ON RIGHT · PRESS B`;
  roundRect(19,568,962,39,11,'#051c31e8');txt(message,500,594,14,'#dcffff','center',850);}
-function draw(){c.clearRect(0,0,W,H);if(!g){grad('#08273c','#134d6a');seaScene();if(window.FishmanComicArt)window.FishmanComicArt.menuDec(c,t);fishman(300,391,1.9);shark(580,410,1.2);naughty(802,437,.8);txt('FISHMAN',501,187,75,'#a9fff2','center',1000);txt('10 CHAPTERS · 20 AREAS · NIGHTMARE GAUNTLET',500,226,19,'#ffecb6','center',850);return;}
- drawBackground();drawStrike();
- if(level===4){for(const h of g.hazards)drawHazard(h);drawRewardsAndShots();drawBoss();}
+function draw(){c.clearRect(0,0,W,H);if(!g){grad('#08273c','#134d6a');seaScene();if(window.FishmanComicArt)window.FishmanComicArt.menuDec(c,t);fishman(300,391,1.9);shark(580,410,1.2);naughty(802,437,.8);txt('FISHMAN',501,187,75,'#a9fff2','center',1000);txt('TWIN STICKS · LONG SCROLLING RUNS · NIGHTMARE',500,226,19,'#ffecb6','center',850);return;}
+ if(level===4){cameraX=0;drawBackground();drawStrike();for(const h of g.hazards)drawHazard(h);drawRewardsAndShots();drawBoss();drawPlayer();}
  else{
- const gate=gates[level];if(gate){const ready=gateReady(),word=level===5?'PRISON DOCK · B':level===0?'MIXING MACHINE · B':level===3?'DISTRICT GATE · B':'EXIT GATE · B';target(gate.x,gate.y,gate.type,word,ready);if(ready)infoPrompt(gate.x,gate.y,'PRESS B TO CONTINUE');}
- for(const i of g.items)itemArt(i);drawRewardsAndShots();
- for(const h of g.hazards)drawHazard(h);
- if(level===3){for(const i of g.items)if(!i.got&&near(i,100))infoPrompt(i.x,i.y,'PRESS B TO DISARM');}
- if(level===5&&!g.captured&&near(g.items[0],158))infoPrompt(g.items[0].x,g.items[0].y,'PRESS B TO CAPTURE');
+  cameraX=clamp(g.x-390,0,g.runLength-W);
+  for(let sector=Math.max(0,Math.floor(cameraX/W));sector<=Math.min(RUN_SECTORS-1,Math.floor((cameraX+W)/W));sector++){
+   c.save();c.translate(sector*W-cameraX,0);drawBackground();
+   // Different chapter scenery sections and floating directional signs.
+   c.fillStyle=sector%2?'#72d8e00c':'#ffd58a09';c.fillRect(0,110,W,448);
+   txt('ZONE '+(sector+1)+' / '+RUN_SECTORS,640,174,21,'#d5fef2','center',900);
+   c.restore();
+  }
+  c.save();c.translate(-cameraX,0);
+  drawStrike();
+  for(let mark=1;mark<RUN_SECTORS;mark++){
+   const x=mark*W+88;glow(x,313,90,'#b4fdd737');roundRect(x-11,240,22,277,6,'#207b80a6');
+   circle(x,230,32,mark<=g.checkpointIndex?'#adffcd':'#ffe7a0');txt('★',x,243,31,'#185069','center',1000);
+   txt('CHECKPOINT '+mark,x,188,18,'#f6ffe7','center',900);
+  }
+  const gate=worldGate();if(gate){const ready=gateReady(),word=level===5?'PRISON DOCK · B':level===0?'MIXING MACHINE · B':level===3?'DISTRICT GATE · B':'EXIT GATE · B';target(gate.x,gate.y,gate.type,word,ready);if(ready)infoPrompt(gate.x,gate.y,'PRESS B TO CONTINUE');}
+  for(const it of g.items)if(!it.got&&it.x>cameraX-75&&it.x<cameraX+W+75)itemArt(it);
+  drawRewardsAndShots();
+  for(const h of g.hazards)if(h.x>cameraX-100&&h.x<cameraX+W+100)drawHazard(h);
+  if(level===3)for(const it of g.items)if(!it.got&&near(it,100))infoPrompt(it.x,it.y,'PRESS B TO DISARM');
+  if(level===5&&!g.captured&&near(g.items[0],158))infoPrompt(g.items[0].x,g.items[0].y,'PRESS B TO CAPTURE');
+  drawPlayer();
+  c.restore();
  }
- if(['playing','paused','gameOver','chapterWin','gameWin'].includes(scene)){drawPlayer();hud();objective();if(toastLife>0){const width=Math.min(860,Math.max(320,toast.length*8));roundRect((W-width)/2,104,width,42,12,'#043247ed');txt(toast,500,131,14,'#dcfff1','center',850);}for(const p of particles){c.globalAlpha=clamp(p.life/.5,0,1);circle(p.x,p.y,p.r,p.color);}c.globalAlpha=1;}if(window.FishmanComicArt)window.FishmanComicArt.onTop(c,t,level);}
+ if(['playing','paused','gameOver','chapterWin','gameWin'].includes(scene)){hud();objective();if(toastLife>0){const width=Math.min(860,Math.max(320,toast.length*8));roundRect((W-width)/2,104,width,42,12,'#043247ed');txt(toast,500,131,14,'#dcfff1','center',850);}for(const p of particles){c.globalAlpha=clamp(p.life/.5,0,1);circle(p.x-(level===4?0:cameraX),p.y,p.r,p.color);}c.globalAlpha=1;}
+ if(g.runLength){roundRect(288,105,437,17,7,'#092536df');roundRect(293,109,427*clamp(g.x/g.runLength,0,1),8,4,'#ffde70');txt('RUN '+Math.min(100,Math.floor(g.x/g.runLength*100))+'% · ★ '+progress.stars,504,143,15,'#fff3bf','center',900);
+ if(g.collect<g.total){const remaining=g.items.filter(it=>!it.got);if(remaining.length){const n=remaining.reduce((best,it)=>Math.abs(it.x-g.x)<Math.abs(best.x-g.x)?it:best,remaining[0]);if(Math.abs(n.x-g.x)>450){txt(n.x<g.x?'◀ MISSED OBJECTIVES':'NEXT OBJECTIVES ▶',503,165,15,'#fff5b6','center',900);}}}}
+ if(window.FishmanComicArt)window.FishmanComicArt.onTop(c,t,level);
+}
 function drawFrame(now){const dt=Math.min(.033,((now-last)||16)/1000);last=now;if(scene==='playing')tick(dt);else t+=dt*.45;window.FishmanMusic?.update({scene,level,difficulty});draw();requestAnimationFrame(drawFrame);}
-function command(doit){switch(doit){case 'continue':intro(Math.max(0,unlock-1));break;case 'new':intro(0);break;case 'boss':intro(4);break;case 'submarine':intro(5);break;case 'bonus':intro(6);break;case 'play':start(0);break;case 'retry':start(g?g.wave:0);break;case 'next':intro(Math.min(N-1,level+1));break;case 'menu':menu();break;case 'difficulty':difficulty=difficulty==='classic'?'expert':difficulty==='expert'?'nightmare':'classic';hardMode=difficulty!=='classic';try{localStorage.setItem('fishmanDifficulty',difficulty);}catch{}menu();break;case 'resume':pause();break;}}
+function command(doit){switch(doit){case 'continue':intro(Math.max(0,unlock-1));break;case 'new':intro(0);break;case 'boss':intro(4);break;case 'submarine':intro(5);break;case 'bonus':intro(6);break;case 'play':start(0);break;case 'retry':if(g?.checkpointState)restoreRunCheckpoint();else start(g?g.wave:0);break;case 'next':intro(Math.min(N-1,level+1));break;case 'menu':menu();break;case 'difficulty':difficulty=difficulty==='classic'?'expert':difficulty==='expert'?'nightmare':'classic';hardMode=difficulty!=='classic';try{localStorage.setItem('fishmanDifficulty',difficulty);}catch{}menu();break;case 'resume':pause();break;}}
 screen.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.do)command(b.dataset.do);else if(b.dataset.start!==undefined)intro(+b.dataset.start);else if(b.dataset.diff){difficulty=b.dataset.diff;hardMode=difficulty!=='classic';try{localStorage.setItem('fishmanDifficulty',difficulty);}catch{}menu();}});
 document.getElementById('menuBtn').addEventListener('click',()=>scene==='playing'?pause():menu());document.getElementById('soundBtn').addEventListener('click',e=>{soundOn=!soundOn;e.currentTarget.textContent=soundOn?'♫ Music: On':'♫ Music: Off';if(soundOn)sfx('collect');window.FishmanMusic?.toggle(soundOn,{scene,level,difficulty});});
 switchEl.addEventListener('click',e=>{const b=e.target.closest('button[data-hero]');if(b)switchHero(b.dataset.hero);});
 const keymap={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',w:'up',a:'left',s:'down',d:'right',W:'up',A:'left',S:'down',D:'right',' ':'action',e:'interact',E:'interact'};
 window.addEventListener('keydown',e=>{if(keymap[e.key]||['p','P','1','2','3','Escape'].includes(e.key))e.preventDefault();if(e.repeat&&[' ','e','E','p','P'].includes(e.key))return;const k=keymap[e.key];if(k){if(!keys[k]){if(k==='action')attack();if(k==='interact')interact();}keys[k]=true;}if(e.key==='p'||e.key==='P'||e.key==='Escape')pause();if(['1','2','3'].includes(e.key))switchHero({1:'fish',2:'kai',3:'roxy'}[e.key]);});
-window.addEventListener('keyup',e=>{const k=keymap[e.key];if(k)keys[k]=false;});window.addEventListener('blur',()=>{keys={};held={};resetStick();});document.addEventListener('visibilitychange',()=>{if(document.hidden){keys={};held={};resetStick();}});
-function resetStick(){stick.pointerId=null;stick.x=0;stick.y=0;stickKnob.style.transform='translate(-50%,-50%)';joystickEl.classList.remove('active');}
+window.addEventListener('keyup',e=>{const k=keymap[e.key];if(k)keys[k]=false;});const aimKeys={i:[0,-1],j:[-1,0],k:[0,1],l:[1,0]};const pressedAim=new Set();
+function updateKeyboardAim(){let x=0,y=0;for(const key of pressedAim){x+=aimKeys[key][0];y+=aimKeys[key][1];}const d=Math.hypot(x,y);if(d){aim.manual=true;aim.point=null;aim.vx=x/d;aim.vy=y/d;keys.action=true;}else if(rightStick.pointerId===null){keys.action=false;aim.manual=false;}}
+window.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(aimKeys[k]&&!e.repeat){e.preventDefault();pressedAim.add(k);updateKeyboardAim();}});
+window.addEventListener('keyup',e=>{const k=e.key.toLowerCase();if(pressedAim.delete(k)){e.preventDefault();updateKeyboardAim();}});
+window.addEventListener('blur',()=>{keys={};held={};resetStick();});document.addEventListener('visibilitychange',()=>{if(document.hidden){keys={};held={};resetStick();}});
+function resetStick(){stick.pointerId=null;stick.x=0;stick.y=0;stickKnob.style.transform='translate(-50%,-50%)';joystickEl.classList.remove('active');resetRightStick();}
 function moveStick(e){const rect=joystickEl.getBoundingClientRect(),cx=rect.left+rect.width/2,cy=rect.top+rect.height/2,maximum=Math.max(25,rect.width*.30),ox=e.clientX-cx,oy=e.clientY-cy,distance=Math.hypot(ox,oy),amount=Math.min(1,distance/maximum),deadZone=.11,amountAfterDead=amount<=deadZone?0:(amount-deadZone)/(1-deadZone),nx=distance>0?ox/distance:0,ny=distance>0?oy/distance:0;stick.x=nx*amountAfterDead;stick.y=ny*amountAfterDead;stickKnob.style.transform=`translate(-50%,-50%) translate(${(nx*amount*maximum).toFixed(1)}px,${(ny*amount*maximum).toFixed(1)}px)`;}
 joystickEl.addEventListener('pointerdown',e=>{if(stick.pointerId!==null)return;e.preventDefault();stick.pointerId=e.pointerId;try{joystickEl.setPointerCapture(e.pointerId);}catch{}joystickEl.classList.add('active');moveStick(e);});
 joystickEl.addEventListener('pointermove',e=>{if(e.pointerId!==stick.pointerId)return;e.preventDefault();moveStick(e);});for(const event of ['pointerup','pointercancel','lostpointercapture'])joystickEl.addEventListener(event,e=>{if(e.pointerId===stick.pointerId)resetStick();});
+function resetRightStick(){rightStick.pointerId=null;rightStick.x=0;rightStick.y=0;aimKnob.style.transform='translate(-50%,-50%)';aimStickEl.classList.remove('active');aim.manual=false;aim.point=null;}
+function moveRightStick(e){const r=aimStickEl.getBoundingClientRect(),cx=r.left+r.width*.5,cy=r.top+r.height*.5,max=Math.max(23,r.width*.30),ox=e.clientX-cx,oy=e.clientY-cy,d=Math.hypot(ox,oy),amount=Math.min(1,d/max),dead=.12,m=amount<=dead?0:(amount-dead)/(1-dead),nx=d>0?ox/d:0,ny=d>0?oy/d:0;
+ rightStick.x=nx*m;rightStick.y=ny*m;
+ aimKnob.style.transform=`translate(-50%,-50%) translate(${(nx*amount*max).toFixed(1)}px,${(ny*amount*max).toFixed(1)}px)`;
+ if(m>.13){aim.manual=true;aim.point=null;aim.vx=nx;aim.vy=ny;}
+}
+aimStickEl.addEventListener('pointerdown',e=>{if(rightStick.pointerId!==null)return;e.preventDefault();rightStick.pointerId=e.pointerId;try{aimStickEl.setPointerCapture(e.pointerId);}catch{}aimStickEl.classList.add('active');moveRightStick(e);if(scene==='playing')attack();});
+aimStickEl.addEventListener('pointermove',e=>{if(e.pointerId!==rightStick.pointerId)return;e.preventDefault();moveRightStick(e);});
+for(const event of ['pointerup','pointercancel','lostpointercapture'])aimStickEl.addEventListener(event,e=>{if(e.pointerId===rightStick.pointerId)resetRightStick();});
 cv.addEventListener('pointerdown',e=>{if(scene==='playing'){setAimFromCanvas(e);e.preventDefault();}});
 document.querySelectorAll('.touch [data-key]').forEach(b=>{const k=b.dataset.key;const down=e=>{e.preventDefault();try{b.setPointerCapture(e.pointerId);}catch{}b.classList.add('down');if(k==='action'){aim.pointer={id:e.pointerId,x:e.clientX,y:e.clientY};held.action=true;attack();}else if(k==='interact')interact();else held[k]=true;};const up=e=>{e.preventDefault();b.classList.remove('down');held[k]=false;if(k==='action')aim.pointer=null;};if(k==='action')b.addEventListener('pointermove',e=>{if(!aim.pointer||e.pointerId!==aim.pointer.id)return;const dx=e.clientX-aim.pointer.x,dy=e.clientY-aim.pointer.y,d=Math.hypot(dx,dy);if(d>13){aim.manual=true;aim.point=null;aim.vx=dx/d;aim.vy=dy/d;}});b.addEventListener('pointerdown',down);for(const event of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(event,up);});
 // Optional test diagnostics only on local ?test=1; not needed to play.
-if(new URLSearchParams(location.search).has('test'))window.fishmanTest={get:()=>({scene,level,wave:g?.wave,collect:g?.collect,total:g?.total,captured:g?.captured,hp:g?.hp,boss:g?.boss,timer:g?.timer,hardMode,difficulty,strike:g?.strike,arena:g?.arena?{phase:g.arena.phase,attack:g.arena.attack,shield:g.arena.shield,orbs:g.arena.orbs.length,dodgeCool:g.dodgeCool,rest:g.arena.rest}:null,hazards:g?.hazards,items:g?.items,gate:gates[level],unlock,position:g&&{x:g.x,y:g.y},hero:g?.hero,stars:progress.stars,upgrades:progress.upgrades,starPickups:g?.stars,awardPickups:g?.awards,aim}),intro:(n)=>intro(n),start:(n)=>start(n),teleport:(x,y)=>{if(g){g.x=x;g.y=y;g.inv=3;}},interact,attack,step:(seconds=1)=>{for(let i=0;i<Math.ceil(seconds/.025);i++)tick(.025);},steer:(x,y,fire=false)=>{stick.x=x;stick.y=y;held.action=fire;},select:(d)=>{difficulty=d;hardMode=d!=='classic';},selectHero:(h)=>switchHero(h),giveStars:(n=5)=>{for(let i=0;i<n;i++){progress.stars++;if(progress.stars%5===0&&g){g.hp=Math.min(g.maxHp,g.hp+2);levelUp(g.hero,'STAR BONUS');}}saveProgress();},completeCity:()=>unlockGozilla(),hit:()=>hit(),finishBoss:()=>{if(g&&level===4){g.arena.shield=0;g.boss=1;attack();}}};
+if(new URLSearchParams(location.search).has('test'))window.fishmanTest={get:()=>({scene,level,wave:g?.wave,collect:g?.collect,total:g?.total,captured:g?.captured,hp:g?.hp,boss:g?.boss,timer:g?.timer,hardMode,difficulty,strike:g?.strike,arena:g?.arena?{phase:g.arena.phase,attack:g.arena.attack,shield:g.arena.shield,orbs:g.arena.orbs.length,dodgeCool:g.dodgeCool,rest:g.arena.rest}:null,hazards:g?.hazards,items:g?.items,gate:worldGate(),runLength:g?.runLength,checkpoint:g?.checkpointIndex,cameraX,rightStick:{x:rightStick.x,y:rightStick.y,active:rightStick.pointerId!==null},unlock,position:g&&{x:g.x,y:g.y},hero:g?.hero,stars:progress.stars,upgrades:progress.upgrades,starPickups:g?.stars,awardPickups:g?.awards,aim}),intro:(n)=>intro(n),start:(n)=>start(n),teleport:(x,y)=>{if(g){g.x=x;g.y=y;g.inv=3;}},interact,attack,step:(seconds=1)=>{for(let i=0;i<Math.ceil(seconds/.025);i++)tick(.025);},steer:(x,y,fire=false)=>{stick.x=x;stick.y=y;held.action=fire;},select:(d)=>{difficulty=d;hardMode=d!=='classic';},selectHero:(h)=>switchHero(h),giveStars:(n=5)=>{for(let i=0;i<n;i++){progress.stars++;if(progress.stars%5===0&&g){g.hp=Math.min(g.maxHp,g.hp+2);levelUp(g.hero,'STAR BONUS');}}saveProgress();},completeCity:()=>unlockGozilla(),hit:()=>hit(),finishBoss:()=>{if(g&&level===4){g.arena.shield=0;g.boss=1;attack();}}};
 menu();requestAnimationFrame(drawFrame);
 })();
 </script>
