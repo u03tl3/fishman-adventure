@@ -2,6 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="theme-color" content="#062a41"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Fishman">
+<link rel="manifest" href="manifest.webmanifest">
 <title>Fishman — Three Difficulty Modes • McTreeFace Boss Trilogy</title>
 <style>
 :root{color-scheme:dark;--bg:#061827;--panel:#102b43;--panel2:#173952;--ink:#f2fbff;--soft:#a9c6d8;--aqua:#62f5eb;--gold:#ffcf65;--pink:#ff7699}
@@ -100,6 +104,7 @@
 @media (orientation:landscape) and (pointer:coarse){.difficulty-picks{gap:4px;margin:4px auto 5px;max-width:640px}.diff-card{padding:3px 5px;border-radius:9px}.diff-card strong{font-size:clamp(10px,1.8vw,13px);margin:0}.diff-card small{font-size:clamp(8px,1.35vw,10px)}.screen .chaptergrid{margin-top:3px}}
 @media(max-width:530px) and (orientation:portrait){.difficulty-picks{gap:4px}.diff-card{padding:7px 4px}.diff-card strong{font-size:11px}.diff-card small{font-size:9px}}
 </style>
+<link rel="stylesheet" href="fit-screen.css?v=6">
 </head>
 <body>
 <main class="shell">
@@ -541,5 +546,6 @@ if(new URLSearchParams(location.search).has('test'))window.fishmanTest={get:()=>
 menu();requestAnimationFrame(drawFrame);
 })();
 </script>
+<script src="fit-screen.js?v=6"></script>
 </body>
 </html>
