@@ -286,10 +286,13 @@ html.local-coop #localControllerBoard{display:grid!important;grid-template-colum
 #localControllerBoard #touchControl .stick-caption{display:none!important}
 #localControllerBoard #touchControl .touch-right{display:flex!important;flex-direction:row!important;grid-column:auto!important;
  grid-row:auto!important;align-items:center!important;gap:7px!important;padding:0!important;margin:0!important}
+#localControllerBoard .aim-mark{display:none!important}
+#localControllerBoard .skill-cooldown{font-size:6px!important}
 #localControllerBoard .local-pad.p1 .pad-heading{color:#a6f8ff}
 #localControllerBoard .local-pad.p2{--pad-color:#9effdf}
 #localControllerBoard .local-pad.p3{--pad-color:#ffdb91}
 #localControllerBoard .local-pad.p4{--pad-color:#edb2ff}
+@media(max-width:650px){html.local-coop .head .brand{display:none!important}html.local-coop .head .top-actions{width:100%;justify-content:flex-end;gap:4px}}
 @media(max-width:570px){html.local-coop #localControllerBoard{grid-template-columns:minmax(0,1fr)}}
 @media(orientation:landscape) and (max-height:470px){
  html.local-coop .stage-wrap{height:43dvh!important;min-height:140px!important}
@@ -1848,6 +1851,7 @@ menu();updateSkillButton();requestAnimationFrame(drawFrame);
    if(activePointer!==null)return;ev.preventDefault();activePointer=ev.pointerId;
    try{button.setPointerCapture(ev.pointerId);}catch{}
    button.classList.add('down');const p=room(slot);if(!p)return;
+   if(key!=='attack'&&window.FishmanMultiplayerBridge?.getScene?.()!=='playing')return;
    if(key==='attack'){p.input.buttonFire=true;p.input.fire=true;}
    else if(key==='interact')p.input.interact=true;
    else p.input.skill=true;
@@ -1893,6 +1897,7 @@ menu();updateSkillButton();requestAnimationFrame(drawFrame);
  function addPlayer(){
   if(n.role!=='solo'&&n.role!=='local')return;
   if(localCount>=4)return;
+  const onlineModal=document.getElementById('mpScreen');if(onlineModal&&!onlineModal.hidden)onlineModal.hidden=true;
   if(n.role==='solo'){
    n.role='local';n.connected=true;n.slot=1;n.players={};n.localHero=getG()?.hero||n.localHero||'fish';
    document.documentElement.classList.add('local-coop');
