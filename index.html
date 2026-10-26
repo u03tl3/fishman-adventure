@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="theme-color" content="#062a41"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
-<title>Fishman — Three Difficulty Modes • McTreeFace Boss Trilogy</title>
+<title>Fishman — Art Upgrade v21 • McTreeFace Boss Trilogy</title>
 <style>
 :root{color-scheme:dark;--bg:#061827;--panel:#102b43;--panel2:#173952;--ink:#f2fbff;--soft:#a9c6d8;--aqua:#62f5eb;--gold:#ffcf65;--pink:#ff7699}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:radial-gradient(ellipse at 50% -10%,#174969 0%,#071a2b 53%,#05121f 100%);color:var(--ink);font-family:ui-rounded,system-ui,-apple-system,Segoe UI,Arial,sans-serif}button{font:inherit;cursor:pointer}button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
@@ -906,7 +906,7 @@ function tickProjectiles(dt){if(!g||level===4)return;
  for(let i=g.proj.length-1;i>=0;i--){const p=g.proj[i];p.age+=dt;p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;
  if(p.life<=0||p.x<20||p.x>(g.runLength||W)-20||p.y<110||p.y>557){g.proj.splice(i,1);continue;}
  let landed=false;
- for(const h of g.hazards){if(Math.hypot(p.x-h.x,p.y-h.y) < p.r+30){h.stun=Math.max(h.stun,1.2+p.damage/15);h.hp=(h.hp??Math.max(2,hardMode?4:3))-1;burst(h.x,h.y,p.kind==='roxy'?'#ffa55a':'#9defff',9);
+ for(const h of g.hazards){if(Math.hypot(p.x-h.x,p.y-h.y) < p.r+30){h.stun=Math.max(h.stun,1.2+p.damage/15);h.hp=(h.hp??Math.max(2,hardMode?4:3))-1;burst(h.x,h.y,p.kind==='roxy'?'#ffa55a':'#9defff',13);sparkBurst(h.x,h.y,p.kind==='roxy'?'#ffdc9a':'#b5fff9',.65);
  if(h.hp<=0){h.stun=10;h.hp=Math.max(2,hardMode?4:3);}
  landed=true;break;
  }}
@@ -1177,6 +1177,22 @@ function tickChallenge(dt){
  }
 }
 
+
+function paintSharkKing(){
+ c.save();c.translate(0,Math.sin(t*2.8)*5);
+ function ov(x,y,rx,ry,cols){c.save();c.beginPath();c.ellipse(x,y,rx,ry,0,0,TAU);let gr=c.createLinearGradient(x-rx,y-ry,x+rx,y+ry);cols.forEach((v,i)=>gr.addColorStop(i/(cols.length-1),v));c.fillStyle=gr;c.fill();c.lineWidth=4;c.strokeStyle='#10384f';c.stroke();c.restore();}
+ function poly(points,fill){c.beginPath();c.moveTo(...points[0]);for(let i=1;i<points.length;i++)c.lineTo(...points[i]);c.closePath();c.fillStyle=fill;c.fill();c.lineWidth=4;c.strokeStyle='#11384f';c.stroke();}
+ c.save();c.translate(68,0);c.rotate(Math.sin(t*3)*.15);poly([[0,0],[87,-49],[69,0],[94,47],[2,24]],'#4c9cda');c.restore();
+ poly([[-36,-30],[-10,-102],[20,-48]],'#62bce9');poly([[-43,9],[-107,56],[-26,40]],'#81ceee');
+ ov(-4,0,80,59,['#b0efff','#4b9dda','#174f82']);ov(-43,22,61,33,['#fffef6','#d7f3ef','#9ccbdd']);
+ poly([[-102,15],[-66,33],[13,31],[30,13],[-38,12]],'#5e2e47');
+ for(let i=0;i<9;i++){let x=-83+i*10;poly([[x,15],[x+8,15],[x+5,25]],'#f5fff9');}
+ for(const [x,y,r] of [[-61,-18,15],[-12,-23,13]]){ov(x,y,r,r*1.08,['#ffffff','#e2f7f5','#a8cada']);ov(x+4,y+2,r*.4,r*.47,['#235571','#102b46']);c.fillStyle='#fff';c.beginPath();c.arc(x+2,y-4,3,0,TAU);c.fill();}
+ ov(-85,-10,9,5,['#ffc7d3','#f19cb4']);
+ for(let j=0;j<3;j++){c.strokeStyle='#245d83';c.lineWidth=3;c.beginPath();c.moveTo(35+j*7,-5);c.lineTo(37+j*7,11);c.stroke();}
+ poly([[-44,-70],[-38,-94],[-25,-76],[-12,-109],[2,-76],[14,-95],[20,-68]],'#ffd66c');
+ c.restore();
+}
 function drawChallengeArena(){
  const a=g.challenge,idx=a.index,def=a.def;
  if(window.FishmanVisuals)window.FishmanVisuals.paintArena(c,idx,t);else {if(idx===1||idx===8){forest();}else if(idx===3){city();}else{seaScene();}}
@@ -1215,7 +1231,7 @@ function drawChallengeArena(){
  if(window.FishmanVisuals?.paintBoss?.(c,def,t,a.phase)){/* detailed original boss model */}
  else if(def.type==='tree'||def.type==='barky'||def.type==='naughty'){
   c.save();c.scale(def.type==='barky'?1.10:.91,def.type==='barky'?1.10:.91);naughty(0,10,1.05);c.restore();
- }else if(def.type==='shark'){shark(0,0,1.9,'#639cea');}
+ }else if(def.type==='shark'){paintSharkKing();}
  else if(def.type==='fish'){shark(0,0,1.65,'#48d6ea');circle(-23,-16,16,'#d8ff96');}
  else if(def.type==='leviathan'){shark(0,-8,2.0,'#5dd7c7');for(let i=0;i<5;i++)circle(-68+i*24,54,8,def.color);}
  else{
@@ -1612,11 +1628,58 @@ function hud(){c.save();roundRect(16,15,968,84,15,'#062234e5');c.strokeStyle='#3
  roundRect(37,132,211,7,4,'#514071');const ready=clamp(1-g.skillCooldown/Math.max(1,skillRecharge(g.hero)),0,1);if(ready>0)roundRect(37,132,211*ready,7,4,'#cf98ff');txt(g.skillCooldown>.05?g.skillCooldown.toFixed(1)+'s':'READY',256,123,12,'#ffe9ae','right',900);
  c.restore();}
 function infoPrompt(x,y,label){if(Math.hypot(x-g.x,y-g.y)<149){roundRect(x-114,y-119,228,32,10,'#071f34ed');txt(label,x,y-98,14,'#fff9de','center');}}
-function drawHazard(h){c.save();c.translate(h.x,h.y);if(h.hunter){glow(0,0,83,'#fc536c66');c.strokeStyle='#ff7f81';c.lineWidth=4;c.setLineDash([10,8]);c.beginPath();c.arc(0,0,42+Math.sin(t*6)*3,0,TAU);c.stroke();c.setLineDash([]);txt('!',0,-49,27,'#ffefc4','center',1000);}if(h.stun>0){c.globalAlpha=.55;circle(0,0,37,'#9cf9e34f');}
- if(h.type==='jelly'){ellipse(0,-4,24,19,'#ab8fef');ellipse(0,-11,21,12,'#d4aff4');for(let i=0;i<4;i++){c.strokeStyle='#bca0f6';c.lineWidth=4;c.beginPath();c.moveTo(-16+i*11,5);c.quadraticCurveTo(-23+i*11,24,-13+i*11,31);c.stroke();}circle(-8,-13,3,'#183e62');circle(8,-13,3,'#183e62');}
- else if(h.type==='mine'){circle(0,0,23,'#415573');for(let i=0;i<8;i++){const a=i*TAU/8;line(Math.cos(a)*15,Math.sin(a)*15,Math.cos(a)*33,Math.sin(a)*33,'#7e9fae',6);}circle(0,0,7,h.stun>0?'#92ffe9':'#ff7e76');}
- else{ellipse(0,4,26,18,'#743f58');line(-16,4,-33,-20,'#9a627c',7);line(12,4,30,-18,'#9a627c',7);line(0,0,3,-31,'#a2617d',8);circle(-7,1,3,'#ffb8a0');circle(10,1,3,'#ffb8a0');}
- if(h.stun>0)txt('✦',0,-40,25,'#c0fffb','center');c.restore();}
+
+function deluxeEnemy(h){
+ c.save();const te=t+(h.phase||0);c.translate(0,Math.sin(te*2.4)*2.3);
+ const outline='#102e40';
+ function ell(x,y,rx,ry,cols,rot=0,w=3){c.save();c.beginPath();c.ellipse(x,y,rx,ry,rot,0,Math.PI*2);const gg=c.createLinearGradient(x-rx,y-ry,x+rx,y+ry);cols.forEach((q,i)=>gg.addColorStop(i/(cols.length-1),q));c.fillStyle=gg;c.fill();c.lineWidth=w;c.strokeStyle=outline;c.stroke();c.restore();}
+ function limb(x1,y1,x2,y2,color,w=5){c.save();c.lineCap='round';c.strokeStyle=outline;c.lineWidth=w+2;c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke();c.lineWidth=w;c.strokeStyle=color;c.stroke();c.restore();}
+ function pt(x,y,r,color){c.fillStyle=color;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill();}
+ if(h.type==='jelly'){
+  // Glass-like jellyfish dome, realistic glow, layered bell, and eight animated tentacles.
+  const col=h.hunter?['#ffbdcb','#d972b9','#6e469e']:['#d8d0ff','#9f8aee','#5863b4'];
+  for(let i=0;i<8;i++){
+   const x=-19+i*5.5,y=9,tip=y+25+(i%3)*5;
+   c.save();c.lineCap='round';c.strokeStyle=i%2?'#6de8f1':'#e6a8fc';c.lineWidth=2.2+i%2;
+   c.beginPath();c.moveTo(x,y);c.bezierCurveTo(x+Math.sin(te*5+i)*8,y+10,x+Math.sin(te*4+i*.7)*9,tip-8,x+Math.sin(te*4.3+i)*7,tip);c.stroke();c.restore();
+  }
+  ell(0,0,28,20,col,0,3.4);ell(-4,-7,19,9,['#faffffb0','#cfedffaa','#ffffff22'],0,0.5);
+  for(const x of [-11,9]){ell(x,0,5.3,7,['#ffffff','#eaf5ff'],0,1.3);pt(x+1.5,1.6,2.4,'#1c3550');pt(x+.5,-1.5,1.1,'white');}
+  c.strokeStyle='#704879';c.lineWidth=2;c.beginPath();c.arc(1,5,7,.2,Math.PI-.1);c.stroke();
+  ell(-16,-10,4,2,['#ffffffa9','#ffffff33']);
+  if(h.hunter){pt(0,-30,6,'#ff7c8d');c.strokeStyle='#ffd5b4';c.lineWidth=1.8;c.beginPath();c.moveTo(0,-45);c.lineTo(0,-35);c.stroke();}
+ }else if(h.type==='mine'){
+  // Mechanical sea drone, six spikes, inset metal panels, and a pulsing warning eye.
+  const rad=28;for(let i=0;i<8;i++){const a=i*Math.PI/4+Math.sin(te)*.05,x=Math.cos(a),y=Math.sin(a);
+    limb(x*20,y*20,x*37,y*37,'#728e9d',7);pt(x*39,y*39,3.2,'#cae6de');}
+  ell(0,0,26,24,['#a0b3bb','#516c83','#263e59'],0,4);
+  ell(-9,-9,12,8,['#e6f3f5b9','#799eab88','#ffffff11'],0,0);
+  for(let i=0;i<5;i++){const a=i*Math.PI*2/5;pt(Math.cos(a)*19,Math.sin(a)*18,2.3,'#c4e5eb');}
+  ell(2,0,12,13,[h.stun>0?'#f9ffb6':'#ffe9ae',h.stun>0?'#9affdc':'#f3796c','#942d51'],0,2.7);
+  pt(0,-4,3.5,'#fff6dfd9');
+  if(h.hunter){c.strokeStyle='#ffaeb4';c.lineWidth=3;c.beginPath();c.arc(0,0,42+Math.sin(te*8)*2,0,Math.PI*2);c.stroke();}
+ }else{
+  // Animated root imp: stump body, bark plates, leafy helmet and independent claw arms.
+  limb(-15,14,-23,33,'#704b40',10);limb(17,14,25,32,'#6e4b3d',10);
+  limb(-17,3,-33+Math.sin(te*3)*4,-13,'#6b4a3b',8);limb(17,0,35-Math.sin(te*3)*3,-16,'#765042',8);
+  ell(0,2,22,26,['#bc936a','#805b48','#543b3b'],.08,3.5);
+  for(let i=0;i<4;i++)limb(-13+i*9,-3,-11+i*8,14,'#a17c57',2.0);
+  for(const [x,y,rx,ry] of [[-15,-19,15,13],[12,-23,18,14],[0,-34,14,12]])ell(x,y,rx,ry,['#b4ed8a','#4cab69','#297451'],0,2.6);
+  for(const x of [-8,11]){ell(x,-3,5.3,6.5,['#fffadd','#faefd1'],0,1);pt(x+1.4,-2,2.2,'#21334b');}
+  c.strokeStyle='#4a2933';c.lineWidth=2.6;c.beginPath();c.arc(2,9,8,.22,Math.PI-.12);c.stroke();
+  pt(-14,7,3,'#f49e8e');pt(16,8,3,'#f49e8e');
+ }
+ if(h.stun>0){c.strokeStyle='#eafff0';c.lineWidth=3;c.beginPath();c.arc(0,-4,45,te,te+Math.PI*1.7);c.stroke();}
+ c.restore();
+}
+function drawHazard(h){
+ c.save();c.translate(h.x,h.y);
+ if(h.hunter){glow(0,0,75,'#fa646c38');c.strokeStyle='#ff9da0';c.lineWidth=2;c.setLineDash([6,7]);c.beginPath();c.arc(0,0,47+Math.sin(t*6)*2,0,TAU);c.stroke();c.setLineDash([]);}
+ if(h.stun>0)c.globalAlpha=.68;
+ deluxeEnemy(h);
+ if(h.stun>0)txt('✦',0,-53,22,'#eaffff','center');
+ c.restore();
+}
 // Player sprites are deliberately much smaller than the first versions to leave room to navigate.
 const PLAYER_SIZES={fish:.35,kai:.39,roxy:.38,humpty:.43,gozilla:.41,sub:.56};
 const waterStage=()=>[0,2,5,6,7,9].includes(level)||g?.hero==='fish'||g?.hero==='sub';
@@ -1808,7 +1871,97 @@ window.FishmanMultiplayerBridge={getPacket:coopSnapshot,applySnapshot:applyCoopS
 
 // DELUXE HERO PASS: original comic-inspired, articulated, side-facing character models.
 // Keeping these vector shapes small preserves crisp outlines on Retina iPhones.
+
+// HERO ART V21. Three-quarter profile models; original designs guided by the Fishman comics.
+// All elements are drawn with curves instead of flat rectangles or emoji heads.
+function deluxeBoys(h,s,moving,phase,aim,attacking){
+ const dir=(g.poseFacing??g.facing??1)<0?-1:1,vertical=clamp(g.poseAngle||0,-1,1),float=waterStage();
+ const stride=Math.sin(phase),kick=Math.cos(phase),power=clamp((g.attackFlash||0)/.4,0,1);
+ const S=s/(h==='fish'?.63:.60);
+ const bobbing=float?Math.sin(phase*1.12)*2.8*moving:Math.max(0,-stride)*3*moving;
+ c.save();c.translate(g.x,g.y+bobbing);c.scale(S*dir,S);c.rotate(vertical*.085+Math.sin(phase*.8)*.027*moving-power*.035);
+ const ink='#0a2638';
+ function oval(x,y,rx,ry,colors,rot=0,w=3){
+   c.save();c.beginPath();c.ellipse(x,y,rx,ry,rot,0,Math.PI*2);
+   const gg=c.createLinearGradient(x-rx*.65,y-ry*.9,x+rx*.65,y+ry*.95);
+   colors.forEach((z,i)=>gg.addColorStop(i/(colors.length-1),z));
+   c.fillStyle=gg;c.shadowColor='#041c2e58';c.shadowBlur=6;c.shadowOffsetY=2;c.fill();
+   c.shadowColor='transparent';c.lineWidth=w;c.strokeStyle=ink;c.stroke();c.restore();
+ }
+ function blob(points,colors,w=3){c.save();c.beginPath();c.moveTo(...points[0]);for(let i=1;i<points.length;i++){const item=points[i];if(item.length===2)c.lineTo(...item);else if(item.length===4)c.quadraticCurveTo(...item);else c.bezierCurveTo(...item);}c.closePath();
+   const gg=c.createLinearGradient(-20,-80,45,50);colors.forEach((z,i)=>gg.addColorStop(i/(colors.length-1),z));c.fillStyle=gg;c.shadowColor='#041b2f66';c.shadowBlur=5;c.fill();c.shadowColor='transparent';c.lineWidth=w;c.strokeStyle=ink;c.lineJoin='round';c.stroke();c.restore();}
+ function strokeCurve(arr,color,w=5){c.save();c.lineCap='round';c.lineJoin='round';c.beginPath();c.moveTo(arr[0],arr[1]);for(let i=2;i<arr.length;i+=2)c.lineTo(arr[i],arr[i+1]);c.lineWidth=w+3;c.strokeStyle=ink;c.stroke();c.lineWidth=w;c.strokeStyle=color;c.stroke();c.restore();}
+ function spot(x,y,r,col='#ffffffa8'){c.save();c.fillStyle=col;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill();c.restore();}
+ function eye(x,y,r=8){oval(x,y,r,r*1.26,['#ffffff','#f4faf8','#d7e9ec'],0,2.4);spot(x+2,y+2,Math.max(2.6,r*.39),'#1d3a4c');spot(x+1,y-2,Math.max(1.5,r*.19),'#ffffff');}
+ const movingPow=Math.max(.15,moving);
+ // Consistent, deliberately small ground shadows: these are not floating heads.
+ c.save();c.fillStyle=float?'#0b53754a':'#09273948';c.beginPath();c.ellipse(0,53,39,7,0,0,Math.PI*2);c.fill();c.restore();
+ if(h==='fish'){
+   // Tail is jointed: small crescent fins counter-rotate against the body during swimming.
+   c.save();c.translate(-47,20);c.rotate(Math.sin(phase*1.25)*.21*movingPow);
+   blob([[-12,-10],[-61,-29],[-73,-55],[-90,-60,-88,-34],[-79,-9],[-98,7],[-90,33,-70,44],[-50,21]],['#adffea','#32d9d9','#0686bb'],3.5);
+   strokeCurve([-76,-34,-62,-18,-42,-4],'#bafff2',2);strokeCurve([-77,30,-54,17,-41,6],'#96f8ea',2);
+   c.restore();
+   // Indigo shadow edge, teal fish scales and a little vest remembering Finn's red hoodie.
+   oval(-22,14,39,25,['#bbffe7','#46e3cd','#0a7daf'],-.19,3.5);
+   oval(-12,13,23,19,['#faffeb','#65f2d7','#10a5bc'],-.14,2);
+   for(let i=0;i<8;i++)spot(-44+(i%4)*12,6+Math.floor(i/4)*12,2.2,'#e9fff698');
+   // Near and far arms genuinely change on swim stroke.
+   strokeCurve([-8,-7,10,-1,26+kick*9,-18-kick*6],'#edbb98',11);
+   oval(28+kick*9,-18-kick*6,7,8,['#ffe5c1','#f0b58f','#d99076'],0,2);
+   blob([[-17,-10],[20,-10],[28,2],[11,10],[-12,7]],['#ff8494','#e53b60','#ab2450'],3.4);
+   strokeCurve([-8,6,-20,13,-33+Math.sin(phase)*7,5],'#f2bb9a',8);
+   // Finn's rounded human face, cheek and one expressive big eye on the visible side.
+   oval(10,-39,34,36,['#fff0cf','#ffd7aa','#e7a17d'],-.12,4);
+   spot(35,-26,3.8,'#efac8f');spot(13,-26,5.5,'#f99e9399');
+   spot(-6,-27,6,'#f3ad9388');
+   eye(21,-44,8.2);
+   c.save();c.lineWidth=3;c.strokeStyle='#5b2c31';c.lineCap='round';c.beginPath();c.moveTo(16,-59);c.quadraticCurveTo(23,-63,28,-58);c.stroke();c.restore();
+   // Small near-side eyebrow/eye adds perspective rather than bug-like symmetry.
+   oval(-3,-45,4.1,7,['#fff','#e7f2ef'],0,1.7);spot(-1,-44,2.2,'#263444');
+   c.save();c.strokeStyle='#7c3444';c.lineWidth=3;c.beginPath();c.moveTo(25,-19);c.quadraticCurveTo(36,-12,43,-21);c.stroke();c.restore();
+   // His signature messy swept brown hair, integrated with a head shape rather than sticks.
+   blob([[-24,-49],[-29,-69],[-35,-75],[-19,-76],[-17,-89],[0,-80],[9,-95],[20,-83],[33,-90],[34,-75],[46,-75],[36,-59],[26,-68],[7,-70],[-10,-57]],['#ad6139','#7a382b','#391d2b'],3.5);
+   blob([[-20,-58],[-22,-75],[-11,-71],[3,-81],[18,-69],[22,-57]],['#b97547','#763b2a','#512631'],2);
+   spot(-15,-69,4,'#f3b27d66');
+   if(power>.05){c.save();c.globalAlpha=power*.85;spot(41,-25,7,'#fbfbda');c.restore();}
+ }else{
+   // Kai: proper boots, asymmetric blue inventor jacket and backpack.
+   for(const side of [-1,1]){
+    const st=side*stride*14*moving,lift=Math.max(0,side*kick)*12*moving;
+    strokeCurve([-9,19,side*10+st,34-lift,side*15+st,42-lift],'#334b90',11);
+    oval(side*17+st,44-lift,13,7,['#819ad4','#38538f','#203969'],0,2.4);
+   }
+   oval(-18,2,25,28,['#a5dbfc','#2d7ace','#133976'],-.15,3.5);
+   oval(-27,3,13,22,['#5bb5ec','#235eaa','#183b79'],0,2.2);
+   blob([[-19,-11],[16,-12],[27,2],[24,29],[-18,29]],['#a3d8ff','#3b94df','#134991'],3.5);
+   strokeCurve([2,-7,6,24],'#d7f8f8',2.6);
+   // Straps, badge, gadget and moving arm.
+   strokeCurve([-13,-10,-8,21],'#123d76',5);
+   strokeCurve([8,-4,24+stride*4,5,38+stride*8,-7],'#3d85d3',10);
+   oval(37+stride*8,-6,8,9,['#fff1ce','#eec099','#d89578'],0,2);
+   c.save();c.translate(40+stride*8,-15);c.rotate(-.18+power*.1);
+   oval(0,0,9,14,['#dffffa','#4de7e8','#1872b0'],0,2.4);
+   spot(-2,-7,3.2,'#ffffffb8');c.restore();
+   // Human skin face with forehead, cheek, ear and visible small smile.
+   oval(11,-43,33,37,['#fff1d5','#fbd4af','#e6a17e'],-.13,4);
+   spot(35,-29,3.6,'#eeaf8c');spot(10,-28,5,'#f3a39391');
+   spot(-11,-29,6,'#f4b3a67e');
+   eye(21,-47,8.1);eye(-2,-46,4.6);
+   c.save();c.strokeStyle='#6c3941';c.lineCap='round';c.lineWidth=2.8;c.beginPath();c.moveTo(26,-22);c.quadraticCurveTo(33,-18,39,-24);c.stroke();c.restore();
+   // Dark, tidy but spiky hair shape; small blue goggles sit on forehead rather than over the eyes.
+   blob([[-26,-54],[-32,-75],[-37,-83],[-22,-85],[-19,-97],[-3,-87],[9,-100],[21,-91],[33,-97],[41,-74],[40,-65],[29,-72],[11,-76],[-5,-67]],['#68513e','#322d3c','#171e31'],3.5);
+   oval(-8,-74,13,11,['#dbfdff','#5fd7ee','#166cae'],0,3);
+   oval(18,-75,13,11,['#edffff','#7fe3f4','#1a76ab'],0,3);
+   spot(-12,-80,4,'#ffffffb3');spot(14,-81,4,'#ffffffa9');
+   strokeCurve([-8,-64,18,-65],'#33445c',2.6);
+ }
+ // Thin, offset rim highlights separate body parts at phone-sized rendering.
+ c.save();c.globalAlpha=.35;c.strokeStyle='#e9ffff';c.lineWidth=1.7;c.beginPath();c.arc(-10,-43,25,3.2,4.2);c.stroke();c.restore();
+ c.restore();
+}
 function premiumHero(h,s,moving,phase,aim,attacking){
+ if(h==='fish'||h==='kai')return deluxeBoys(h,s,moving,phase,aim,attacking);
  const turn=g.poseFacing||1,dir=Math.sign(turn)||1,face=Math.min(1,Math.abs(turn));
  const vertical=clamp((g.poseAngle||0),-1.1,1.1),swim=waterStage();
  const stride=Math.sin(phase),kick=Math.cos(phase),power=(g.attackFlash||0)/.4;
