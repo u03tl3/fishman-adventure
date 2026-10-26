@@ -249,7 +249,7 @@ html,body{background:#072a56}
  <div class="mp-row"><button id="mpCopy">Copy invite link</button><button id="mpLeave">Leave room</button></div>
  <div class="mp-choice"><div class="mp-row"><label>Your hero<select id="mpHero"><option value="fish">🐟 Fishman</option><option value="kai">🧪 Kai</option><option value="roxy">🦖 Roxy</option><option value="humpty">🥚 Humpty</option><option value="gozilla">🐲 Gozilla (unlock)</option><option value="sub">🚤 Submarine</option></select></label><label id="mpChapterLabel">Starting chapter<select id="mpChapter"></select></label></div>
  <p id="mpTeam">Waiting for teammates…</p><div class="mp-roster" id="mpRoster" aria-label="Player roster"></div><div class="mp-row"><button id="mpStart" type="button">▶ Start co-op adventure</button></div></div></div>
- <p class="mp-small">Play with 1–4 people, each on a different device. P1 progresses chapters at the exit gate; everyone shares goals and rewards. Revive nearby allies by pressing B. Boss health scales with the team. Uses WebRTC via the public PeerJS signalling server; room codes are invitations, not passwords, and certain networks may block connections. The room ends if P1 leaves.</p>
+ <p class="mp-small">Play with 1–4 people, each on a different device. Anyone can advance the group by pressing B at a completed exit gate. Everyone shares goals and rewards. Revive nearby allies by pressing B. Boss health scales with the team. Uses WebRTC via the public PeerJS signalling server; room codes are invitations, not passwords, and certain networks may block connections. The room ends if P1 leaves.</p>
  </div>
 </div>
 
@@ -1294,7 +1294,14 @@ function tickCoopPlayers(dt){
    if(g.hostDown&&g.lives>0&&Math.hypot(p.x-g.x,p.y-g.y)<138)revived=coopRevive(1);
    if(!revived){const other=Object.values(g.coopPlayers).find(o=>o.slot!==slot&&o.down&&o.lives>0&&Math.hypot(p.x-o.x,p.y-o.y)<138);if(other)revived=coopRevive(other.slot);}
    if(!revived){const gate=worldGate();
-    if(gateReady()&&gate&&Math.hypot(p.x-gate.x,p.y-gate.y)<130)say('P1 MUST PRESS B AT THE EXIT TO MOVE THE WHOLE TEAM.',2);
+    if(gateReady()&&gate&&Math.hypot(p.x-gate.x,p.y-gate.y)<130){
+     burst(gate.x,gate.y,'#ffe8a3',31);sfx('win');
+     // Any teammate at a completed exit can advance the shared adventure.
+     if(level===5){if(g.wave===0)setupSub(1);else startChapterArena(false,5);}
+     else if(g.wave===0)setupArea(1);
+     else startChapterArena(false,level);
+     return; // World changed; reinitialise all teammate positions on the next frame.
+    }
     else withCoopPlayer(p,input,()=>interact());
    }
   }
@@ -1490,7 +1497,7 @@ menu();updateSkillButton();requestAnimationFrame(drawFrame);
    $('mpCode').textContent=n.code;
    const people=participants();const game=window.FishmanMultiplayerBridge?.getScene?.();
    team.textContent=n.role==='host'?people+'/4 players here · '+(people===4?'Room full':game==='playing'?'Friends can join during the adventure':'Waiting for teammates…'):
-    n.slot?'You are Player '+n.slot+'. The host controls chapter transitions.':'Connecting and waiting for your player number…';
+    n.slot?'You are Player '+n.slot+'. Any player can activate completed chapter exits.':'Connecting and waiting for your player number…';
    const slots=currentRoster(),markup=[];
    for(let slot=1;slot<=4;slot++){
     const entry=slots.find(p=>p.slot===slot),isSelf=(n.role==='host'&&slot===1)||(n.role==='guest'&&n.slot===slot);
