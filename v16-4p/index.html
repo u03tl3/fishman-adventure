@@ -1466,124 +1466,211 @@ menu();updateSkillButton();requestAnimationFrame(drawFrame);
 })();
 </script>
 <script src="../fit-screen.js?v=6"></script>
-<script>/* Fishman Adventure: private-by-code two-player co-op using WebRTC via PeerJS Cloud.
-   The host is authoritative. Only gameplay state and inputs are exchanged. */
+<script>
+/* Fishman v16 four-player WebRTC co-op: one authoritative P1 host plus three independent guests. */
 (()=>{'use strict';
-const $=id=>document.getElementById(id);
-const panel=$('mpScreen'),status=$('mpStatus'),connUI=$('mpConnected'),roomInput=$('mpRoom'),team=$('mpTeam'),startBtn=$('mpStart'),chapter=$('mpChapter'),hero=$('mpHero'),opener=$('mpOpen');
-const n=window.FishmanNet={role:'solo',connected:false,peer:null,connection:null,code:'',input:{x:0,y:0,fire:false,aim:null,skill:false,interact:false,hero:null},lastInputAt:0,remoteHero:'kai',localHero:'fish',lastSend:0,lastControlSend:0,sendAction,sendInput,sendSnapshot};
-const proto='fishman17-';let joining=false;
-const heroes={fish:'Fishman',kai:'Kai',roxy:'Roxy',humpty:'Humpty',gozilla:'Gozilla',sub:'Submarine'};
-function state(message){status.textContent=message;}
-function show(open=true){panel.hidden=!open;if(open)updateUI();}
-function updateUI(){
- const on=n.role!=='solo';connUI.hidden=!on;
- if(on){$('mpCode').textContent=n.code;team.textContent=n.connected?'✅ Player 1 + Player 2 connected. Two-player adventure ready.':n.role==='host'?'Waiting for your friend to enter the room code…':'Connecting to host…';}
- startBtn.hidden=n.role!=='host';startBtn.disabled=!n.connected;
- $('mpChapterLabel').hidden=n.role!=='host';opener.classList.toggle('connected',n.connected);opener.textContent=n.connected?'👥 2P Live':'👥 2P Online';
- $('mpHost').disabled=joining||on;$('mpJoin').disabled=joining||on;
- hero.value=n.role==='host'?n.localHero:n.remoteHero;
-}
-function valid(code){return String(code||'').replace(/[^A-Z0-9]/ig,'').toUpperCase().slice(0,7);}
-function codeGen(){const symbols='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';const nums=new Uint8Array(7);crypto.getRandomValues(nums);return [...nums].map(x=>symbols[x%symbols.length]).join('');}
-function loadPeerJS(){return new Promise((ok,bad)=>{
- if(typeof window.Peer==='function')return ok();
- const script=document.createElement('script');script.src='https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js';script.async=true;
- script.onload=()=>typeof window.Peer==='function'?ok():bad(Error('PeerJS failed to initialise'));
- script.onerror=()=>bad(Error('Online connection library was blocked. Check your network.'));
- document.head.appendChild(script);
-});}
-function clearRoom(){try{n.connection?.close();n.peer?.destroy();}catch{}
- n.role='solo';n.connected=false;n.peer=null;n.connection=null;n.code='';n.input={x:0,y:0,fire:false,aim:null,skill:false,interact:false,hero:null};n.lastInputAt=0;joining=false;state('Online room closed. Solo adventure is still available.');updateUI();}
-async function create(){
- if(joining||n.role!=='solo')return;joining=true;state('Opening private online room…');updateUI();
- try{await loadPeerJS();const code=codeGen();n.role='host';n.code=code;
- n.peer=new window.Peer(proto+code,{debug:0});
- n.peer.on('open',()=>{joining=false;state(`Room ${code} created. Share the room code or invite link with your friend.`);updateUI();});
- n.peer.on('connection',connection=>{
-  if(n.connected){connection.on('open',()=>connection.send({kind:'error',message:'Room is full (2 players maximum).'}));setTimeout(()=>connection.close(),800);return;}
-  wire(connection,'host');
- });
- n.peer.on('error',error=>{joining=false;state('Room error: '+(error?.message||'Connection failed'));if(!n.connected)clearRoom();});
- n.peer.on('disconnected',()=>{if(!n.connection?.open)state('Signalling disconnected. Existing co-op may continue; new guests cannot join.');});
- }catch(e){joining=false;clearRoom();state('Cannot create online room: '+e.message);}
-}
-async function join(code){
- if(joining||n.role!=='solo')return;code=valid(code);if(code.length<5){state('Enter the 6–7 character room code from your friend.');return;}
- joining=true;state(`Finding room ${code}…`);updateUI();
- try{await loadPeerJS();n.role='guest';n.code=code;
- n.peer=new window.Peer(undefined,{debug:0});
- n.peer.on('open',()=>{
-  const c=n.peer.connect(proto+code,{reliable:true,serialization:'json',metadata:{game:'fishman17'}});
-  wire(c,'guest');
- });
- n.peer.on('error',e=>{joining=false;state('Connection error: '+(e?.message||'Could not join'));updateUI();});
- }catch(e){joining=false;clearRoom();state('Unable to join: '+e.message);}
-}
-function wire(connection,role){
- n.connection=connection;
- connection.on('open',()=>{
-  joining=false;n.connected=true;n.lastInputAt=Date.now();
-  state(role==='host'?'Friend joined! Select a chapter and tap Start two-player adventure.':'Connected! The host controls chapter progression; you control Player 2.');
-  connection.send({kind:'hello',hero:n.remoteHero,version:17});
-  if(role==='host')sendSnapshot(performance.now(),true);
-  updateUI();
- });
- connection.on('data',packet=>{
-  if(!packet||typeof packet!=='object')return;
-  if(packet.kind==='error'){state(packet.message||'Room error');connection.close();return;}
-  if(packet.kind==='hello'){if(role==='host'){n.remoteHero=heroes[packet.hero]?packet.hero:'kai';}else if(packet.hero&&heroes[packet.hero])n.remoteHero=packet.hero;updateUI();return;}
-  if(role==='host'){
-   if(packet.kind==='input'){
-    n.lastInputAt=Date.now();n.input.x=Math.max(-1,Math.min(1,Number(packet.x)||0));n.input.y=Math.max(-1,Math.min(1,Number(packet.y)||0));
-    n.input.fire=!!packet.fire;n.input.aim=packet.aim&&Number.isFinite(+packet.aim.x)&&Number.isFinite(+packet.aim.y)?{x:+packet.aim.x,y:+packet.aim.y}:null;
-   }else if(packet.kind==='action'){
-    n.lastInputAt=Date.now();
-    if(packet.action==='hero'&&heroes[packet.value]){n.input.hero=packet.value;n.remoteHero=packet.value;}
-    if(packet.action==='skill')n.input.skill=true;
-    if(packet.action==='interact')n.input.interact=true;
-    if(packet.action==='fire')n.input.fire=true;
+ const $=id=>document.getElementById(id);
+ const panel=$('mpScreen'),status=$('mpStatus'),connUI=$('mpConnected'),roomInput=$('mpRoom'),team=$('mpTeam'),
+  rosterEl=$('mpRoster'),startBtn=$('mpStart'),chapter=$('mpChapter'),hero=$('mpHero'),opener=$('mpOpen');
+ const heroNames={fish:'Fishman',kai:'Kai',roxy:'Roxy',humpty:'Humpty',gozilla:'Gozilla',sub:'Submarine'};
+ const emptyInput=()=>({x:0,y:0,fire:false,aim:null,skill:false,interact:false,hero:null});
+ const n=window.FishmanNet={role:'solo',connected:false,peer:null,connection:null,players:{},roster:[],slot:null,code:'',
+  input:emptyInput(),remoteHero:'kai',localHero:'fish',lastSend:0,lastControlSend:0,sendAction,sendInput,sendSnapshot};
+ const proto='fishman-v16-four-';let joining=false;
+ function state(message){status.textContent=message;}
+ function show(open=true){panel.hidden=!open;if(open)updateUI();}
+ function participants(){return n.role==='host'?1+Object.values(n.players).filter(p=>p.connection?.open).length:n.role==='guest'?n.roster.length||2:1;}
+ function currentRoster(){
+  if(n.role==='host')return [{slot:1,hero:n.localHero},...Object.entries(n.players).filter(([,p])=>p.connection?.open).map(([slot,p])=>({slot:+slot,hero:p.hero}))];
+  return n.roster;
+ }
+ function updateUI(){
+  const active=n.role!=='solo';connUI.hidden=!active;
+  if(active){
+   $('mpCode').textContent=n.code;
+   const people=participants();const game=window.FishmanMultiplayerBridge?.getScene?.();
+   team.textContent=n.role==='host'?people+'/4 players here · '+(people===4?'Room full':game==='playing'?'Friends can join during the adventure':'Waiting for teammates…'):
+    n.slot?'You are Player '+n.slot+'. The host controls chapter transitions.':'Connecting and waiting for your player number…';
+   const slots=currentRoster(),markup=[];
+   for(let slot=1;slot<=4;slot++){
+    const entry=slots.find(p=>p.slot===slot),isSelf=(n.role==='host'&&slot===1)||(n.role==='guest'&&n.slot===slot);
+    markup.push('<div class="mp-slot '+(entry?'live':'')+'"><strong>P'+slot+(slot===1?' · HOST':'')+(isSelf?' · YOU':'')+'</strong><br>'+
+     (entry?(heroNames[entry.hero]||'Hero')+' · Connected':'Open slot · Invite a friend')+'</div>');
    }
-  }else if(packet.kind==='sync'){
-   window.FishmanMultiplayerBridge?.applySnapshot(packet);if(packet.scene==='playing'&&!panel.hidden)show(false);
-   if(packet.team?.stars!==undefined){/* host controls shared upgrades; view remains read-only */}
+   rosterEl.innerHTML=markup.join('');
   }
- });
- connection.on('close',()=>{
-  n.connected=false;n.connection=null;joining=false;
-  state(role==='host'?'Friend disconnected. Room remains open; they may reconnect.':'Host disconnected. Ask them to create a new room.');
-  if(role==='guest'){try{n.peer?.destroy();}catch{}n.role='solo';window.FishmanMultiplayerBridge?.goMenu?.();}
+  startBtn.hidden=n.role!=='host';startBtn.disabled=n.role!=='host'||!n.connected;
+  $('mpChapterLabel').hidden=n.role!=='host';
+  opener.classList.toggle('connected',n.connected);
+  opener.textContent=n.connected?'👥 '+participants()+'/4 Live':'👥 1–4P Online';
+  $('mpHost').disabled=joining||active;$('mpJoin').disabled=joining||active;
+  hero.value=n.role==='host'?n.localHero:n.remoteHero;
+ }
+ function valid(code){return String(code||'').replace(/[^A-Z0-9]/ig,'').toUpperCase().slice(0,7);}
+ function newCode(){const abc='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',buf=new Uint8Array(7);crypto.getRandomValues(buf);return [...buf].map(x=>abc[x%abc.length]).join('');}
+ function loadPeerJS(){return new Promise((ok,bad)=>{
+  if(typeof window.Peer==='function')return ok();
+  const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js';sc.async=true;
+  sc.onload=()=>typeof window.Peer==='function'?ok():bad(Error('PeerJS did not initialise'));
+  sc.onerror=()=>bad(Error('The connection library was blocked. Check your internet connection.'));
+  document.head.appendChild(sc);
+ });}
+ function refreshHost(){
+  if(n.role!=='host')return;
+  n.connected=Object.values(n.players).some(p=>p.connection?.open);
+  const people=currentRoster();n.roster=people;
+  const packet={kind:'roster',players:people};
+  for(const p of Object.values(n.players))if(p.connection?.open){try{p.connection.send(packet);}catch{}}
   updateUI();
- });
- connection.on('error',e=>{state('Connection interrupted: '+(e?.message||'Network error'));});
-}
-function sendAction(action,value){
- if(n.role!=='guest'||!n.connection?.open)return;
- if(action==='hero'&&heroes[value])n.remoteHero=value;
- if(action==='fire')n.input.fire=true;
- try{n.connection.send({kind:'action',action,value});}catch{}
-}
-function sendInput(now,control){
- if(n.role!=='guest'||!n.connection?.open||now-n.lastControlSend<55)return;n.lastControlSend=now;
- try{n.connection.send({kind:'input',x:control.x,y:control.y,aim:control.aim,fire:control.fire});}catch{}
-}
-function sendSnapshot(now,force=false){
- if(n.role!=='host'||!n.connection?.open||(!force&&now-n.lastSend<85))return;
- const ch=n.connection.dataChannel;if(ch?.bufferedAmount>900000)return;
- const packet=window.FishmanMultiplayerBridge?.getPacket();if(!packet)return;
- n.lastSend=now;
- try{n.connection.send(packet);}catch(e){if(force)state('State synchronisation issue: '+e.message);}
-}
-function roomChange(){const h=hero.value;if(!heroes[h])return;if(n.role==='host'){n.localHero=h;window.FishmanMultiplayerBridge?.selectHero?.(h);}else if(n.role==='guest'){n.remoteHero=h;sendAction('hero',h);}updateUI();}
-async function copyInvite(){const url=new URL(location.href);url.searchParams.set('room',n.code);url.searchParams.set('v','17');try{await navigator.clipboard.writeText(url.href);state('Invite link copied — send it to your friend.');}catch{state('Share this link: '+url.href);}}
-function populateChapters(){const unlock=window.FishmanMultiplayerBridge?.getUnlock?.()||1;chapter.replaceChildren();for(let i=0;i<10;i++){const o=document.createElement('option');o.value=String(i);o.textContent=`Chapter ${i+1}`+(i>=unlock?' (locked)':'');o.disabled=i>=unlock;chapter.appendChild(o);}for(const [i,name] of [[4,'⚡ Boss Practice — Chapter 5'],[9,'🏆 Final Nine-Boss Arena — Chapter 10']]){const o=document.createElement('option');o.value=String(i);o.textContent=name;chapter.appendChild(o);}chapter.value=String(Math.max(0,unlock-1));}
-function startGame(){if(n.role!=='host'||!n.connected)return;const i=Math.max(0,Math.min(9,+chapter.value||0));window.FishmanMultiplayerBridge?.startCoop(i);if(n.localHero)window.FishmanMultiplayerBridge?.selectHero?.(n.localHero);show(false);sendSnapshot(performance.now(),true);}
-$('mpHost').addEventListener('click',create);$('mpJoin').addEventListener('click',()=>join(roomInput.value));$('mpClose').addEventListener('click',()=>show(false));opener.addEventListener('click',()=>{populateChapters();show(true);});
-$('mpLeave').addEventListener('click',clearRoom);$('mpCopy').addEventListener('click',copyInvite);$('mpStart').addEventListener('click',startGame);hero.addEventListener('change',roomChange);
-roomInput.addEventListener('input',()=>roomInput.value=valid(roomInput.value));
-const q=new URLSearchParams(location.search),room=valid(q.get('room'));if(room){roomInput.value=room;show(true);state(`You've been invited to room ${room}. Tap Join room to play.`);}
-window.addEventListener('pagehide',()=>{try{n.connection?.close();n.peer?.destroy();}catch{}});
-updateUI();
+ }
+ function clearRoom(message='Room closed. You can still play solo.'){
+  const hadGuest=n.role==='guest';
+  try{n.connection?.close();for(const p of Object.values(n.players))p.connection?.close();n.peer?.destroy();}catch{}
+  n.role='solo';n.connected=false;n.peer=null;n.connection=null;n.players={};n.roster=[];n.slot=null;n.code='';n.input=emptyInput();
+  n.lastSend=0;n.lastControlSend=0;joining=false;
+  if(hadGuest)window.FishmanMultiplayerBridge?.goMenu?.();
+  state(message);updateUI();
+ }
+ async function create(){
+  if(joining||n.role!=='solo')return;
+  joining=true;state('Creating your four-player room…');updateUI();
+  try{
+   await loadPeerJS();n.role='host';n.code=newCode();n.players={};n.slot=1;
+   n.peer=new window.Peer(proto+n.code,{debug:0});
+   n.peer.on('open',()=>{joining=false;state('Room '+n.code+' is ready! Share the code or invite link with up to three friends.');refreshHost();});
+   n.peer.on('connection',connection=>{
+    const slot=[2,3,4].find(x=>!n.players[x]);
+    if(!slot){connection.on('open',()=>{connection.send({kind:'error',message:'Room full — maximum four players.'});setTimeout(()=>connection.close(),650);});return;}
+    const defaults={2:'kai',3:'roxy',4:'humpty'};
+    n.players[slot]={connection,hero:defaults[slot],input:emptyInput(),lastInputAt:Date.now()};
+    wireHost(connection,slot);
+   });
+   n.peer.on('error',err=>{if(n.role!=='host')return;state('Room error: '+(err?.message||'Connection failed'));if(!n.connected)clearRoom('Could not create room. Please try again.');});
+   n.peer.on('disconnected',()=>{if(n.role==='host')state('Signalling connection lost. Existing players may keep playing; new players might not join.');});
+  }catch(e){clearRoom('Cannot host game: '+(e?.message||String(e)));}
+ }
+ async function join(code){
+  if(joining||n.role!=='solo')return;
+  code=valid(code);if(code.length<5){state('Enter your friend’s seven-character room code.');return;}
+  joining=true;state('Looking for room '+code+'…');updateUI();
+  try{
+   await loadPeerJS();n.role='guest';n.code=code;n.slot=null;
+   n.peer=new window.Peer(undefined,{debug:0});
+   n.peer.on('open',()=>{
+    const conn=n.peer.connect(proto+code,{reliable:true,serialization:'json',metadata:{game:'fishman-v16-4p'}});
+    wireGuest(conn);
+   });
+   n.peer.on('error',e=>{joining=false;const msg=e?.type==='peer-unavailable'?'No open room found with that code.':(e?.message||'Unable to connect.');
+    clearRoom('Join failed: '+msg);});
+  }catch(e){clearRoom('Unable to join: '+(e?.message||String(e)));}
+ }
+ function wireHost(conn,slot){
+  const room=n.players[slot];if(!room)return;
+  conn.on('open',()=>{
+   if(n.players[slot]!==room)return;
+   room.lastInputAt=Date.now();conn.send({kind:'assigned',slot,maxPlayers:4});
+   state('P'+slot+' joined! '+(1+Object.values(n.players).filter(p=>p.connection?.open).length)+'/4 connected.');
+   refreshHost();sendSnapshot(performance.now(),true);
+  });
+  conn.on('data',p=>{
+   if(!p||typeof p!=='object'||n.players[slot]!==room)return;
+   if(p.kind==='hello'){if(heroNames[p.hero])room.hero=p.hero;refreshHost();return;}
+   room.lastInputAt=Date.now();
+   if(p.kind==='input'){
+    const x=Number(p.x),y=Number(p.y);
+    room.input.x=Number.isFinite(x)?Math.max(-1,Math.min(1,x)):0;
+    room.input.y=Number.isFinite(y)?Math.max(-1,Math.min(1,y)):0;
+    room.input.fire=!!p.fire;
+    room.input.aim=p.aim&&Number.isFinite(+p.aim.x)&&Number.isFinite(+p.aim.y)?{x:+p.aim.x,y:+p.aim.y}:null;
+   }else if(p.kind==='action'){
+    if(p.action==='hero'&&heroNames[p.value]){room.input.hero=p.value;room.hero=p.value;refreshHost();}
+    else if(p.action==='skill')room.input.skill=true;
+    else if(p.action==='interact')room.input.interact=true;
+    else if(p.action==='fire')room.input.fire=true;
+   }
+  });
+  conn.on('close',()=>{
+   if(n.players[slot]===room){delete n.players[slot];state('P'+slot+' disconnected. Their slot is open for another friend.');refreshHost();}
+  });
+  conn.on('error',e=>state('P'+slot+' connection error: '+(e?.message||'Disconnected')));
+ }
+ function wireGuest(conn){
+  n.connection=conn;
+  conn.on('open',()=>{
+   joining=false;n.connected=true;n.lastControlSend=0;
+   state('Connected! Waiting for the host to assign you a player slot…');
+   conn.send({kind:'hello',hero:n.remoteHero,version:'16-4p'});updateUI();
+  });
+  conn.on('data',pkt=>{
+   if(!pkt||typeof pkt!=='object')return;
+   if(pkt.kind==='error'){clearRoom(pkt.message||'Room unavailable');return;}
+   if(pkt.kind==='assigned'){n.slot=pkt.slot;state('You are Player '+n.slot+'! Control your own hero while P1 guides the adventure.');updateUI();return;}
+   if(pkt.kind==='roster'){n.roster=Array.isArray(pkt.players)?pkt.players:[];updateUI();return;}
+   if(pkt.kind==='sync'){
+    window.FishmanMultiplayerBridge?.applySnapshot(pkt);
+    if(pkt.scene==='playing'&&!panel.hidden)show(false);
+   }
+  });
+  conn.on('close',()=>{if(n.role==='guest')clearRoom('Host disconnected. Your solo game is available.');});
+  conn.on('error',e=>state('Connection interrupted: '+(e?.message||'Try rejoining the room.')));
+ }
+ function sendAction(action,value){
+  if(n.role!=='guest'||!n.connection?.open)return;
+  if(action==='hero'&&heroNames[value])n.remoteHero=value;
+  if(action==='fire')n.input.fire=true;
+  try{n.connection.send({kind:'action',action,value});}catch{}
+ }
+ function sendInput(now,control){
+  if(n.role!=='guest'||!n.connection?.open||now-n.lastControlSend<55)return;
+  n.lastControlSend=now;
+  try{n.connection.send({kind:'input',x:control.x,y:control.y,aim:control.aim,fire:control.fire});}catch{}
+ }
+ function sendSnapshot(now,force=false){
+  if(n.role!=='host'||!n.connected||(!force&&now-n.lastSend<95))return;
+  const packet=window.FishmanMultiplayerBridge?.getPacket();if(!packet)return;
+  n.lastSend=now;
+  for(const p of Object.values(n.players)){
+   if(!p.connection?.open||p.connection.dataChannel?.bufferedAmount>650000)continue;
+   try{p.connection.send(packet);}catch(e){if(force)state('Sync problem: '+(e?.message||'Try rejoining'));}
+  }
+ }
+ function roomChange(){
+  const value=hero.value;if(!heroNames[value])return;
+  if(n.role==='host'){n.localHero=value;window.FishmanMultiplayerBridge?.selectHero?.(value);refreshHost();}
+  else if(n.role==='guest'){n.remoteHero=value;sendAction('hero',value);}
+  updateUI();
+ }
+ async function copyInvite(){
+  const url=new URL(location.href);url.searchParams.set('room',n.code);url.searchParams.set('v','16-4p');
+  try{await navigator.clipboard.writeText(url.href);state('Invite link copied! Send it to up to three friends.');}
+  catch{state('Copy and share this link: '+url.href);}
+ }
+ function populateChapters(){
+  const unlock=window.FishmanMultiplayerBridge?.getUnlock?.()||1;chapter.replaceChildren();
+  for(let i=0;i<10;i++){const o=document.createElement('option');o.value=String(i);o.textContent='Chapter '+(i+1)+(i>=unlock?' (locked)':'');o.disabled=i>=unlock;chapter.appendChild(o);}
+  for(const [i,name] of [[4,'⚡ McTreeFace Boss Practice'],[9,'🏆 Nine-Boss Final Arena']]){const o=document.createElement('option');o.value=String(i);o.textContent=name;chapter.appendChild(o);}
+  chapter.value=String(Math.max(0,unlock-1));
+ }
+ function startGame(){
+  if(n.role!=='host'||!n.connected)return;
+  const chosen=Math.max(0,Math.min(9,+chapter.value||0));
+  window.FishmanMultiplayerBridge?.startCoop(chosen);
+  if(n.localHero)window.FishmanMultiplayerBridge?.selectHero?.(n.localHero);
+  show(false);sendSnapshot(performance.now(),true);
+ }
+ $('mpHost').addEventListener('click',create);
+ $('mpJoin').addEventListener('click',()=>join(roomInput.value));
+ $('mpClose').addEventListener('click',()=>show(false));
+ opener.addEventListener('click',()=>{populateChapters();show(true);});
+ $('mpLeave').addEventListener('click',()=>clearRoom());
+ $('mpCopy').addEventListener('click',copyInvite);
+ $('mpStart').addEventListener('click',startGame);
+ hero.addEventListener('change',roomChange);
+ roomInput.addEventListener('input',()=>roomInput.value=valid(roomInput.value));
+ const query=new URLSearchParams(location.search),room=valid(query.get('room'));
+ if(room){roomInput.value=room;show(true);state('You have been invited to room '+room+'. Tap Join room to play.');}
+ window.addEventListener('pagehide',()=>{try{n.connection?.close();for(const p of Object.values(n.players))p.connection?.close();n.peer?.destroy();}catch{}});
+ updateUI();
 })();
 </script>
 </body>
