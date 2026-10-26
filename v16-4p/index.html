@@ -939,6 +939,7 @@ function start(checkpoint=0,remainingLives=null){scene='playing';aim.manual=fals
  const boss=level===4,sub=level===5; if(level>3)unlockGozilla();BOSS_MAX=Math.round((nightmare()?660:hardMode?420:240)*(1+.47*(coopSize()-1)));
  const hearts=nightmare()?(boss?5:sub?4:3):hardMode?(boss?7:sub?5:4):(boss?12:sub?7:6);
  g={skillCooldown:0,skillCooldowns:{fish:0,kai:0,roxy:0,humpty:0,gozilla:0,sub:0},skillEffect:0,skillFlash:0,freezeTime:0,sonarTime:0,speedBoost:0,skillKind:null,skillCrystals:[],maxLives:chapterLives(),lives:remainingLives===null?chapterLives():Math.max(1,Math.min(chapterLives(),remainingLives)),runLength:0,hero:heroFor(level),x:116,y:425,hp:hearts,maxHp:hearts,inv:0,cool:0,shield:0,items:[],hazards:[],proj:[],shots:[],stars:[],awards:[],collect:0,total:nightmare()?8:hardMode?6:4,deadline:level===3&&!hardMode?190:0,timer:hardMode?(boss?(nightmare()?195:165):85):0,maxTimer:0,boss:BOSS_MAX,bossAtt:nightmare()?1.3:hardMode?1.3:2.3,captured:false,actionWave:0,wave:0,dodge:0,dodgeCool:0,strike:null,strikeClock:3.8,deathMotion:0,reviveMotion:0};
+ if(net()?.role==='local'&&coopHeroAvailable(net().localHero))g.hero=net().localHero;
  if(boss){g.x=155;g.y=355;g.boss=BOSS_MAX;g.hazards=[];initRewards(0);
   g.arena={phase:0,attack:null,attackIndex:0,rest:2.6,orbs:[],bossX:807,bossY:342,shield:0,shieldMax:0,clearedCount:0,required:nightmare()?3:hardMode?2:1,phaseClock:0,combo:0,beamFlash:0,dodgeFlash:0};
   g.maxTimer=g.timer;g.dodgeCool=0;g.dodge=0;resetStrikes();}
@@ -954,8 +955,10 @@ function gateReady(){return g.collect>=g.total&&(level!==5||g.wave===1||g.captur
 function interact(){if(net()?.role==='guest'){net()?.sendAction('interact');return;}if(scene!=='playing')return;
  if(coopActionSlot===1&&(net()?.role==='host'||net()?.role==='local')&&net()?.connected){const ally=Object.values(g?.coopPlayers||{}).find(p=>p.down&&p.lives>0&&Math.hypot(p.x-g.x,p.y-g.y)<138);if(ally){coopRevive(ally.slot);return;}}
  if(g.challenge){const a=g.challenge;
-  if(a.dodgeCool>0){say('DODGE RECHARGING '+a.dodgeCool.toFixed(1)+'s',1);return;}
-  a.dodgeCool=nightmare()?2.75:hardMode?2.0:1.3;
+  const cooldown=coopActionSlot===1?a.dodgeCool:g.dodgeCool||0;
+  if(cooldown>0){say('DODGE RECHARGING '+cooldown.toFixed(1)+'s',1);return;}
+  if(coopActionSlot===1)a.dodgeCool=nightmare()?2.75:hardMode?2.0:1.3;
+  else g.dodgeCool=nightmare()?2.75:hardMode?2.0:1.3;
   const vx=stick.x||(g.lastDx||1),vy=stick.y||(g.lastDy||0),d=Math.max(1,Math.hypot(vx,vy));
   g.x=clamp(g.x+vx/d*100,g.hero==='sub'?145:59,653);
   g.y=clamp(g.y+vy/d*100,166,528);g.inv=Math.max(g.inv,.9);burst(g.x,g.y,'#a8f9ff',20);sfx('power');return;
@@ -1372,7 +1375,7 @@ function tickCoopPlayers(dt){
   let p=g.coopPlayers[slot];if(!p||p.chapter!==level||p.zone!==(g.wave||0)||p.arena!==(!!g.challenge||level===4))p=createCoopPlayer(slot);
   if(!p)continue;
   const stale=n.role==='local'?false:Date.now()-(remote.lastInputAt||0)>1800,mx=stale?0:clamp(Number(input.x)||0,-1,1),my=stale?0:clamp(Number(input.y)||0,-1,1);
-  p.inv=Math.max(0,p.inv-dt);p.cool=Math.max(0,p.cool-dt);p.shield=Math.max(0,p.shield-dt);
+  p.inv=Math.max(0,p.inv-dt);p.cool=Math.max(0,p.cool-dt);p.shield=Math.max(0,p.shield-dt);p.dodgeCool=Math.max(0,(p.dodgeCool||0)-dt);
   p.skillEffect=Math.max(0,(p.skillEffect||0)-dt);p.attackFlash=Math.max(0,(p.attackFlash||0)-dt);
   p.reviveMotion=Math.max(0,(p.reviveMotion||0)-dt);p.skillFlash=Math.max(0,(p.skillFlash||0)-dt);
   p.freezeTime=Math.max(0,(p.freezeTime||0)-dt);p.sonarTime=Math.max(0,(p.sonarTime||0)-dt);
@@ -1778,6 +1781,152 @@ menu();updateSkillButton();requestAnimationFrame(drawFrame);
  if(room){roomInput.value=room;show(true);state('You have been invited to room '+room+'. Tap Join room to play.');}
  window.addEventListener('pagehide',()=>{try{n.connection?.close();for(const p of Object.values(n.players))p.connection?.close();n.peer?.destroy();}catch{}});
  updateUI();
+})();
+</script>
+
+<script id="fishmanLocalControllers">
+/* Same-device couch co-op: exactly one V button adds P2, P3 and P4 in order.
+   Each player has independent MOVE stick, AIM+FIRE stick, USE, ATTACK and SKILL buttons.
+   The existing P1 game controls are moved, not cloned, so original listeners keep working. */
+(()=>{'use strict';
+ const n=window.FishmanNet,btn=document.getElementById('addPlayerBtn'),openOnline=document.getElementById('mpOpen');
+ const shell=document.querySelector('.shell'),mainControls=document.getElementById('touchControl');
+ const heroes=[['fish','🐟 Fishman'],['kai','🧪 Kai'],['roxy','🦖 Roxy'],['humpty','🥚 Humpty'],['gozilla','🐲 Gozilla'],['sub','🚤 Submarine']];
+ const human={fish:'Fishman',kai:'Kai',roxy:'Roxy',humpty:'Humpty',gozilla:'Gozilla',sub:'Submarine'};
+ const icon={fish:'🐟',kai:'🧪',roxy:'🦖',humpty:'🥚',gozilla:'🐲',sub:'🚤'};
+ const colors={1:'#a6f8ff',2:'#9effdf',3:'#ffdb91',4:'#edb2ff'};
+ const board=document.createElement('section');board.id='localControllerBoard';board.setAttribute('aria-label','Individual gamepads for each active player');
+ mainControls.insertAdjacentElement('afterend',board);
+ let localCount=1,lastUpdate=0;
+ const sticks=new Map(),fireHeld=new Map();
+ const getG=()=>window.FishmanMultiplayerBridge?.getG?.();
+ function room(slot){return n.players?.[slot];}
+ function makeSelector(slot,value){
+  const sel=document.createElement('select');sel.setAttribute('aria-label','Player '+slot+' character');
+  for(const [id,name] of heroes){const o=document.createElement('option');o.value=id;o.textContent=name;sel.appendChild(o);}sel.value=value;return sel;
+ }
+ function makeStick(slot,type){
+  const wrap=document.createElement('div');wrap.className='pad-stick-wrap';
+  const base=document.createElement('div');base.className='stick-base local-stick'+(type==='aim'?' aim-stick':'');
+  base.setAttribute('role','group');base.setAttribute('aria-label','Player '+slot+' '+(type==='move'?'move':'aim and attack')+' joystick');
+  const arrows=document.createElement('div');arrows.className='stick-arrows';arrows.setAttribute('aria-hidden','true');
+  arrows.innerHTML='<span class="up">▲</span><span class="left">◀</span><span class="right">▶</span><span class="down">▼</span>';base.appendChild(arrows);
+  const knob=document.createElement('div');knob.className='stick-knob';knob.innerHTML='<span class="stick-grip"></span>';base.appendChild(knob);
+  const caption=document.createElement('span');caption.className='pad-caption';caption.textContent=type==='move'?'MOVE':'AIM + FIRE';
+  wrap.append(base,caption);
+  const state={pointer:null,x:0,y:0};
+  const update=(ev)=>{
+   const r=base.getBoundingClientRect(),dx=ev.clientX-r.left-r.width/2,dy=ev.clientY-r.top-r.height/2;
+   const len=Math.hypot(dx,dy),max=Math.max(22,r.width*.32),amt=Math.min(1,len/max),dead=.13;
+   const magnitude=amt<=dead?0:(amt-dead)/(1-dead),ux=len?dx/len:0,uy=len?dy/len:0;
+   state.x=ux*magnitude;state.y=uy*magnitude;
+   knob.style.transform='translate(-50%,-50%) translate('+(ux*amt*max).toFixed(1)+'px,'+(uy*amt*max).toFixed(1)+'px)';
+   const p=room(slot);if(!p)return;
+   if(type==='move'){p.input.x=state.x;p.input.y=state.y;}
+   else{p.input.aim=magnitude>.11?{x:ux,y:uy}:null;fireHeld.set(slot,magnitude>.11);p.input.fire=!!(fireHeld.get(slot)||p.input.buttonFire);}
+   p.lastInputAt=Date.now();
+  };
+  function end(ev){if(state.pointer===null||(ev&&ev.pointerId!==state.pointer))return;
+   state.pointer=null;state.x=state.y=0;knob.style.transform='translate(-50%,-50%)';base.classList.remove('active');
+   const p=room(slot);if(!p)return;
+   if(type==='move'){p.input.x=0;p.input.y=0;}else{p.input.aim=null;fireHeld.set(slot,false);p.input.fire=!!p.input.buttonFire;}
+   p.lastInputAt=Date.now();
+  }
+  base.addEventListener('pointerdown',ev=>{if(state.pointer!==null)return;ev.preventDefault();state.pointer=ev.pointerId;
+   try{base.setPointerCapture(ev.pointerId);}catch{}base.classList.add('active');update(ev);});
+  base.addEventListener('pointermove',ev=>{if(ev.pointerId!==state.pointer)return;ev.preventDefault();update(ev);});
+  for(const event of ['pointerup','pointercancel','lostpointercapture'])base.addEventListener(event,end);
+  sticks.set(slot+type,end);return wrap;
+ }
+ function makeButton(slot,key,label){
+  const button=document.createElement('button');button.type='button';
+  button.className='pad-button '+(key==='attack'?'pad-attack':key==='skill'?'pad-skill':'pad-use');
+  button.setAttribute('aria-label','Player '+slot+' '+(key==='attack'?'attack':key==='interact'?'use / dodge':'special skill'));
+  button.innerHTML='<span>'+(key==='attack'?'A':key==='interact'?'B':'S')+'</span><small>'+label+'</small>';
+  let activePointer=null;
+  button.addEventListener('pointerdown',ev=>{
+   if(activePointer!==null)return;ev.preventDefault();activePointer=ev.pointerId;
+   try{button.setPointerCapture(ev.pointerId);}catch{}
+   button.classList.add('down');const p=room(slot);if(!p)return;
+   if(key==='attack'){p.input.buttonFire=true;p.input.fire=true;}
+   else if(key==='interact')p.input.interact=true;
+   else p.input.skill=true;
+   p.lastInputAt=Date.now();
+  });
+  const up=ev=>{if(activePointer===null||(ev&&ev.pointerId!==activePointer))return;activePointer=null;
+   button.classList.remove('down');const p=room(slot);if(p&&key==='attack'){p.input.buttonFire=false;p.input.fire=!!fireHeld.get(slot);}};
+  for(const event of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(event,up);
+  return button;
+ }
+ function makePad(slot){
+  const pad=document.createElement('article');pad.className='local-pad p'+slot;
+  pad.dataset.player=slot;pad.style.setProperty('--pad-color',colors[slot]);
+  const heading=document.createElement('div');heading.className='pad-heading';
+  const title=document.createElement('strong');title.className='pad-player-name';title.textContent='PLAYER '+slot;
+  const select=makeSelector(slot,slot===1?n.localHero:room(slot).hero);
+  heading.append(title,select);pad.appendChild(heading);
+  select.addEventListener('change',()=>{
+   if(slot===1){n.localHero=select.value;window.FishmanMultiplayerBridge?.selectHero?.(select.value);}
+   else{const p=room(slot);if(!p)return;p.hero=select.value;p.input.hero=select.value;p.lastInputAt=Date.now();}
+   syncHeadings();
+  });
+  if(slot===1){
+   pad.appendChild(mainControls);
+  }else{
+   const row=document.createElement('div');row.className='pad-controls';
+   row.append(makeStick(slot,'move'),makeStick(slot,'aim'));
+   const buttons=document.createElement('div');buttons.className='pad-buttons';
+   buttons.append(makeButton(slot,'interact','USE'),makeButton(slot,'attack','FIRE'),makeButton(slot,'skill','SKILL'));
+   row.appendChild(buttons);pad.appendChild(row);
+  }
+  board.appendChild(pad);return pad;
+ }
+ function syncHeadings(){
+  for(const pad of board.querySelectorAll('.local-pad')){
+   const slot=+pad.dataset.player,p=slot===1?null:getG()?.coopPlayers?.[slot];
+   const hero=slot===1?(getG()?.hero||n.localHero):(p?.hero||room(slot)?.hero||'fish');
+   pad.querySelector('.pad-player-name').textContent='P'+slot+' · '+(icon[hero]||'🐟')+' '+(human[hero]||'Fishman')+(p?.down?' · DOWN':'');
+   const sel=pad.querySelector('select');if(document.activeElement!==sel&&sel.value!==hero)sel.value=hero;
+   const b=pad.querySelector('.pad-use small');if(b)b.textContent=getG()?.challenge||window.FishmanMultiplayerBridge?.getLevel?.()===4?'DODGE':'USE';
+  }
+ }
+ function addPlayer(){
+  if(n.role!=='solo'&&n.role!=='local')return;
+  if(localCount>=4)return;
+  if(n.role==='solo'){
+   n.role='local';n.connected=true;n.slot=1;n.players={};n.localHero=getG()?.hero||n.localHero||'fish';
+   document.documentElement.classList.add('local-coop');
+   makePad(1);openOnline.hidden=true;openOnline.disabled=true;
+  }
+  const slot=++localCount;
+  const defaults={2:'kai',3:'roxy',4:'humpty'};
+  n.players[slot]={connection:{open:true},hero:defaults[slot],
+   input:{x:0,y:0,aim:null,fire:false,buttonFire:false,skill:false,interact:false,hero:defaults[slot]},lastInputAt:Date.now()};
+  makePad(slot);
+  btn.textContent=localCount<4?'ⓥ V · ADD P'+(localCount+1):'✓ 4 / 4 PLAYERS';
+  btn.disabled=localCount>=4;
+  btn.title=localCount<4?'Press V to add Player '+(localCount+1):'All four players are here';
+  syncHeadings();
+  board.scrollIntoView?.({block:'nearest',behavior:'instant'});
+ }
+ btn.addEventListener('click',addPlayer);
+ window.addEventListener('keydown',ev=>{
+  if(ev.key?.toLowerCase()!=='v'||ev.repeat||ev.ctrlKey||ev.altKey||ev.metaKey)return;
+  if(['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName))return;
+  ev.preventDefault();addPlayer();
+ });
+ window.addEventListener('blur',()=>{
+  for(const slot of [2,3,4]){const p=room(slot);if(!p)continue;
+   p.input.x=0;p.input.y=0;p.input.fire=false;p.input.buttonFire=false;p.input.aim=null;fireHeld.set(slot,false);
+  }
+  for(const end of sticks.values())end();
+ });
+ window.addEventListener('pagehide',()=>{for(const slot of [2,3,4]){const p=room(slot);if(p){p.input.fire=false;p.input.x=0;p.input.y=0;}}});
+ setInterval(()=>{if(n.role!=='local'){
+   btn.disabled=n.role!=='solo';btn.title=n.role==='solo'?'Add another player on this device (V)':'Leave online mode before adding local players';
+  }if(n.role==='local')syncHeadings();
+ },350);
+ window.FishmanLocal={addPlayer,get count(){return localCount;},get players(){return n.players;}};
 })();
 </script>
 </body>
