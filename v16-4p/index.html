@@ -964,7 +964,7 @@ function drawChallengeArena(){
  }
  c.restore();
  c.restore();
- drawRewardsAndShots();drawPlayer();
+ drawRewardsAndShots();drawPlayer();drawP1Marker();
  hud();
  roundRect(239,91,521,61,16,'#061d36ed');
  txt(a.final?`FINAL ARENA ${a.round}/${a.total}`:`CHAPTER ${level+1} BOSS`,499,111,13,'#aef5ed','center',900);
@@ -1538,6 +1538,13 @@ function tickCoopPlayers(dt){
  }
  if(g.hostDown&&g.lives<=0&&Object.values(g.coopPlayers).every(p=>p.down&&p.lives<=0)){g.hostDown=false;g.hp=0;die('The entire team ran out of lives. Retry the chapter.');}
 }
+function drawP1Marker(){
+ if(!g||!net()?.connected)return;
+ const y=g.y-(g.hero==='sub'?95:56),col=COOP_COLORS[1];
+ roundRect(g.x-28,y-30,56,20,7,'#102b43e9');txt('P1',g.x,y-15,14,col,'center',950);
+ roundRect(g.x-26,y-8,52,7,3,'#31404d');if(g.hp>0)roundRect(g.x-25,y-7,50*clamp(g.hp/g.maxHp,0,1),5,2,col);
+ if(g.hostDown)txt(g.lives>0?'REVIVE':'OUT',g.x,y-43,12,'#ffe393','center');
+}
 function drawCoopPlayers(){
  if(!g?.coopPlayers||net()?.role==='solo')return;
  for(const p of Object.values(g.coopPlayers)){
@@ -1627,9 +1634,9 @@ function objective(){let message='';
  roundRect(19,568,962,39,11,'#051c31e8');txt(message,500,594,14,'#dcffff','center',850);}
 function draw(){c.clearRect(0,0,W,H);if(!g){grad('#08273c','#134d6a');seaScene();if(window.FishmanComicArt)window.FishmanComicArt.menuDec(c,t);fishman(300,391,1.9);shark(580,410,1.2);naughty(802,437,.8);txt('FISHMAN',501,187,75,'#a9fff2','center',1000);txt('TWIN STICKS · v23 POWER WEAPONS · UP TO 4 PLAYERS',500,226,19,'#ffecb6','center',850);return;}
  if(g.challenge){cameraX=0;drawChallengeArena();if(net()?.connected)drawCoopPlayers();drawTeamWeaponHud();return;}
- if(level===4){cameraX=0;drawBackground();drawStrike();for(const h of g.hazards)drawHazard(h);drawRewardsAndShots();drawBoss();drawPlayer();if(net()?.connected)drawCoopPlayers();}
+ if(level===4){cameraX=0;drawBackground();drawStrike();for(const h of g.hazards)drawHazard(h);drawRewardsAndShots();drawBoss();drawPlayer();drawP1Marker();if(net()?.connected)drawCoopPlayers();}
  else{
-  const positions=net()?.role==='local'?[g.x,...Object.values(g.coopPlayers||{}).map(p=>p.x)]:[];
+  const positions=net()?.role==='local'?[g.x,...Object.values(g.coopPlayers||{}).filter(p=>!p.down&&p.lives>0).map(p=>p.x)]:[];
    // Keep the full local party visible: centre the midpoint, not the leading player.
    cameraX=clamp((net()?.role==='guest'&&g.coopPlayers?.[net()?.slot]?g.coopPlayers[net().slot].x-390:positions.length>1?(Math.min(...positions)+Math.max(...positions))/2-W/2:g.x-390),0,Math.max(0,(g.runLength||W)-W));
   for(let sector=Math.max(0,Math.floor(cameraX/W));sector<=Math.min(RUN_SECTORS-1,Math.floor((cameraX+W)/W));sector++){
@@ -1652,7 +1659,7 @@ function draw(){c.clearRect(0,0,W,H);if(!g){grad('#08273c','#134d6a');seaScene()
   for(const h of g.hazards)if(h.x>cameraX-100&&h.x<cameraX+W+100)drawHazard(h);
   if(level===3)for(const it of g.items)if(!it.got&&near(it,100))infoPrompt(it.x,it.y,'PRESS B TO DISARM');
   if(level===5&&!g.captured&&g.items?.[0]&&near(g.items[0],158))infoPrompt(g.items[0].x,g.items[0].y,'PRESS B TO CAPTURE');
-  drawPlayer();if(net()?.connected)drawCoopPlayers();
+  drawPlayer();drawP1Marker();if(net()?.connected)drawCoopPlayers();
   c.restore();
  }
  if(['playing','paused','gameOver','chapterWin','gameWin'].includes(scene)){hud();objective();if(toastLife>0){const width=Math.min(860,Math.max(320,toast.length*8));roundRect((W-width)/2,104,width,42,12,'#043247ed');txt(toast,500,131,14,'#dcfff1','center',850);}for(const p of particles){c.globalAlpha=clamp(p.life/.5,0,1);circle(p.x-(level===4?0:cameraX),p.y,p.r,p.color);}c.globalAlpha=1;}
