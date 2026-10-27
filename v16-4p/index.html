@@ -878,25 +878,67 @@ function weaponFire(){
  sfx(wt==='charge'?'power':'attack');
 }
 
-function tickProjectiles(dt){if(!g||level===4)return;
- for(let i=g.proj.length-1;i>=0;i--){const p=g.proj[i];p.age+=dt;p.life-=dt;
- if(p.homing&&g.hazards?.length){const targets=g.hazards.filter(h=>h.stun<1&&Math.hypot(h.x-p.x,h.y-p.y)<340);
-  if(targets.length){const target=targets.reduce((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)<Math.hypot(b.x-p.x,b.y-p.y)?a:b);
-   const angle=Math.atan2(target.y-p.y,target.x-p.x),old=Math.atan2(p.vy,p.vx),speed=Math.hypot(p.vx,p.vy),turn=Math.atan2(Math.sin(angle-old),Math.cos(angle-old));
-   p.vx=Math.cos(old+turn*Math.min(.22,p.homing*dt*12))*speed;p.vy=Math.sin(old+turn*Math.min(.22,p.homing*dt*12))*speed;}}
- p.x+=p.vx*dt;p.y+=p.vy*dt;
- if(p.life<=0||p.x<20||p.x>(g.runLength||W)-20||p.y<110||p.y>557){g.proj.splice(i,1);continue;}
- let landed=false;
- for(const h of g.hazards){if(Math.hypot(p.x-h.x,p.y-h.y) < p.r+30){h.stun=Math.max(h.stun,1.2+p.damage/15);if(p.chain)for(const other of g.hazards||[])if(other!==h&&Math.hypot(other.x-h.x,other.y-h.y)<140)other.stun=Math.max(other.stun,.8+.2*p.chain);h.hp=(h.hp??Math.max(2,hardMode?4:3))-1;burst(h.x,h.y,p.kind==='roxy'?'#ffa55a':'#9defff',9);
- if(h.hp<=0){h.stun=10;h.hp=Math.max(2,hardMode?4:3);}
- landed=true;break;
- }}
- if(landed&&!p.pierce)g.proj.splice(i,1);
+
+function steerProjectile(p,dt,boss=null){
+ if(!p.homing)return;
+ const candidates=(g.hazards||[]).filter(h=>h.stun<1.5&&Math.hypot(h.x-p.x,h.y-p.y)<580);
+ if(boss&&Math.hypot(boss.x-p.x,boss.y-p.y)<700)candidates.push(boss);
+ if(!candidates.length)return;
+ const target=candidates.reduce((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)<Math.hypot(b.x-p.x,b.y-p.y)?a:b);
+ const heading=Math.atan2(target.y-p.y,target.x-p.x),old=Math.atan2(p.vy,p.vx),speed=Math.hypot(p.vx,p.vy);
+ const delta=Math.atan2(Math.sin(heading-old),Math.cos(heading-old));
+ const direction=old+delta*Math.min(.6,(p.homing||0)*dt*8);
+ p.vx=Math.cos(direction)*speed;p.vy=Math.sin(direction)*speed;
+}
+function splashWeapon(p,x,y){
+ const radius=p.splash||0;if(!radius)return;
+ weaponFX('shock',x,y,x,y,p.weapon==='charge'?'#dfa9ff':'#8bf6ff',.50,radius);
+ burst(x,y,p.weapon==='charge'?'#e4b8ff':'#85eaff',19);
+ for(const h of g.hazards||[])if(Math.hypot(h.x-x,h.y-y)<radius){
+  h.stun=Math.max(h.stun,p.stun||2.1);
+  h.hp=(h.hp??(hardMode?5:3))-2;if(h.hp<=0){h.hp=hardMode?5:3;h.stun=7;}
  }
 }
-function drawRewardsAndShots(){if(!g)return;c.save();drawWeaponModels();for(const crystal of g.skillCrystals||[]){if(crystal.got)continue;glow(crystal.x,crystal.y,52,'#b88df970');c.save();c.translate(crystal.x,crystal.y+Math.sin(t*2.2)*5);c.rotate(t*.48);c.fillStyle='#d7a1ff';c.strokeStyle='#352260';c.lineWidth=3;c.beginPath();c.moveTo(0,-28);c.lineTo(21,-4);c.lineTo(0,26);c.lineTo(-21,-4);c.closePath();c.fill();c.stroke();c.restore();txt('SKILL ✦',crystal.x,crystal.y-43,13,'#e7c2ff','center',900);}for(const v of g.stars||[]){if(v.got)continue;glow(v.x,v.y,43,'#ffda6454');c.save();c.translate(v.x,v.y);c.rotate(t*.65);c.beginPath();for(let j=0;j<10;j++){const a=j*Math.PI/5-Math.PI/2,r=j%2===0?20:8;c.lineTo(Math.cos(a)*r,Math.sin(a)*r);}c.closePath();c.fillStyle='#ffd35a';c.fill();c.strokeStyle='#34292c';c.lineWidth=3;c.stroke();c.restore();}
+function tickProjectiles(dt){
+ if(!g||level===4)return;
+ for(let i=g.proj.length-1;i>=0;i--){
+  const p=g.proj[i];p.age+=dt;p.life-=dt;steerProjectile(p,dt,g.challenge||null);
+  p.x+=p.vx*dt;p.y+=p.vy*dt;
+  if(p.life<=0||p.x<20||p.x>(g.runLength||W)-20||p.y<110||p.y>557){
+   // Expiring charge orbs still emit a visible explosion, but cannot damage at a distance.
+   if(p.weapon==='charge')weaponFX('ring',p.x,p.y,p.x,p.y,'#d7a1ff',.2,42);
+   g.proj.splice(i,1);continue;
+  }
+  let landed=false;
+  for(const h of g.hazards||[]){
+   if(Math.hypot(p.x-h.x,p.y-h.y)<p.r+30){
+    h.stun=Math.max(h.stun,p.stun||1.2+p.damage/19);
+    h.hp=(h.hp??(hardMode?5:3))-(p.weapon==='charge'?4:1);
+    if(p.weapon==='rapid')weaponFX('beam',p.x-p.vx*dt,p.y-p.vy*dt,p.x,p.y,'#55fcff',.09);
+    if(p.weapon==='electric'||p.chain)for(const other of g.hazards||[])if(other!==h&&Math.hypot(h.x-other.x,h.y-other.y)<170){
+     other.stun=Math.max(other.stun,2.2);weaponFX('beam',h.x,h.y,other.x,other.y,'#fff3b1',.24);
+    }
+    if(p.splash)splashWeapon(p,p.x,p.y);
+    burst(h.x,h.y,p.weapon==='charge'?'#ebaeff':p.weapon==='flame'?'#ffa565':'#95efff',9);
+    if(h.hp<=0){h.hp=hardMode?5:3;h.stun=7;}
+    landed=true;break;
+   }
+  }
+  if(landed&&!p.pierce)g.proj.splice(i,1);
+ }
+}
+
+function drawRewardsAndShots(){if(!g)return;c.save();drawWeaponModels();drawWeaponFX();for(const crystal of g.skillCrystals||[]){if(crystal.got)continue;glow(crystal.x,crystal.y,52,'#b88df970');c.save();c.translate(crystal.x,crystal.y+Math.sin(t*2.2)*5);c.rotate(t*.48);c.fillStyle='#d7a1ff';c.strokeStyle='#352260';c.lineWidth=3;c.beginPath();c.moveTo(0,-28);c.lineTo(21,-4);c.lineTo(0,26);c.lineTo(-21,-4);c.closePath();c.fill();c.stroke();c.restore();txt('SKILL ✦',crystal.x,crystal.y-43,13,'#e7c2ff','center',900);}for(const v of g.stars||[]){if(v.got)continue;glow(v.x,v.y,43,'#ffda6454');c.save();c.translate(v.x,v.y);c.rotate(t*.65);c.beginPath();for(let j=0;j<10;j++){const a=j*Math.PI/5-Math.PI/2,r=j%2===0?20:8;c.lineTo(Math.cos(a)*r,Math.sin(a)*r);}c.closePath();c.fillStyle='#ffd35a';c.fill();c.strokeStyle='#34292c';c.lineWidth=3;c.stroke();c.restore();}
  for(const a of g.awards||[]){if(a.got)continue;glow(a.x,a.y,58,'#d8ffac66');circle(a.x,a.y,27,'#fff4b1');txt(awardIcon(a.hero),a.x,a.y+12,30,'#ffffff','center',900);txt(heroNames[a.hero].toUpperCase(),a.x,a.y-39,12,'#ffe6a7','center',950);}
- for(const p of g.proj||[]){glow(p.x,p.y,p.kind==='gozilla'?58:32,p.kind==='roxy'?'#ff945d8e':p.kind==='gozilla'?'#80f9fc9e':'#a4fcff77');
+ for(const p of g.proj||[]){
+ if(p.weapon==='charge'){glow(p.x,p.y,75,'#dcb0ffa8');circle(p.x,p.y,p.r,'#d6a1ff');circle(p.x-5,p.y-5,p.r*.48,'#fff9fb');continue;}
+ if(p.weapon==='rapid'){glow(p.x,p.y,19,'#38efffaf');c.save();c.strokeStyle='#7bffff';c.lineWidth=4;c.beginPath();c.moveTo(p.x-p.vx*.034,p.y-p.vy*.034);c.lineTo(p.x,p.y);c.stroke();c.restore();continue;}
+ if(p.weapon==='homing'){glow(p.x,p.y,29,'#92ffcfa6');circle(p.x,p.y,p.r,'#66eca2');txt('➤',p.x,p.y+7,17,'#0d3a35','center',1000);continue;}
+ if(p.weapon==='spread'){circle(p.x,p.y,p.r,'#ffb86d');continue;}
+ if(p.weapon==='cryo'){glow(p.x,p.y,25,'#bce0ff95');circle(p.x,p.y,p.r,'#b6d8ff');continue;}
+ if(p.weapon==='flame'){glow(p.x,p.y,30,'#ff865fa0');circle(p.x,p.y,p.r,'#ffa15a');continue;}
+ if(['aqua','egg','laser','sonar'].includes(p.weapon)){glow(p.x,p.y,37,'#aaf9ff9a');circle(p.x,p.y,p.r,'#93f9fb');continue;}
+ glow(p.x,p.y,p.kind==='gozilla'?58:32,p.kind==='roxy'?'#ff945d8e':p.kind==='gozilla'?'#80f9fc9e':'#a4fcff77');
  if(p.kind==='gozilla'){c.save();c.strokeStyle='#80fcff99';c.lineWidth=17;c.beginPath();c.moveTo(g.x,g.y-12);c.lineTo(p.x,p.y);c.stroke();c.strokeStyle='#eaffff';c.lineWidth=5;c.stroke();c.restore();circle(p.x,p.y,9,'#b6ffff');}
  else if(p.kind==='roxy'){c.save();c.translate(p.x,p.y);c.rotate(Math.atan2(p.vy,p.vx));ellipse(-10,0,23,9,'#ff7b3c');ellipse(3,-1,13,8,'#ffed8d');c.restore();}
  else if(p.kind==='humpty'){c.save();c.translate(p.x,p.y);c.rotate(p.age*13);ellipse(0,0,17,13,'#fff0bc');line(-9,-2,8,4,'#a06a3a',3);c.restore();}
@@ -997,11 +1039,18 @@ function tickChallenge(dt){
  a.stun=Math.max(0,a.stun-dt);a.x=768+Math.sin(a.clock*.85+a.index)*24;
  a.y=344+Math.sin(a.clock*1.18+a.index*.6)*48;
  // Player shots are genuinely aimed; only a projectile touching the boss deals damage.
- for(let i=g.proj.length-1;i>=0;i--){const p=g.proj[i];p.age+=dt;p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;
-   if(p.life<=0||p.x<30||p.x>960||p.y<160||p.y>550){g.proj.splice(i,1);continue;}
-   if(Math.hypot(p.x-a.x,p.y-a.y)<a.r+p.r){a.hp=Math.max(0,a.hp-p.damage);a.flash=.19;
-    burst(p.x,p.y,p.kind==='roxy'?'#ffad69':'#8bf9ff',6);sfx('attack');g.proj.splice(i,1);
-    if(a.hp<=0){challengeWin();return;}}
+ for(let i=g.proj.length-1;i>=0;i--){
+  const p=g.proj[i];p.age+=dt;p.life-=dt;steerProjectile(p,dt,a);p.x+=p.vx*dt;p.y+=p.vy*dt;
+  if(p.life<=0||p.x<30||p.x>960||p.y<160||p.y>550){g.proj.splice(i,1);continue;}
+  if(Math.hypot(p.x-a.x,p.y-a.y)<a.r+p.r){
+   const damage=p.damage*(p.weapon==='charge'?1.15:1);
+   a.hp=Math.max(0,a.hp-damage);a.flash=.26;
+   if(p.splash)splashWeapon(p,p.x,p.y);
+   else weaponFX('ring',p.x,p.y,p.x,p.y,p.weapon==='homing'?'#88ffc2':'#b7fbff',.25,46);
+   burst(p.x,p.y,p.weapon==='charge'?'#e2a8ff':'#8bf9ff',12);sfx('attack');
+   if(!p.pierce)g.proj.splice(i,1);else {p.damage*=.42;p.pierce=false;}
+   if(a.hp<=0){challengeWin();return;}
+  }
  }
  if(g.freezeTime>0||a.stun>0)return;
  for(let i=a.bullet.length-1;i>=0;i--){const o=a.bullet[i];o.age+=dt;o.life-=dt;
@@ -1315,6 +1364,7 @@ function drawBossCombat(){const a=g.arena,k=a?.attack;
 }
 
 function tick(dt){t+=dt;if(toastLife>0)toastLife-=dt;for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=240*dt;p.life-=dt;if(p.life<=0)particles.splice(i,1);}if(scene!=='playing'||!g)return;
+ tickWeaponFX(dt);
  if(g.hostDown){if(g.lives<=0){g.hostDown=false;g.hostRespawn=0;die('P1 is out of lives. Restart the chapter.');return;}
   g.hostRespawn=Math.max(0,(g.hostRespawn||0)-dt);if(g.hostRespawn<=0)coopRevive(1);
  }g.inv=Math.max(0,g.inv-dt);g.weaponShield=Math.max(0,(g.weaponShield||0)-dt);for(const hero of Object.keys(g.skillCooldowns||{}))g.skillCooldowns[hero]=Math.max(0,g.skillCooldowns[hero]-dt);g.skillCooldown=g.skillCooldowns?.[g.hero]||0;g.skillEffect=Math.max(0,(g.skillEffect||0)-dt);g.skillFlash=Math.max(0,(g.skillFlash||0)-dt);g.freezeTime=Math.max(0,(g.freezeTime||0)-dt);g.sonarTime=Math.max(0,(g.sonarTime||0)-dt);g.speedBoost=Math.max(0,(g.speedBoost||0)-dt);g.cool=Math.max(0,g.cool-dt);g.shield=Math.max(0,g.shield-dt);g.actionWave=Math.max(0,g.actionWave-dt);g.attackFlash=Math.max(0,(g.attackFlash||0)-dt);g.reviveMotion=Math.max(0,(g.reviveMotion||0)-dt);g.deathMotion=Math.max(0,(g.deathMotion||0)-dt);
