@@ -289,6 +289,31 @@ await suite('v23-weapon-style-and-boss-rage', {width:1280,height:870}, async p=>
  assert.ok(arena.pattern||arena.bullet.length,'Enraged boss did not prepare any attack');
 });
 
+
+await suite('all-six-hero-special-attacks', {width:1200,height:830}, async page=>{
+ await page.evaluate(()=>{fishmanTest.intro(2);fishmanTest.start(0)});
+ const results=await page.evaluate(()=>{
+  const g=FishmanMultiplayerBridge.getG(),heroes=['fish','kai','roxy','humpty','gozilla','sub'],out={};
+  for(const h of heroes){
+   g.hero=h;g.skillCooldown=0;g.skillCooldowns[h]=0;g.skillEffect=0;
+   g.x=420;g.y=330;g.proj=[];g.weaponFX=[];
+   fishmanTest.skill();
+   out[h]={type:g.proj[0]?.weapon,count:g.proj.length,
+    kinds:[...new Set(g.proj.map(p=>p.weapon))],
+    cd:g.skillCooldown,fx:g.weaponFX.length};
+  }
+  return out;
+ });
+ const expected={fish:['aqua',12],kai:['cryo',16],roxy:['flame',11],
+  humpty:['egg',13],gozilla:['laser',10],sub:['homing',10]};
+ for(const [hero,[weapon,min]] of Object.entries(expected)){
+  assert.ok(results[hero].kinds.includes(weapon),hero+' S skill did not change weapon style: '+JSON.stringify(results[hero]));
+  assert.ok(results[hero].count>=min,hero+' S skill did not create its characteristic volley');
+  assert.ok(results[hero].fx>0,hero+' S skill visual shockwave missing');
+  assert.ok(results[hero].cd>1,hero+' S skill cooldown never started');
+ }
+});
+
 const peerSimulator=()=> {
  const tag='fishman-local-qa-bus';
  class Connection{
