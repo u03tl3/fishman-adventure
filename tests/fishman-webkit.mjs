@@ -16,8 +16,13 @@ for(const viewport of [{width:390,height:844},{width:844,height:390},{width:1024
   assert.equal(await page.locator('#localControllerBoard .stick-base').count(),8);
   for(let chapter=0;chapter<10;chapter++){
    await page.evaluate(ch=>{fishmanTest.intro(ch);fishmanTest.start(0)},chapter);
-   await page.waitForTimeout(50);
-   const game=await page.evaluate(()=>({scene:FishmanMultiplayerBridge.getScene(),n:Object.keys(FishmanMultiplayerBridge.getG()?.coopPlayers||{}).length}));
+   await page.waitForTimeout(80);
+   const game=await page.evaluate(()=>({scene:FishmanMultiplayerBridge.getScene(),
+    n:Object.keys(FishmanMultiplayerBridge.getG()?.coopPlayers||{}).length,
+    mode:FishmanNet.role,slots:FishmanLocal.count,
+    rooms:Object.entries(FishmanNet.players||{}).map(([k,v])=>({slot:k,open:v.connection?.open,hero:v.hero})),
+    level:FishmanMultiplayerBridge.getLevel(),wave:FishmanMultiplayerBridge.getG()?.wave}));
+   if(game.n!==3)console.error('WEBKIT_DEBUG_CHAPTER',viewport,chapter,JSON.stringify(game));
    assert.equal(game.scene,'playing');
    assert.equal(game.n,3,'Three local teammates absent from Safari chapter '+chapter);
   }
