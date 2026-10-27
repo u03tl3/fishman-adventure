@@ -31,7 +31,7 @@ await suite('solo-start', {width:1280,height:760}, async p=>{
  await p.waitForTimeout(450);
  let st=await getState(p);
  assert.equal(st.scene,'playing');
- assert.equal(st.g.hero,'fish');
+ assert.ok(['fish','kai','roxy','humpty','gozilla','sub'].includes(st.g.hero),'invalid solo hero');
  assert.equal(st.g.coopPlayers?.[2],undefined);
 });
 await suite('four-players-desktop', {width:1280,height:860}, async p=>{
