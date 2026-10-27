@@ -447,12 +447,12 @@ await suite('health-only-bosses-difficulty-and-four-player-scaling', {width:1200
   }
   return res;
  });
- assert.equal(result.classic.maxHp,650);
- assert.equal(result.expert.maxHp,975);
- assert.equal(result.nightmare.maxHp,1400);
- assert.equal(result.classic.treeBoss,1400);
- assert.equal(result.expert.treeBoss,2100);
- assert.equal(result.nightmare.treeBoss,3000);
+ assert.equal(result.classic.maxHp,650*20);
+ assert.equal(result.expert.maxHp,975*20);
+ assert.equal(result.nightmare.maxHp,1400*20);
+ assert.equal(result.classic.treeBoss,1400*20);
+ assert.equal(result.expert.treeBoss,2100*20);
+ assert.equal(result.nightmare.treeBoss,3000*20);
  for(const d of Object.values(result)){
   assert.equal(d.initialBullets,0);
   assert.equal(d.bulletsAfterHalfSecond,0,'Boss unexpectedly fired an added signature volley');
@@ -500,6 +500,68 @@ await suite('one-render-per-character-no-ghost-copy', {width:1220,height:840}, a
  for(let i=0;i<multi.positions.length;i++)for(let j=i+1;j<multi.positions.length;j++)
   assert.ok(Math.hypot(multi.positions[i].x-multi.positions[j].x,
     multi.positions[i].y-multi.positions[j].y)>80,'Teammates spawn so close they look like ghost copies');
+});
+
+
+await suite('every-boss-20x-hp-exact-and-joining-midfight', {width:1230,height:835}, async page=>{
+ const baseHP={classic:650,expert:975,nightmare:1400};
+ const treeHP={classic:1400,expert:2100,nightmare:3000};
+ const testData=await page.evaluate(()=>{
+  const result={};
+  for(const diff of ['classic','expert','nightmare']){
+   fishmanTest.select(diff);fishmanTest.intro(2);fishmanTest.start(0);
+   const regular=[],rush=[];
+   for(let boss=0;boss<9;boss++){
+    fishmanTest.startChapterArena(boss,false);
+    let a=FishmanMultiplayerBridge.getG().challenge;
+    regular.push(a.maxHp);
+    fishmanTest.startChapterArena(boss,true);
+    a=FishmanMultiplayerBridge.getG().challenge;
+    rush.push(a.maxHp);
+   }
+   fishmanTest.intro(4);fishmanTest.start(0);
+   const g=FishmanMultiplayerBridge.getG();
+   result[diff]={regular,rush,tree:g.boss,timer:g.timer,maxTimer:g.maxTimer,treeMaxHP:globalThis.fishmanTest.get().boss};
+  }
+  return result;
+ });
+ for(const diff of Object.keys(baseHP)){
+  for(let boss=0;boss<9;boss++){
+   assert.equal(testData[diff].regular[boss],Math.round(baseHP[diff]*20*(boss===8?1.3:1)),
+     `Chapter boss ${boss} on ${diff} must have 20x baseline HP`);
+   assert.equal(testData[diff].rush[boss],Math.round(baseHP[diff]*20*.85*(boss===8?1.3:1)),
+     `Final boss rush boss ${boss} on ${diff} must have 20x HP`);
+  }
+  assert.equal(testData[diff].tree,treeHP[diff]*20,'McTreeFace HP does not have 20x baseline');
+  if(diff!=='classic'){
+   const previousTimer=diff==='expert'?165:195;
+   assert.equal(testData[diff].maxTimer,previousTimer*20,
+    'Timed boss becomes impossible if timer is not expanded with its HP');
+  }
+ }
+ await page.evaluate(()=>{fishmanTest.select('classic');fishmanTest.intro(2);fishmanTest.start(0);fishmanTest.startChapterArena(2,false)});
+ const first=await page.evaluate(()=>{
+  const g=FishmanMultiplayerBridge.getG(),a=g.challenge;
+  a.hp=Math.ceil(a.maxHp*.38);
+  return {max:a.maxHp,hp:a.hp,ratio:a.hp/a.maxHp};
+ });
+ assert.equal(first.max,650*20);
+ await engage(page,2);await engage(page,3);await engage(page,4);
+ await page.waitForTimeout(125);
+ const joined=await page.evaluate(()=>{
+  const g=FishmanMultiplayerBridge.getG(),a=g.challenge;
+  return {max:a.maxHp,hp:a.hp,ratio:a.hp/a.maxHp,team:Object.keys(g.coopPlayers||{}).length,level:FishmanMultiplayerBridge.getLevel()};
+ });
+ assert.equal(joined.max,Math.round(650*20*(1+.47*3)));
+ assert.ok(Math.abs(joined.ratio-first.ratio)<.002,'Joining teammates incorrectly reset or healed boss HP');
+ assert.equal(joined.team,3);assert.equal(joined.level,2);
+ await page.waitForTimeout(300);
+ const stable=await page.evaluate(()=>({
+   max:FishmanMultiplayerBridge.getG().challenge.maxHp,
+   hp:FishmanMultiplayerBridge.getG().challenge.hp
+ }));
+ assert.equal(stable.max,joined.max);
+ assert.ok(stable.hp<=joined.hp,'Repeated co-op sync unexpectedly regenerated boss HP');
 });
 
 const peerSimulator=()=> {
