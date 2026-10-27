@@ -1068,7 +1068,7 @@ function startChapterArena(finalRush=false,number=finalRush?0:level){
    x:767,y:348,r:69,hp:1,maxHp:1,bullet:[],pattern:null,patternIndex:0,rest:1.3,rage:0,rageClock:0,signatureTimer:1.8,specialWarning:0,
    cooldown:0,dodgeCool:0,stun:0,clock:0,flash:0,regen:0};
  const a=g.challenge;
- a.maxHp=Math.round((nightmare()?480:hardMode?365:245)*(finalRush?.85:1)*(number===8?1.3:1)*(1+.47*(coopSize()-1)));
+ a.maxHp=Math.round((nightmare()?1400:hardMode?975:650)*(finalRush?.85:1)*(number===8?1.3:1)*(1+.47*(coopSize()-1)));
  a.hp=a.maxHp;
  g.runLength=0;g.checkpointState=null;g.checkpointIndex=0;g.x=140;g.y=340;g.inv=2;
  g.proj=[];g.shots=[];g.hazards=[];g.items=[];g.stars=[];g.awards=[];g.skillCrystals=[];
@@ -1152,21 +1152,21 @@ function tickBossSignature(a,dt){
 }
 
 function releaseChallengePattern(a){
- const pat=a.pattern,target=chooseBossTarget(a.patternIndex),ang=Math.atan2(target.y-a.y,target.x-a.x),sp=(nightmare()?345:hardMode?292:245)*(1+.10*(a.rage||0));
+ const pat=a.pattern,target=chooseBossTarget(a.patternIndex),ang=Math.atan2(target.y-a.y,target.x-a.x),sp=nightmare()?300:hardMode?250:204;
  if(pat.kind==='fan'||pat.kind==='portals'){
-  const n=pat.kind==='portals'?(nightmare()?10:hardMode?8:7):(nightmare()?9:hardMode?7:5);
+  const n=pat.kind==='portals'?(nightmare()?8:6):(nightmare()?7:hardMode?5:3);
   for(let i=0;i<n;i++){const degree=ang+(i-(n-1)/2)*(pat.kind==='portals'?.20:.17);
     const px=pat.kind==='portals'?(i%2?943:63):a.x,py=pat.kind==='portals'?188+(i%5)*76:a.y;
     const aim=pat.kind==='portals'?Math.atan2(target.y-py,target.x-px):degree;
     challengeOrb(a,px,py,Math.cos(aim)*sp,Math.sin(aim)*sp,pat.kind==='portals'?13:15);}
  }
  if(pat.kind==='ring'){
-  const n=nightmare()?22:hardMode?18:14;
+  const n=nightmare()?18:hardMode?14:10;
   for(let i=0;i<n;i++){const theta=i*Math.PI*2/n+pat.clock*.4;
    challengeOrb(a,a.x,a.y,Math.cos(theta)*sp*.75,Math.sin(theta)*sp*.75,12);}
  }
  if(pat.kind==='mines'){
-  for(let i=0;i<(nightmare()?9:hardMode?7:5);i++){
+  for(let i=0;i<(nightmare()?7:hardMode?5:3);i++){
    const yy=205+i*59, xx=i%2?490:305;
    challengeOrb(a,xx,yy,Math.sin(i)*28,Math.cos(i)*18,19,'#ffac77');
   }
@@ -1178,9 +1178,9 @@ function tickChallenge(dt){
  const fraction=a.hp/Math.max(1,a.maxHp),nextRage=fraction<=.3?2:fraction<=.64?1:0;
  if(nextRage>(a.rage||0)){
   a.rage=nextRage;a.rageClock=.5;burst(a.x,a.y,nextRage===2?'#ff5d91':'#ffb76e',31);
-  say('⚠ '+a.def.name.toUpperCase()+' ENRAGED — PHASE '+(nextRage+1)+'!',2.6);
+  say('⚠ '+a.def.name.toUpperCase()+' LOW HEALTH — PHASE '+(nextRage+1)+'!',2.6);
  }
- a.stun=Math.max(0,a.stun-dt);tickBossSignature(a,dt);a.x=768+Math.sin(a.clock*.85+a.index)*24;
+ a.stun=Math.max(0,a.stun-dt);a.x=768+Math.sin(a.clock*.85+a.index)*24;
  a.y=344+Math.sin(a.clock*1.18+a.index*.6)*48;
  // Player shots are genuinely aimed; only a projectile touching the boss deals damage.
  for(let i=g.proj.length-1;i>=0;i--){
@@ -1219,20 +1219,11 @@ function tickChallenge(dt){
  if(a.rest>0){a.rest-=dt;return;}
  if(!a.pattern){const kind=a.def.attacks[a.patternIndex%a.def.attacks.length];a.patternIndex++;
   const focus=chooseBossTarget(a.patternIndex);
-  a.pattern={kind,state:'warning',clock:0,warn:nightmare()?.65:hardMode?.85:1.05,duration:kind==='mines'?1.6:kind==='dash'?1.25:1.5,
+  a.pattern={kind,state:'warning',clock:0,warn:nightmare()?.57:hardMode?.82:1.15,duration:kind==='mines'?1.5:kind==='dash'?1.15:1.5,
    aimX:clamp(focus.x,105,650),aimY:clamp(focus.y,208,503),released:false};
   return;}
  const p=a.pattern;p.clock+=dt;
- if(a.rage>0&&p.state==='active'){
-  a.rageClock=(a.rageClock||0)-dt;
-  if(a.rageClock<=0&&a.bullet.length<75){
-   const focus=chooseBossTarget(a.patternIndex+a.rage),speed=(nightmare()?296:hardMode?260:224);
-   const direction=Math.atan2(focus.y-a.y,focus.x-a.x),amount=a.rage===2?3:2;
-   for(let i=0;i<amount;i++){const ang=direction+(i-(amount-1)/2)*.23;
-    challengeOrb(a,a.x,a.y,Math.cos(ang)*speed,Math.sin(ang)*speed,12,'#ff78d7',.88);}
-   a.rageClock=a.rage===2?.66:.96;
-  }
- }
+ // Rage changes the boss appearance, not the number of attacks.
  if(p.state==='warning'){
   if(p.clock>=p.warn){p.state='active';p.clock=0;sfx('power');
    if(['fan','ring','mines','portals'].includes(p.kind))releaseChallengePattern(a);}
@@ -1247,7 +1238,7 @@ function tickChallenge(dt){
   if(Math.abs(g.y-p.aimY)<(nightmare()?66:hardMode?53:40))hit();
  }
  if(scene!=='playing')return;
- if(p.clock>=p.duration){a.pattern=null;a.rest=nightmare()?.2:hardMode?.34:.54;}
+ if(p.clock>=p.duration){a.pattern=null;a.rest=nightmare()?.25:hardMode?.42:.7;}
 }
 function drawChallengeArena(){
  const a=g.challenge,idx=a.index,def=a.def;
@@ -1293,7 +1284,7 @@ function drawChallengeArena(){
  hud();
  roundRect(239,91,521,61,16,'#061d36ed');
  txt(a.final?`FINAL ARENA ${a.round}/${a.total}`:`CHAPTER ${level+1} BOSS`,499,111,13,'#aef5ed','center',900);
- txt(def.name+(a.rage?' · ⚡ ENRAGED '+(a.rage+1):''),499,131,18,a.rage?'#ffb5af':'#fff1c0','center',950);
+ txt(def.name+(a.rage?' · PHASE '+(a.rage+1):''),499,131,18,a.rage?'#ffb5af':'#fff1c0','center',950);
  roundRect(283,139,434,9,5,'#39495c');
  if(a.hp>0)roundRect(285,140,430*a.hp/a.maxHp,7,4,a.hp/a.maxHp<.28?'#ff6982':def.color);
  roundRect(20,563,960,43,12,'#061b34e9');
@@ -1377,7 +1368,7 @@ function setupSub(w){cameraX=0;g.hero='sub';g.skillCooldown=0;g.skillEffect=0;g.
  resetStrikes();initRewards(w);g.notice=null;makeLongRun();
 }
 function start(checkpoint=0,remainingLives=null){scene='playing';aim.manual=false;aim.point=null;resetStick();held={};keys={};hideScreen();t=0;particles=[];toastLife=0;const bbtn=document.querySelector('[data-key=interact]');bbtn.querySelector('.button-name').textContent=level===4?'◌ DODGE':'USE ✦';bbtn.setAttribute('aria-label',level===4?'B button: dodge attacks':'B button: interact');
- const boss=level===4,sub=level===5; if(level>3)unlockGozilla();BOSS_MAX=Math.round((nightmare()?1000:hardMode?720:455)*(1+.47*(coopSize()-1)));
+ const boss=level===4,sub=level===5; if(level>3)unlockGozilla();BOSS_MAX=Math.round((nightmare()?3000:hardMode?2100:1400)*(1+.47*(coopSize()-1)));
  const hearts=nightmare()?(boss?5:sub?4:3):hardMode?(boss?7:sub?5:4):(boss?12:sub?7:6);
  g={...freshWeaponState(),skillBurstCool:0,skillCooldown:0,skillCooldowns:{fish:0,kai:0,roxy:0,humpty:0,gozilla:0,sub:0},skillEffect:0,skillFlash:0,freezeTime:0,sonarTime:0,speedBoost:0,skillKind:null,skillCrystals:[],maxLives:chapterLives(),lives:remainingLives===null?chapterLives():Math.max(1,Math.min(chapterLives(),remainingLives)),runLength:0,hero:heroFor(level),x:116,y:425,hp:hearts,maxHp:hearts,inv:0,cool:0,shield:0,items:[],hazards:[],proj:[],shots:[],stars:[],awards:[],collect:0,total:nightmare()?8:hardMode?6:4,deadline:level===3&&!hardMode?190:0,timer:hardMode?(boss?(nightmare()?195:165):85):0,maxTimer:0,boss:BOSS_MAX,bossAtt:nightmare()?1.3:hardMode?1.3:2.3,captured:false,actionWave:0,wave:0,dodge:0,dodgeCool:0,strike:null,strikeClock:3.8,deathMotion:0,reviveMotion:0};
  if(net()?.role==='local'&&coopHeroAvailable(net().localHero))g.hero=net().localHero;
@@ -1456,14 +1447,14 @@ function enterBossPhase(phase){let a=g.arena;a.phase=phase;a.attack=null;a.attac
 }
 function fireBossOrb(x,y,vx,vy,r=15,type='seed',lifetime=5){if(g.arena.orbs.length>=110)return;g.arena.orbs.push({x,y,vx,vy,r,type,lifetime,age:0});}
 function spawnBossVolley(atk){const a=g.arena,hero=chooseBossTarget(a.attackIndex);
- if(atk.kind==='fan'){const count=nightmare()?9:hardMode?7:5;const aim=Math.atan2(hero.y-a.bossY,hero.x-a.bossX);const sp=nightmare()?355:hardMode?297:253;
+ if(atk.kind==='fan'){const count=nightmare()?7:hardMode?5:3;const aim=Math.atan2(hero.y-a.bossY,hero.x-a.bossX);const sp=nightmare()?315:hardMode?264:215;
   for(let i=0;i<count;i++){const ang=aim+(i-(count-1)/2)*(nightmare()?.14:hardMode?.15:.18);fireBossOrb(a.bossX-20,a.bossY,Math.cos(ang)*sp,Math.sin(ang)*sp,nightmare()?15:13,'seed');}}
- if(atk.kind==='boomerang'){const sp=nightmare()?406:hardMode?337:266;for(let i=0;i<2;i++){const y=i?atk.aim+100:atk.aim-100;fireBossOrb(890,clamp(y,205,518),-sp,0,22,'blade',4);}}
- if(atk.kind==='portals'){const sp=nightmare()?290:hardMode?250:215;for(let row=0;row<(nightmare()?6:hardMode?5:4);row++){const y=204+row*74;const side=row%2;fireBossOrb(side?960:39,y,side?-sp:sp,Math.sin(row*2+atk.life)*42,13,'portal',4.2);}}
- if(atk.kind==='spiral'){const count=nightmare()?24:hardMode?19:15;const offset=atk.life*2.25;const sp=nightmare()?265:hardMode?232:196;for(let i=0;i<count;i++){const angle=i*TAU/count+offset;fireBossOrb(a.bossX-10,a.bossY,Math.cos(angle)*sp,Math.sin(angle)*sp,nightmare()?13:11,'star',4);}}
+ if(atk.kind==='boomerang'){const sp=nightmare()?365:hardMode?300:236;for(let i=0;i<2;i++){const y=i?atk.aim+100:atk.aim-100;fireBossOrb(890,clamp(y,205,518),-sp,0,22,'blade',4);}}
+ if(atk.kind==='portals'){const sp=nightmare()?290:hardMode?250:215;for(let row=0;row<(nightmare()?5:hardMode?4:3);row++){const y=204+row*74;const side=row%2;fireBossOrb(side?960:39,y,side?-sp:sp,Math.sin(row*2+atk.life)*42,13,'portal',4.2);}}
+ if(atk.kind==='spiral'){const count=nightmare()?20:hardMode?16:12;const offset=atk.life*2.25;const sp=nightmare()?265:hardMode?232:196;for(let i=0;i<count;i++){const angle=i*TAU/count+offset;fireBossOrb(a.bossX-10,a.bossY,Math.cos(angle)*sp,Math.sin(angle)*sp,nightmare()?13:11,'star',4);}}
 }
 function createBossAttack(){const a=g.arena,phase=bossPhase(),kind=BOSS_ATTACKS[phase][a.attackIndex%3],title=BOSS_NAMES[phase][a.attackIndex%3],focus=chooseBossTarget(a.attackIndex);a.attackIndex++;
- const warn=nightmare() ? .62 : (hardMode ? .85 : 1.17), len=({fan:2.0,boomerang:2.1,charge:1.7,portals:2.25,spikes:1.6,spiral:1.9,beam:1.7,vortex:2.6,maze:2})[kind];
+ const warn=nightmare() ? 0.65 : (hardMode ? 0.9 : 1.35), len=({fan:2.0,boomerang:2.1,charge:1.7,portals:2.25,spikes:1.6,spiral:1.9,beam:1.7,vortex:2.6,maze:2})[kind];
  a.attack={kind,title,state:'warn',life:0,warn,duration:len,shots:0,aim:clamp(focus.y,232,486),aimX:clamp(focus.x,145,655),x:960,follow:0,crush:false};
  if(phase===1){a.bossX=795+Math.sin(a.attackIndex*2.4)*38;a.bossY=308+Math.cos(a.attackIndex*2)*38;}
  if(phase===2){a.bossX=800+Math.sin(a.attackIndex*2)*42;a.bossY=294+Math.cos(a.attackIndex)*36;}
@@ -1471,15 +1462,7 @@ function createBossAttack(){const a=g.arena,phase=bossPhase(),kind=BOSS_ATTACKS[
 }
 function orbTouch(o){if(Math.hypot(o.x-g.x,o.y-g.y)<o.r+(g.hero==='roxy'?22:19)){hit();return true;}return false;}
 function tickBossCombat(dt){const a=g.arena;if(!a)return;if(g.freezeTime>0)return;
- const rage=bossPhase(); // McTreeFace gains extra storms in its last two forms.
- if(rage>0){
-  a.rageClock=(a.rageClock||2.9)-dt;
-  if(a.rageClock<=0&&a.orbs.length<72){
-   spawnBossVolley({kind:'fan',life:0,aim:chooseBossTarget(a.attackIndex).y});
-   a.rageClock=rage===2?1.95:2.75;
-   if(rage===2)say('⚠ THORN CROWN · RAGE VOLLEY!',1);
-  }
- }else a.rageClock=2.9;
+ // Keep McTreeFace's original attack power; this build increases health only.
  g.dodgeCool=Math.max(0,g.dodgeCool-dt);g.dodge=Math.max(0,g.dodge-dt);a.dodgeFlash=Math.max(0,a.dodgeFlash-dt);a.phaseClock+=dt;
  // Orbs remain dangerous even while the boss prepares a different move.
  for(let i=a.orbs.length-1;i>=0;i--){const o=a.orbs[i];o.age+=dt;o.lifetime-=dt;
@@ -1495,7 +1478,7 @@ function tickBossCombat(dt){const a=g.arena;if(!a)return;if(g.freezeTime>0)retur
  // Different original Fishman attacks: spreads, boomerangs, charging ship, paired portals, spikes, stars, cannon, vortex and prison.
  if(['fan','boomerang','portals','spiral'].includes(k.kind)){
   const cadence=k.kind==='fan'?.6:k.kind==='portals'?.8:k.kind==='spiral'?.95:1.2;
-  if(k.life>=cadence*k.shots&&k.shots<(nightmare()?4:hardMode?3:2)){spawnBossVolley(k);k.shots++;}
+  if(k.life>=cadence*k.shots&&k.shots<(nightmare()?3:hardMode?2:1)){spawnBossVolley(k);k.shots++;}
  }
  if(k.kind==='charge'){
   k.x=920-k.life*(nightmare()?780:hardMode?650:535);
@@ -1517,7 +1500,7 @@ function tickBossCombat(dt){const a=g.arena;if(!a)return;if(g.freezeTime>0)retur
    if(Math.abs(g.x-x)<(nightmare()?47:hardMode?40:32)&&Math.abs(g.y-opening)>56)hit();
   }
  }
- if(k.life>=k.duration){a.attack=null;a.clearedCount++;a.rest=nightmare()?.29:hardMode?.48:.79;if(a.clearedCount===a.required)say('GUARD BROKEN! Keep firing A to finish this form!',2.4);}
+ if(k.life>=k.duration){a.attack=null;a.clearedCount++;a.rest=nightmare()?.44:hardMode?.65:1.0;if(a.clearedCount===a.required)say('GUARD BROKEN! Keep firing A to finish this form!',2.4);}
 }
 function drawBossCombat(){const a=g.arena,k=a?.attack;
  for(const o of a.orbs){glow(o.x,o.y,o.r*2.2,o.type==='portal'?'#d99dff44':o.type==='star'?'#ffff944a':'#ffb08840');circle(o.x,o.y,o.r,o.type==='blade'?'#ffd180':o.type==='portal'?'#be9fff':o.type==='star'?'#e7fa88':'#ff7c8b');
@@ -1834,10 +1817,10 @@ function tickCoopPlayers(dt){
  const teamSize=coopSize(),scale=1+.47*(teamSize-1);
  if(g.challenge){
   const a=g.challenge;
-  const target=Math.round((nightmare()?480:hardMode?365:245)*(a.final?.85:1)*(a.index===8?1.3:1)*scale);
+  const target=Math.round((nightmare()?1400:hardMode?975:650)*(a.final?.85:1)*(a.index===8?1.3:1)*scale);
   if(a.maxHp!==target&&a.maxHp>0){a.hp=Math.max(1,Math.ceil(target*a.hp/a.maxHp));a.maxHp=target;}
  }else if(level===4&&g.arena){
-  const target=Math.round((nightmare()?1000:hardMode?720:455)*scale);
+  const target=Math.round((nightmare()?3000:hardMode?2100:1400)*scale);
   if(BOSS_MAX!==target&&BOSS_MAX>0){g.boss=Math.max(1,Math.ceil(target*g.boss/BOSS_MAX));BOSS_MAX=target;}
  }
  const live=new Set(Object.entries(n.players||{}).filter(([,v])=>v.connection?.open).map(([slot])=>String(slot)));
@@ -1976,7 +1959,7 @@ function drawPlayer(){
  if(deathAmt>0){const u=1-deathAmt/.8;ty+=u*38;rot+=u*(swimmer?1.15:1.9);c.globalAlpha*=1-u*.78;drawScale*=(1-u*.22);} 
  if(reviveAmt>0){const u=1-reviveAmt/1.0;ty+=(1-u)*22;drawScale*=(.84+u*.22);c.globalAlpha*=Math.min(1,.48+u*.7);} 
  // One solid, readable sprite per player in co-op; extra silhouette layers caused blur and frame drops.
- if(coopSize()===1)drawPseudo3D(h,drawScale,vec,bob,phase);
+ // Render ONE body per character. The former '3D shadow' was actually a second whole character image.
  c.translate(tx,ty); c.rotate(rot);
  if(h==='humpty'&&attacking)c.rotate(Math.sin(t*16)*.24);
  if(swimmer&&h!=='sub')c.rotate(Math.sin(phase*1.2)*.07*Math.max(.2,moving)+vec.y*.11);
@@ -2170,7 +2153,8 @@ menu();updateSkillButton();requestAnimationFrame(drawFrame);
    n.peer.on('connection',connection=>{
     const slot=[2,3,4].find(x=>!n.players[x]);
     if(!slot){connection.on('open',()=>{connection.send({kind:'error',message:'Room full — maximum four players.'});setTimeout(()=>connection.close(),650);});return;}
-    const defaults={2:'kai',3:'roxy',4:'humpty'};
+    // Give local teammates different starting characters, while allowing manual selection.
+  const defaults={2:(n.localHero==='kai'?'fish':'kai'),3:'roxy',4:'humpty'};
     n.players[slot]={connection,hero:defaults[slot],input:emptyInput(),lastInputAt:Date.now()};
     wireHost(connection,slot);
    });
@@ -2444,7 +2428,8 @@ menu();updateSkillButton();requestAnimationFrame(drawFrame);
    makePad(1);openOnline.hidden=true;openOnline.disabled=true;
   }
   const slot=++localCount;
-  const defaults={2:'kai',3:'roxy',4:'humpty'};
+  // Give local teammates different starting characters, while allowing manual selection.
+  const defaults={2:(n.localHero==='kai'?'fish':'kai'),3:'roxy',4:'humpty'};
   n.players[slot]={connection:{open:true},hero:defaults[slot],
    input:{x:0,y:0,aim:null,fire:false,buttonFire:false,skill:false,interact:false,weapon:false,hero:defaults[slot]},lastInputAt:Date.now()};
   makePad(slot);
