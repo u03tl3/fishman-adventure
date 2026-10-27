@@ -3,9 +3,17 @@ on:
   push:
     branches: [main]
     paths:
+      - 'index.html'
       - 'v16-4p/**'
       - 'tests/fishman-qa.mjs'
       - 'tests/fishman-webkit.mjs'
+      - 'tests/fishman-master-qa.mjs'
+      - '.github/workflows/fishman-qa.yml'
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'v16-4p/**'
+      - 'tests/**'
       - '.github/workflows/fishman-qa.yml'
   workflow_dispatch:
 
@@ -34,3 +42,5 @@ jobs:
         run: node tests/fishman-qa.mjs
       - name: Test Safari-style WebKit touch interactions
         run: node tests/fishman-webkit.mjs
+      - name: Test master artwork, ten chapters, land/water and two-player sync
+        run: node tests/fishman-master-qa.mjs
