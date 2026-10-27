@@ -865,7 +865,7 @@ function electricAttack(v,L,wl,power=false){
  g.cool=power?.25:Math.max(.35,.72-wl*.04);g.attackFlash=.4;sfx('power');
 }
 function weaponFire(){
- if(!g||scene!=='playing'||g.cool>0||g.hostDown||g.down)return;
+ if(!g||scene!=='playing'||g.cool>0||g.down||(coopActionSlot===1&&g.hostDown))return;
  ensureWeaponState();const hero=g.hero,L=heroUpgrade(hero),wt=g.weapon||'basic',wl=g.weaponLevels[wt]||1;
  const v=aimVector(),angle=Math.atan2(v.y,v.x);g.lastAim=v;g.actionWave=.23;g.attackFlash=.33;
  if(wt==='electric'){electricAttack(v,L,wl);return;}
@@ -1759,7 +1759,7 @@ function tickCoopPlayers(dt){
    if(!revived){
     const gate=worldGate(),atExit=gate&&gateReady()&&Math.hypot(p.x-gate.x,p.y-gate.y)<130;
     if(atExit)say('GATE READY: P1 MUST PRESS B TWICE TO CONTINUE.',2.6);
-    else if(!g.hostDown)withCoopPlayer(p,input,()=>interact());
+    else withCoopPlayer(p,input,()=>interact());
    }
   }
   if(input.fire&&p.cool<=0)withCoopPlayer(p,input,()=>weaponFire());
