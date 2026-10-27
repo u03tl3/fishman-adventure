@@ -34,12 +34,16 @@ try {
       const g = FishmanMultiplayerBridge.getG();
       g.hero = 'fish'; g.x = 200; g.y = 350;
       window.__fishArtCalls = [];
-      const original = window.FishmanVisualMaster.hero;
-      window.FishmanVisualMaster.hero = function(ctx, pose) {
-        const painted = original(ctx, pose);
-        if (pose.type === 'fish') window.__fishArtCalls.push({ mode: pose.mode, fullBody: pose.fullBody, painted });
-        return painted;
-      };
+      // v29 is the preferred approved illustrator; v28/master is a retained fallback.
+      for (const [renderer, method] of [[window.FishmanV29Art,'fish'],[window.FishmanVisualMaster,'hero']]) {
+        if (typeof renderer?.[method] !== 'function') continue;
+        const original = renderer[method];
+        renderer[method] = function(ctx, pose) {
+          const painted = original(ctx, pose);
+          if (pose?.type === 'fish') window.__fishArtCalls.push({ renderer:method, mode:pose.mode, fullBody:pose.fullBody, painted });
+          return painted;
+        };
+      }
     });
     await page.waitForFunction(() => window.FishmanV28Art.hero(document.getElementById('game').getContext('2d'), {
       type: 'fish', x: 200, y: 280, phase: 0, motion: 0, fullBody: true
