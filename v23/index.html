@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#06283f">
+<title>Fishman v23 — Aquarium Graphics Upgrade</title>
+<style>
+:root{
+  --bg:#061a28; --panel:#0d2b43; --panel2:#123d5a; --ink:#eafcff; --soft:#9ec6d9;
+  --aqua:#8ef3e3; --teal:#2bc1c8; --gold:#ffd87a; --orange:#ffb55a; --pink:#ff8eb1;
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:radial-gradient(circle at 50% 0%,#124f6d 0,#071a28 55%,#04121e 100%);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+button{font:inherit;cursor:pointer;touch-action:manipulation}
+button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+#app{width:100vw;height:100dvh;display:grid;grid-template-columns:clamp(82px,13vw,148px) minmax(0,1fr) clamp(106px,16vw,180px);align-items:center;gap:6px;padding:calc(env(safe-area-inset-top) + 4px) calc(env(safe-area-inset-right) + 4px) calc(env(safe-area-inset-bottom) + 4px) calc(env(safe-area-inset-left) + 4px)}
+.side{height:100%;display:flex;align-items:center;justify-content:center;min-width:0}
+.leftpack,.rightpack{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.stick{position:relative;width:clamp(74px,11vw,136px);height:clamp(74px,11vw,136px);border-radius:50%;border:4px solid #4f92af;background:radial-gradient(circle at 40% 40%,#315a72,#0b2438 68%);box-shadow:inset 0 0 0 8px #0d2f47,0 10px 20px #0007;touch-action:none;user-select:none}
+.stick.active{border-color:#d7ffff;box-shadow:inset 0 0 0 8px #0d2f47,0 0 24px #5ee9ff77}
+.stick::before{content:'✣';position:absolute;inset:0;display:grid;place-items:center;color:#a7dfef58;font-size:24px}
+.knob{position:absolute;left:50%;top:50%;width:52%;height:52%;transform:translate(-50%,-50%);border-radius:50%;border:3px solid #0d3a57;background:radial-gradient(circle at 30% 22%,#a7fff8,#41b4d8 48%,#155069 76%);box-shadow:inset 0 4px 8px #d7ffffa0,inset 0 -8px 10px #0a3550,0 4px 12px #0008;pointer-events:none}
+.caption{font-size:11px;font-weight:900;letter-spacing:.16em;color:#8ee7df;text-align:center}
+.caption small{display:block;letter-spacing:0;color:#9abed2;font-size:11px;font-weight:600}
+.viewport{position:relative;min-width:0;min-height:0;width:100%;height:100%;border:2px solid #5fd8df;border-radius:16px;background:#04253a;overflow:hidden;box-shadow:inset 0 0 0 4px #133a53,0 0 40px #0fa0d824}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+.topbar{position:absolute;top:8px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;pointer-events:none;z-index:3}
+.pills{display:flex;flex-wrap:wrap;gap:6px;max-width:80%}
+.pill{background:#062739df;border:1px solid #7fd4d8a0;color:#defdff;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800;text-shadow:0 1px 2px #0008;white-space:nowrap}
+.minibtn{pointer-events:auto;border:1px solid #5ea6bc;background:#0a3048eb;color:#effcff;padding:7px 10px;border-radius:10px;font-weight:800;font-size:12px}
+.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:12px;z-index:5;background:linear-gradient(145deg,#041828ea,#0d4059d9)}
+.overlay.hide{display:none}
+.panel{width:min(760px,100%);max-height:100%;overflow:auto;border:1px solid #93eff45f;border-radius:18px;background:linear-gradient(145deg,#0a2840f3,#11526af3);box-shadow:0 14px 36px #000c,inset 0 1px 0 #ffffff22;padding:18px 18px 16px;text-align:center}
+.tag{display:inline-block;padding:6px 12px;border-radius:999px;border:1px solid #69d9c1a0;background:#2cd2bc15;color:#97ffe0;font-size:11px;font-weight:900;letter-spacing:.18em;text-transform:uppercase}
+.panel h1{margin:10px 0 10px;font-size:clamp(28px,5vw,52px);line-height:1.02;letter-spacing:-.05em;color:#ffe59a;text-shadow:0 4px 0 #784331,0 10px 24px #0008}
+.panel p{max-width:650px;margin:0 auto 12px;color:#def0f7;font-size:14px;line-height:1.55}
+.heroRow{display:flex;justify-content:center;align-items:flex-end;gap:16px;min-height:100px;margin:8px 0 6px}
+.miniHero{width:92px;height:92px;border-radius:50%;background:radial-gradient(circle,#276882,#102d44 66%);border:2px solid #78d9d1;display:grid;place-items:center;box-shadow:0 8px 22px #0007}
+.btnrow{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-top:12px}
+.btn{border:0;border-radius:13px;padding:12px 18px;font-size:15px;font-weight:900;color:#173448;background:linear-gradient(#ffe79d,#ebb35c);box-shadow:0 5px 0 #93542d,0 10px 26px #ffca6b44}
+.btn.alt{background:#1a425b;color:#ecfdff;border:1px solid #6c9eaf;box-shadow:0 5px 0 #0c2232}
+.btn:active{transform:translateY(3px)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:left;margin-top:14px}
+.card{background:#13374cc9;border:1px solid #406d83;border-radius:14px;padding:12px}
+.card b{display:block;color:#92ffe4;font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
+.card span{display:block;color:#e8f9ff;font-size:13px;line-height:1.5}
+.actions{display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center}
+.actionBtn{width:clamp(46px,6vw,78px);height:clamp(46px,6vw,78px);border-radius:50%;border:4px solid #28526a;background:radial-gradient(circle at 33% 25%,#9ae8ff,#2c82a6 52%,#143f59 76%);box-shadow:inset 0 4px 8px #c5fbff7a,inset 0 -8px 10px #0a2134,0 6px 0 #081726,0 10px 18px #0008;color:#fff;font-size:clamp(14px,2vw,24px);font-weight:1000;line-height:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;-webkit-tap-highlight-color:transparent}
+.actionBtn small{font-size:9px;letter-spacing:.08em}
+.actionBtn.gold{background:radial-gradient(circle at 35% 24%,#ffe9a8,#efb25d 52%,#8b5528 78%);color:#2f2518;border-color:#925f35;box-shadow:inset 0 4px 8px #fff3c7,inset 0 -8px 10px #8a501f,0 6px 0 #382110,0 10px 18px #0008}
+.actionBtn.purple{background:radial-gradient(circle at 35% 24%,#efc2ff,#9f72df 52%,#5841a5 78%);border-color:#6a58a2}
+.foot{position:absolute;left:0;right:0;bottom:6px;text-align:center;font-size:11px;color:#bbd4df;z-index:3;pointer-events:none}
+@media (max-width:860px){.grid{grid-template-columns:1fr 1fr}.pill{font-size:10px;padding:5px 8px}.panel p{font-size:12px}.card span{font-size:12px}}
+@media (max-width:560px){
+ #app{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) clamp(118px,22dvh,210px)}
+ .viewport{grid-row:1;grid-column:1}
+ .side{grid-row:2;grid-column:1;height:auto}
+ .side.right{position:absolute;right:0;left:0;bottom:0;justify-content:flex-end;padding:0 8px calc(env(safe-area-inset-bottom) + 2px) 8px;pointer-events:none}
+ .side.right > *{pointer-events:auto}
+ .side.left{position:absolute;left:0;right:0;bottom:0;justify-content:flex-start;padding:0 8px calc(env(safe-area-inset-bottom) + 2px) 8px;pointer-events:none}
+ .side.left > *{pointer-events:auto}
+ .rightpack{flex-direction:row;gap:10px;margin-left:auto}
+ .leftpack{flex-direction:row;gap:10px;margin-right:auto}
+ .caption{display:none}
+ .panel{padding:12px}
+ .heroRow{min-height:74px}
+ .miniHero{width:70px;height:70px}
+ .grid{grid-template-columns:1fr}
+ .foot{display:none}
+}
+@media (orientation:landscape) and (pointer:coarse) and (max-height:540px){
+ #app{padding:2px;gap:2px;grid-template-columns:78px minmax(0,1fr) 116px}
+ .stick{width:70px;height:70px}.actionBtn{width:52px;height:52px;border-width:3px}.actionBtn small{font-size:7px}
+ .topbar{top:4px;left:4px;right:4px}.pill{font-size:10px;padding:4px 7px}.minibtn{padding:5px 7px;font-size:10px}.foot{display:none}
+}
+</style>
+</head>
+<body>
+<main id="app">
+  <aside class="side left"><div class="leftpack"><div class="stick" id="moveStick" aria-label="Move joystick"><div class="knob" id="moveKnob"></div></div><div class="caption">MOVE<small>Swim in any direction</small></div></div></aside>
+  <section class="viewport">
+    <canvas id="game" width="1280" height="720"></canvas>
+    <div class="topbar">
+      <div class="pills">
+        <span class="pill" id="zonePill">AQUARIUM — ENTRANCE</span>
+        <span class="pill" id="heroPill">FISHMAN</span>
+        <span class="pill" id="statusPill">♥ 6 · ☆ 0</span>
+        <span class="pill" id="objectivePill">Collect the pearls</span>
+      </div>
+      <button class="minibtn" id="menuBtn">☰ MENU</button>
+    </div>
+    <div class="overlay" id="overlay"><div class="panel" id="panel"></div></div>
+    <div class="foot">Landscape phone play supported · Left joystick moves · A attacks · B interacts / switch · S uses special</div>
+  </section>
+  <aside class="side right"><div class="rightpack actions">
+    <button class="actionBtn gold" id="attackBtn">A<small>ATTACK</small></button>
+    <button class="actionBtn" id="interactBtn">B<small>USE</small></button>
+    <button class="actionBtn purple" id="specialBtn">S<small>SPECIAL</small></button>
+  </div></aside>
+</main>
+<script>
+(()=>{
+'use strict';
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+const overlay=document.getElementById('overlay'),panel=document.getElementById('panel');
+const zonePill=document.getElementById('zonePill'),heroPill=document.getElementById('heroPill'),statusPill=document.getElementById('statusPill'),objectivePill=document.getElementById('objectivePill');
+const menuBtn=document.getElementById('menuBtn');
+const moveStick=document.getElementById('moveStick'),moveKnob=document.getElementById('moveKnob');
+const attackBtn=document.getElementById('attackBtn'),interactBtn=document.getElementById('interactBtn'),specialBtn=document.getElementById('specialBtn');
+const W=1280,H=720;
+const keys={};
+let scene='menu',chapter='aquarium',zoneIndex=0,last=0,time=0,holdAttack=false,holdSpecial=false,notification='',camera={x:0,y:0};
+let moveInput={x:0,y:0,id:null};
+let world=null;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const rand=(a,b)=>a+Math.random()*(b-a);
+const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const colors={teal:'#67efe8',deep:'#0a607a',gold:'#ffd67a',orange:'#ffb45a',pink:'#ff8aae',white:'#effcff'};
+
+const artBriefs=[
+  {title:'Fishman sprite redesign', text:'Heroic turquoise fish-boy silhouette, yellow accent belt and fin highlights, brighter facial expression, 8-direction swimming, clear attack pose, shield and victory animation.'},
+  {title:'Kai sprite redesign', text:'Readable inventor-kid silhouette, compact aqua suit, orange hair, gadget backpack, clean swim motion, collect/use-gadget/hurt/victory states.'},
+  {title:'Aquarium background redesign', text:'Layered far / mid / foreground composition: curved glass, glowing tanks, coral, pipes, control lights, fish silhouettes, drifting bubbles and water caustic lighting.'},
+  {title:'Bubble and weapon FX redesign', text:'Softer aqua glows, readable projectiles, sparkly pickups, impact starbursts, shield rings, clean EMP pulse and weapon-switch feedback.'}
+];
+
+function showMenu(){
+  scene='menu';
+  overlay.classList.remove('hide');
+  panel.innerHTML=`<div class="tag">Fishman v23</div><h1>Aquarium Graphics Upgrade</h1>
+  <div class="heroRow"><div class="miniHero">🐟</div><div class="miniHero">🧒</div><div class="miniHero">🚤</div></div>
+  <p>This build upgrades the <b>Aquarium</b> with brighter graphics, more detailed backgrounds, better effects, and polished mobile controls. It also includes a repaired, visible yellow <b>Submarine Challenge</b>.</p>
+  <div class="btnrow">
+    <button class="btn" data-action="playAquarium">▶ Play Aquarium</button>
+    <button class="btn alt" data-action="playSub">🚤 Submarine Challenge</button>
+    <button class="btn alt" data-action="briefs">🎨 Art Briefs</button>
+  </div>
+  <div class="grid">
+    <div class="card"><b>Aquarium zone 1</b><span>Play as Fishman. Collect pearls, defeat security drones, and unlock the main tank gate.</span></div>
+    <div class="card"><b>Aquarium zone 2</b><span>Play as Kai. Activate consoles, avoid hazards, and reopen the escape portal with your gadgets.</span></div>
+    <div class="card"><b>Submarine stage</b><span>Steer the large yellow submarine, gather passes, avoid mines, and dock at the prison gate.</span></div>
+  </div>`;
+}
+
+function showBriefs(){
+  scene='panel';
+  overlay.classList.remove('hide');
+  panel.innerHTML=`<div class="tag">v23 asset briefs</div><h1>Graphics Production Notes</h1>
+  <p>These are the four detailed art targets for the new visual pass.</p>
+  <div class="grid">${artBriefs.map(b=>`<div class="card"><b>${b.title}</b><span>${b.text}</span></div>`).join('')}</div>
+  <div class="btnrow"><button class="btn" data-action="playAquarium">▶ Play Aquarium</button><button class="btn alt" data-action="backMenu">Back to menu</button></div>`;
+}
+
+function heroTemplate(kind,x,y){
+  if(kind==='fishman') return {kind,x,y,r:26,vx:0,vy:0,speed:265,maxHp:6,hp:6,inv:0,attackCd:0,specialCd:0,shield:0,faceX:1,faceY:0,score:0};
+  if(kind==='kai') return {kind,x,y,r:23,vx:0,vy:0,speed:240,maxHp:5,hp:5,inv:0,attackCd:0,specialCd:0,shield:0,faceX:1,faceY:0,score:0};
+  return {kind:'submarine',x,y,r:44,vx:0,vy:0,speed:220,maxHp:7,hp:7,inv:0,attackCd:0,specialCd:0,shield:0,faceX:1,faceY:0,score:0};
+}
+
+function createAquariumZone1(){
+  const worldW=2350,worldH=720;
+  return {
+    chapter:'aquarium', name:'Aquarium — Entrance', hero:heroTemplate('fishman',140,450), worldW, worldH,
+    pearls:Array.from({length:5},(_,i)=>({x:380+i*330+(i%2)*60,y:220+(i%3)*110,collected:false,type:'pearl'})),
+    enemies:[
+      {x:610,y:300,r:22,hp:3,maxHp:3,type:'drone',phase:0,stunned:0},
+      {x:990,y:450,r:22,hp:3,maxHp:3,type:'drone',phase:1.4,stunned:0},
+      {x:1460,y:270,r:22,hp:4,maxHp:4,type:'drone',phase:2.6,stunned:0},
+      {x:1870,y:420,r:26,hp:5,maxHp:5,type:'eel',phase:1.9,stunned:0}
+    ],
+    shots:[], enemyShots:[], bubbles:makeBubbles(32,worldW,worldH), fishes:makeFish(14,worldW),
+    switches:[{x:2030,y:360,active:false,label:'Main Gate'}],
+    coral:makeCoral(worldW),
+    objective:()=>`Pearls ${countCollected(this?.pearls||[])} / 5 · Enemies ${countDefeated(this?.enemies||[])} / 4`,
+    complete:false, nextZone:'aquarium2', message:'Collect 5 pearls and defeat all 4 security creatures. Then activate the Main Gate with B.'
+  };
+}
+
+function createAquariumZone2(){
+  const worldW=2400,worldH=720;
+  return {
+    chapter:'aquarium', name:'Aquarium — Reactor Wing', hero:heroTemplate('kai',160,470), worldW, worldH,
+    pearls:Array.from({length:4},(_,i)=>({x:540+i*370,y:180+((i+1)%3)*120,collected:false,type:'star'})),
+    enemies:[
+      {x:670,y:260,r:20,hp:3,maxHp:3,type:'jelly',phase:0.7,stunned:0},
+      {x:1030,y:420,r:20,hp:3,maxHp:3,type:'drone',phase:2.2,stunned:0},
+      {x:1490,y:280,r:20,hp:3,maxHp:3,type:'jelly',phase:3.4,stunned:0},
+      {x:1930,y:360,r:30,hp:8,maxHp:8,type:'guardian',phase:1.8,stunned:0}
+    ],
+    shots:[], enemyShots:[], bubbles:makeBubbles(28,worldW,worldH), fishes:makeFish(10,worldW), coral:makeCoral(worldW),
+    switches:[{x:780,y:520,active:false,label:'Console A'},{x:1270,y:180,active:false,label:'Console B'},{x:1840,y:520,active:false,label:'Console C'}],
+    objective:()=>`Consoles ${countActive(this?.switches||[])} / 3 · Security ${countDefeated(this?.enemies||[])} / 4`,
+    complete:false, nextZone:'win', message:'Use Kai to activate 3 consoles. Defeat the Guardian and reopen the portal.'
+  };
+}
+
+function createSubmarineZone(){
+  const worldW=2600,worldH=720;
+  return {
+    chapter:'submarine', name:'Yellow Submarine', hero:heroTemplate('submarine',180,420), worldW, worldH,
+    pearls:[
+      {x:650,y:220,collected:false,type:'pass'},{x:1010,y:500,collected:false,type:'pass'},
+      {x:1470,y:220,collected:false,type:'pass'},{x:1980,y:470,collected:false,type:'pass'}],
+    enemies:[
+      {x:740,y:350,r:26,hp:4,maxHp:4,type:'mine',phase:1.2,stunned:0},{x:1210,y:240,r:26,hp:4,maxHp:4,type:'mine',phase:2.2,stunned:0},
+      {x:1660,y:450,r:28,hp:5,maxHp:5,type:'mine',phase:3.1,stunned:0},{x:2140,y:310,r:32,hp:6,maxHp:6,type:'warden',phase:2.5,stunned:0}
+    ],
+    shots:[], enemyShots:[], bubbles:makeBubbles(36,worldW,worldH), fishes:makeFish(8,worldW), coral:makeCoral(worldW),
+    switches:[{x:2365,y:365,active:false,label:'Prison Dock'}],
+    objective:()=>`Passes ${countCollected(this?.pearls||[])} / 4 · Dock at prison gate`,
+    complete:false, nextZone:'winSub', message:'The submarine is now clearly visible. Collect 4 security passes, avoid mines, then dock at the prison gate with B.'
+  };
+}
+
+function countCollected(arr){return arr.filter(o=>o.collected).length}
+function countDefeated(arr){return arr.filter(o=>o.hp<=0).length}
+function countActive(arr){return arr.filter(o=>o.active).length}
+function makeBubbles(n,w,h){return Array.from({length:n},()=>({x:rand(0,w),y:rand(0,h),r:rand(4,16),spd:rand(12,34),drift:rand(-12,12)}));}
+function makeFish(n,w){return Array.from({length:n},(_,i)=>({x:rand(0,w),y:rand(80,620),s:rand(0.5,1.2),spd:rand(14,26)*(Math.random()<0.5?1:-1),hue:i%2?'#84d7ee22':'#c0f7ff18'}));}
+function makeCoral(w){
+  const arr=[]; for(let x=0;x<w;x+=140){ arr.push({x:x+rand(-30,30),h:rand(40,120),hue:Math.random()<0.5?'#2cc3b5':'#f070a2'});} return arr;
+}
+
+function startAquarium(){chapter='aquarium'; zoneIndex=0; world=createAquariumZone1(); scene='play'; overlay.classList.add('hide'); notification=world.message;}
+function startSub(){chapter='submarine'; zoneIndex=0; world=createSubmarineZone(); scene='play'; overlay.classList.add('hide'); notification=world.message;}
+function gotoAquarium2(){zoneIndex=1; world=createAquariumZone2(); scene='play'; overlay.classList.add('hide'); notification=world.message;}
+function showWin(title,desc,nextAction){
+  scene='panel'; overlay.classList.remove('hide');
+  panel.innerHTML=`<div class="tag">Mission complete</div><h1>${title}</h1><p>${desc}</p><div class="btnrow">${nextAction||''}<button class="btn alt" data-action="backMenu">Menu</button></div>`;
+}
+
+function resetCurrent(){ if(chapter==='aquarium'&&zoneIndex===0) startAquarium(); else if(chapter==='aquarium'&&zoneIndex===1) gotoAquarium2(); else startSub(); }
+
+function attack(){
+  if(scene!=='play'||!world) return;
+  const h=world.hero; if(h.attackCd>0) return;
+  if(h.kind==='submarine'){
+    h.attackCd=.34;
+    world.shots.push({x:h.x+h.faceX*52,y:h.y+h.faceY*8,vx:h.faceX*480,vy:h.faceY*220,r:12,life:1.2,type:'torpedo',dmg:2});
+    notification='Torpedo launched'; return;
+  }
+  if(h.kind==='fishman'){
+    h.attackCd=.28;
+    world.shots.push({x:h.x+h.faceX*32,y:h.y+h.faceY*12,vx:h.faceX*430,vy:h.faceY*240,r:10,life:1.2,type:'bubble',dmg:1});
+  } else {
+    h.attackCd=.36;
+    world.shots.push({x:h.x+h.faceX*28,y:h.y+h.faceY*10,vx:h.faceX*380,vy:h.faceY*200,r:10,life:1.1,type:'pulse',dmg:1});
+  }
+}
+function special(){
+  if(scene!=='play'||!world) return;
+  const h=world.hero; if(h.specialCd>0) return;
+  if(h.kind==='fishman'){
+    h.specialCd=6; h.shield=3.2; notification='Bubble shield active';
+  } else if(h.kind==='kai'){
+    h.specialCd=7; h.shield=1.2; notification='EMP pulse released';
+    for(const e of world.enemies) if(e.hp>0 && Math.hypot(e.x-h.x,e.y-h.y)<220) e.stunned=3.2;
+  } else {
+    h.specialCd=7; h.shield=2.4; notification='Sonar shield active';
+    for(const e of world.enemies) if(e.hp>0 && Math.hypot(e.x-h.x,e.y-h.y)<250) e.stunned=3.6;
+  }
+}
+function interact(){
+  if(scene!=='play'||!world) return;
+  const h=world.hero;
+  let used=false;
+  for(const sw of world.switches){
+    if(Math.hypot(sw.x-h.x,sw.y-h.y)<90){
+      if(chapter==='submarine'){
+        if(countCollected(world.pearls)===4){ sw.active=true; used=true; world.complete=true; showWin('Submarine mission cleared','The bright yellow submarine reaches the underwater prison safely. Naughty is delivered and the prison gate seals shut.', ''); }
+        else { notification=`Need ${4-countCollected(world.pearls)} more security passes`; used=true; }
+      } else {
+        sw.active=true; used=true; notification=`${sw.label} activated`;
+      }
+    }
+  }
+  if(chapter==='aquarium' && zoneIndex===0 && countCollected(world.pearls)===5 && countDefeated(world.enemies)===4 && world.switches[0].active){
+    if(h.x>1980){ used=true; gotoAquarium2(); }
+  }
+  if(chapter==='aquarium' && zoneIndex===1){
+    if(countActive(world.switches)===3 && countDefeated(world.enemies)===4 && h.x>2220){ used=true; showWin('Aquarium upgrade complete','Fishman and Kai clear the upgraded Aquarium chapter. The new art direction is locked for v23.', '<button class="btn" data-action="playSub">Bonus submarine</button>'); }
+  }
+  if(!used) notification='Nothing to use here';
+}
+
+function update(dt){
+  time+=dt;
+  if(scene!=='play'||!world) return;
+  const h=world.hero;
+  // background animations
+  for(const b of world.bubbles){ b.y-=b.spd*dt; b.x+=Math.sin(time*0.9+b.r)*b.drift*dt*0.2; if(b.y<-20){b.y=world.worldH+20; b.x=rand(0,world.worldW);} }
+  for(const f of world.fishes){ f.x+=f.spd*dt; if(f.spd>0 && f.x>world.worldW+60) f.x=-60; if(f.spd<0 && f.x<-60) f.x=world.worldW+60; }
+  // hero move
+  h.inv=Math.max(0,h.inv-dt); h.attackCd=Math.max(0,h.attackCd-dt); h.specialCd=Math.max(0,h.specialCd-dt); h.shield=Math.max(0,h.shield-dt);
+  const kx=(keys.ArrowRight||keys.d?1:0)-(keys.ArrowLeft||keys.a?1:0), ky=(keys.ArrowDown||keys.s?1:0)-(keys.ArrowUp||keys.w?1:0);
+  let dx=moveInput.x, dy=moveInput.y;
+  if(kx||ky){ const m=Math.hypot(kx,ky)||1; dx=kx/m; dy=ky/m; }
+  const mag=Math.hypot(dx,dy);
+  h.vx=dx*h.speed; h.vy=dy*h.speed;
+  h.x=clamp(h.x+h.vx*dt, 70, world.worldW-70); h.y=clamp(h.y+h.vy*dt, 90, world.worldH-90);
+  if(mag>0.08){ h.faceX=dx/mag; h.faceY=dy/mag; }
+  if((holdAttack||keys[' ']) && h.attackCd<=0) attack();
+  if((holdSpecial||keys.Shift) && h.specialCd<=0) special();
+
+  // collectibles
+  for(const p of world.pearls){
+    if(!p.collected && Math.hypot(p.x-h.x,p.y-h.y) < h.r + 24){ p.collected=true; h.score++; notification = p.type==='pass' ? 'Security pass collected' : 'Collected'; }
+  }
+  // enemies and collisions
+  for(const e of world.enemies){
+    if(e.hp<=0) continue;
+    e.stunned=Math.max(0,e.stunned-dt);
+    if(e.type==='mine'){
+      e.x += Math.cos(time*1.1 + e.phase)*16*dt; e.y += Math.sin(time*1.7 + e.phase)*24*dt;
+    } else if(e.type==='guardian'){
+      if(e.stunned<=0){ const ang=Math.atan2(h.y-e.y,h.x-e.x); e.x += Math.cos(ang)*56*dt; e.y += Math.sin(ang)*56*dt; }
+    } else if(e.type==='eel'){
+      if(e.stunned<=0){ e.x += Math.sin(time*2.3 + e.phase)*70*dt; e.y += Math.cos(time*1.4 + e.phase)*45*dt; }
+    } else {
+      if(e.stunned<=0){ const ang=Math.atan2(h.y-e.y,h.x-e.x); e.x += Math.cos(ang)*80*dt; e.y += Math.sin(ang)*80*dt; }
+    }
+    if(Math.hypot(e.x-h.x,e.y-h.y) < e.r + h.r - 6 && h.inv<=0 && h.shield<=0){
+      h.hp--; h.inv=1.2; notification='Ouch!';
+      if(h.hp<=0){ scene='panel'; overlay.classList.remove('hide'); panel.innerHTML=`<div class="tag">Try again</div><h1>Mission failed</h1><p>Your hero needs another attempt. The upgraded graphics build is saved, so just retry the current mission.</p><div class="btnrow"><button class="btn" data-action="retry">Retry</button><button class="btn alt" data-action="backMenu">Menu</button></div>`; return; }
+    }
+  }
+
+  // shots
+  for(let i=world.shots.length-1;i>=0;i--){
+    const s=world.shots[i]; s.x += s.vx*dt; s.y += s.vy*dt; s.life -= dt;
+    if(s.life<=0 || s.x<0 || s.x>world.worldW || s.y<0 || s.y>world.worldH){ world.shots.splice(i,1); continue; }
+    for(const e of world.enemies){
+      if(e.hp>0 && Math.hypot(e.x-s.x,e.y-s.y) < e.r + s.r){ e.hp -= s.dmg; if(s.type==='pulse') e.stunned=1.4; notification = e.hp<=0 ? 'Enemy cleared' : 'Hit'; world.shots.splice(i,1); break; }
+    }
+  }
+
+  // objective completion hints
+  if(chapter==='aquarium' && zoneIndex===0 && countCollected(world.pearls)===5 && countDefeated(world.enemies)===4 && world.switches[0].active) notification='Swim to the right gate and press B';
+  if(chapter==='aquarium' && zoneIndex===0 && countCollected(world.pearls)===5 && countDefeated(world.enemies)===4 && !world.switches[0].active) notification='Press B at the Main Gate switch';
+  if(chapter==='aquarium' && zoneIndex===1 && countActive(world.switches)===3 && countDefeated(world.enemies)===4) notification='Portal open! Swim to the far right and press B';
+  if(chapter==='submarine' && countCollected(world.pearls)===4) notification='All passes found! Dock at the prison gate with B';
+
+  camera.x = clamp(h.x - W/2, 0, Math.max(0, world.worldW - W));
+  camera.y = 0;
+  updateUI();
+}
+
+function updateUI(){
+  if(!world) return;
+  zonePill.textContent = world.name;
+  heroPill.textContent = world.hero.kind==='fishman' ? 'FISHMAN' : world.hero.kind==='kai' ? 'KAI' : 'SUBMARINE';
+  statusPill.textContent = `♥ ${world.hero.hp} / ${world.hero.maxHp} · ☆ ${world.hero.score}`;
+  if(chapter==='aquarium' && zoneIndex===0) objectivePill.textContent = `Pearls ${countCollected(world.pearls)}/5 · Foes ${countDefeated(world.enemies)}/4`;
+  else if(chapter==='aquarium' && zoneIndex===1) objectivePill.textContent = `Consoles ${countActive(world.switches)}/3 · Foes ${countDefeated(world.enemies)}/4`;
+  else objectivePill.textContent = `Passes ${countCollected(world.pearls)}/4 · Dock at the gate`;
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  if(!world){ drawMenuBackdrop(); return; }
+  drawBackground(world);
+  ctx.save(); ctx.translate(-camera.x,0);
+  drawAquariumScenery(world);
+  for(const p of world.pearls) if(!p.collected) drawCollectible(p);
+  for(const sw of world.switches) drawSwitch(sw);
+  for(const e of world.enemies) if(e.hp>0) drawEnemy(e);
+  for(const s of world.shots) drawShot(s);
+  drawHero(world.hero);
+  ctx.restore();
+  drawHud();
+}
+
+function drawMenuBackdrop(){
+  const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,'#104964'); g.addColorStop(1,'#052033'); ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  for(let i=0;i<32;i++){ drawBubble(60+i*38,(time*30+i*17)%760,8+(i%5),0.25); }
+  ctx.fillStyle='#c0f6ff18';
+  for(let i=0;i<8;i++){ drawFishSilhouette(100+i*150,120+(i%4)*80,1+i%2*.3); }
+}
+
+function drawBackground(w){
+  const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,'#0f5674'); g.addColorStop(0.45,'#0a3d57'); g.addColorStop(1,'#062636');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  // caustics
+  for(let i=0;i<8;i++){
+    ctx.fillStyle=`rgba(180,255,255,${0.035 + 0.01*Math.sin(time*0.8+i)})`;
+    ctx.beginPath(); ctx.ellipse(120+i*170,70+Math.sin(time*0.7+i)*12,120,22,0.2,0,Math.PI*2); ctx.fill();
+  }
+  // far glass walls and columns
+  for(let i=0;i<6;i++){
+    const x=(i*240 - (camera.x*0.25)%240);
+    ctx.fillStyle='#81dfff14'; ctx.fillRect(x,0,26,H);
+    ctx.fillStyle='#d1ffff0e'; ctx.fillRect(x+26,0,6,H);
+  }
+  ctx.fillStyle='#d7feff0a'; ctx.fillRect(0,92,W,4);
+  // far fish and bubbles
+  for(const f of w.fishes){ drawFishSilhouette(f.x-camera.x*0.2,f.y,f.s,f.hue); }
+  for(const b of w.bubbles){ drawBubble(b.x-camera.x*0.15,b.y,b.r,0.18); }
+}
+
+function drawAquariumScenery(w){
+  // mid tanks
+  for(let x=0;x<w.worldW;x+=430){
+    const xx=x+40;
+    ctx.fillStyle='#9af0ff12'; roundRect(xx,110,240,280,18,true,false);
+    ctx.strokeStyle='#c7ffff28'; ctx.lineWidth=3; roundRect(xx,110,240,280,18,false,true);
+    ctx.fillStyle='#66eff01b'; roundRect(xx+24,132,194,236,16,true,false);
+    ctx.fillStyle='#82dbef20'; ctx.fillRect(xx+56,388,126,24);
+    ctx.fillStyle='#ffd87a'; ctx.fillRect(xx+96,398,36,8);
+  }
+  // foreground coral and rocks
+  for(const c of w.coral){
+    ctx.fillStyle='#0b3342'; ctx.beginPath(); ctx.ellipse(c.x,685,58,18,0,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#15495b'; ctx.lineWidth=6; ctx.beginPath(); ctx.moveTo(c.x,668); ctx.quadraticCurveTo(c.x+10,640,c.x-2,602-c.h*0.5); ctx.stroke();
+    ctx.strokeStyle=c.hue; ctx.lineWidth=7; ctx.beginPath(); ctx.moveTo(c.x,670); ctx.quadraticCurveTo(c.x-16,640,c.x-24,670-c.h); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(c.x+10,670); ctx.quadraticCurveTo(c.x+24,635,c.x+34,670-c.h*0.7); ctx.stroke();
+    ctx.strokeStyle='#6fe0cf'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(c.x-8,670); ctx.quadraticCurveTo(c.x-2,645,c.x+4,670-c.h*0.45); ctx.stroke();
+  }
+  // pipes and control boxes
+  ctx.strokeStyle='#486f7e'; ctx.lineWidth=12; ctx.beginPath(); ctx.moveTo(0,112); ctx.lineTo(w.worldW,112); ctx.stroke();
+  for(let x=250;x<w.worldW;x+=460){
+    ctx.fillStyle='#153f55'; roundRect(x,76,82,52,12,true,false);
+    ctx.fillStyle='#72ffe3'; ctx.fillRect(x+14,92,16,16); ctx.fillStyle='#ffd676'; ctx.fillRect(x+38,92,16,16); ctx.fillStyle='#ff8cad'; ctx.fillRect(x+62,92,8,16);
+  }
+  // exit portals hints
+  if(chapter==='aquarium' && zoneIndex===0){
+    ctx.fillStyle='#9ef9ff22'; roundRect(2240,210,80,290,24,true,false); ctx.strokeStyle='#94f8ff90'; ctx.lineWidth=5; roundRect(2240,210,80,290,24,false,true);
+    if(countCollected(w.pearls)===5 && countDefeated(w.enemies)===4 && w.switches[0].active){ labelText('EXIT → PRESS B',2280,190,'#ffefac',18,true); }
+  }
+  if(chapter==='aquarium' && zoneIndex===1){
+    ctx.fillStyle='#b687ff24'; roundRect(2280,190,90,320,26,true,false); ctx.strokeStyle='#dcb5ff90'; ctx.lineWidth=5; roundRect(2280,190,90,320,26,false,true);
+    labelText('PORTAL',2325,175,'#eed6ff',18,true);
+  }
+  if(chapter==='submarine'){
+    ctx.fillStyle='#96f0ff10'; roundRect(2315,220,90,250,18,true,false); ctx.strokeStyle='#91f6ff86'; ctx.lineWidth=5; roundRect(2315,220,90,250,18,false,true);
+    labelText('PRISON DOCK',2360,198,'#ffe9a0',18,true);
+  }
+}
+
+function drawBubble(x,y,r,a){ ctx.beginPath(); ctx.fillStyle=`rgba(190,255,255,${a})`; ctx.arc(x,y,r,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.fillStyle=`rgba(255,255,255,${a*1.3})`; ctx.arc(x-r*0.25,y-r*0.25,Math.max(1.5,r*0.2),0,Math.PI*2); ctx.fill(); }
+function drawFishSilhouette(x,y,s=1,color='#d7ffff14'){ ctx.save(); ctx.translate(x,y); ctx.scale(s,s); ctx.fillStyle=color; ctx.beginPath(); ctx.ellipse(0,0,28,12,0,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.moveTo(18,0); ctx.lineTo(36,-10); ctx.lineTo(34,0); ctx.lineTo(36,10); ctx.closePath(); ctx.fill(); ctx.restore(); }
+function drawCollectible(p){
+  ctx.save(); ctx.translate(p.x,p.y);
+  const pulse=1+Math.sin(time*4+p.x*0.01)*0.08; ctx.scale(pulse,pulse);
+  if(p.type==='pearl'){ ctx.fillStyle='#ffd87a'; ctx.beginPath(); ctx.arc(0,0,16,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#fff8db'; ctx.beginPath(); ctx.arc(-4,-5,5,0,Math.PI*2); ctx.fill(); }
+  else if(p.type==='star'){ ctx.fillStyle='#92f8ff'; star(0,0,7,15,5); ctx.fill(); }
+  else { ctx.fillStyle='#ffe48d'; roundRect(-16,-12,32,24,7,true,false); ctx.fillStyle='#36556d'; ctx.fillRect(-8,-4,16,8); }
+  ctx.restore();
+}
+function drawSwitch(sw){
+  ctx.fillStyle=sw.active?'#2fe0a6':'#27586f'; roundRect(sw.x-28,sw.y-26,56,52,12,true,false);
+  ctx.fillStyle=sw.active?'#e5fff4':'#98d8e2'; ctx.fillRect(sw.x-12,sw.y-10,24,20);
+  labelText(sw.label + (sw.active?' ✓':' · B'), sw.x, sw.y-40, sw.active?'#c1ffe9':'#f5f8ff', 15, true);
+}
+function drawEnemy(e){
+  ctx.save(); ctx.translate(e.x,e.y);
+  if(e.type==='drone'){
+    ctx.fillStyle=e.stunned>0?'#b6ffff':'#ff8db2'; ctx.beginPath(); ctx.arc(0,0,e.r,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#2c3355'; ctx.beginPath(); ctx.arc(-7,-5,5,0,Math.PI*2); ctx.arc(7,-5,5,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#ffd6e6'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(-e.r,0); ctx.lineTo(-e.r-16*Math.sin(time*5+e.phase),-18); ctx.moveTo(e.r,0); ctx.lineTo(e.r+16*Math.sin(time*5+e.phase),18); ctx.stroke();
+  } else if(e.type==='jelly'){
+    ctx.fillStyle=e.stunned>0?'#cefbff':'#d38bff'; ctx.beginPath(); ctx.arc(0,-8,e.r,Math.PI,Math.PI*2); ctx.lineTo(e.r,8); ctx.quadraticCurveTo(0,18,-e.r,8); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle='#ead1ff'; ctx.lineWidth=3; for(let i=-2;i<=2;i++){ ctx.beginPath(); ctx.moveTo(i*7,8); ctx.quadraticCurveTo(i*8+4,22+Math.sin(time*4+i)*6,i*6,32); ctx.stroke(); }
+  } else if(e.type==='eel'){
+    ctx.rotate(Math.sin(time*2+e.phase)*0.2); ctx.strokeStyle=e.stunned>0?'#c7ffff':'#96ff8f'; ctx.lineWidth=14; ctx.beginPath(); ctx.moveTo(-26,0); ctx.quadraticCurveTo(0,-16,18,2); ctx.quadraticCurveTo(34,16,42,0); ctx.stroke(); ctx.fillStyle='#193c28'; ctx.beginPath(); ctx.arc(32,-4,4,0,Math.PI*2); ctx.fill();
+  } else if(e.type==='guardian'){
+    ctx.fillStyle=e.stunned>0?'#d3ffff':'#ffb576'; ctx.beginPath(); ctx.arc(0,0,e.r,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#6b432b'; ctx.fillRect(-10,-8,20,16); ctx.strokeStyle='#ffd6ad'; ctx.lineWidth=5; ctx.beginPath(); ctx.moveTo(-e.r,0); ctx.lineTo(-e.r-18,-12); ctx.moveTo(e.r,0); ctx.lineTo(e.r+18,12); ctx.stroke();
+  } else if(e.type==='mine'){
+    ctx.fillStyle=e.stunned>0?'#caffff':'#ff9f76'; ctx.beginPath(); ctx.arc(0,0,e.r,0,Math.PI*2); ctx.fill(); for(let a=0;a<8;a++){ const ang=a*Math.PI/4; ctx.strokeStyle='#ffe0b7'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(Math.cos(ang)*(e.r-2),Math.sin(ang)*(e.r-2)); ctx.lineTo(Math.cos(ang)*(e.r+14),Math.sin(ang)*(e.r+14)); ctx.stroke(); }
+  } else if(e.type==='warden'){
+    ctx.fillStyle=e.stunned>0?'#d6ffff':'#f26e92'; ctx.beginPath(); ctx.arc(0,0,e.r,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#4b2030'; ctx.beginPath(); ctx.arc(-9,-6,5,0,Math.PI*2); ctx.arc(9,-6,5,0,Math.PI*2); ctx.fill(); ctx.strokeStyle='#ffd6e3'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(-16,16); ctx.quadraticCurveTo(0,6,16,16); ctx.stroke();
+  }
+  // hp bar
+  ctx.fillStyle='#0007'; ctx.fillRect(-24,e.r+12,48,6); ctx.fillStyle='#ffd87a'; ctx.fillRect(-24,e.r+12,48*(e.hp/e.maxHp),6);
+  ctx.restore();
+}
+function drawShot(s){
+  ctx.save(); ctx.translate(s.x,s.y);
+  if(s.type==='bubble'){ ctx.fillStyle='#97f9ff'; ctx.beginPath(); ctx.arc(0,0,s.r,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#ffffff'; ctx.beginPath(); ctx.arc(-3,-3,2,0,Math.PI*2); ctx.fill(); }
+  else if(s.type==='pulse'){ ctx.fillStyle='#c2a7ff'; star(0,0,5,11,6); ctx.fill(); }
+  else { ctx.fillStyle='#ffe191'; ctx.beginPath(); ctx.moveTo(-12,-5); ctx.lineTo(10,0); ctx.lineTo(-12,5); ctx.closePath(); ctx.fill(); }
+  ctx.restore();
+}
+function drawHero(h){ if(h.kind==='fishman') drawFishman(h); else if(h.kind==='kai') drawKai(h); else drawSubmarine(h); if(h.shield>0){ ctx.strokeStyle='rgba(175,255,255,0.7)'; ctx.lineWidth=4; ctx.beginPath(); ctx.arc(h.x,h.y,h.r+18+Math.sin(time*6)*4,0,Math.PI*2); ctx.stroke(); } }
+function drawFishman(h){
+  ctx.save(); ctx.translate(h.x,h.y); const ang=Math.atan2(h.faceY,h.faceX||1); ctx.rotate(ang*0.22);
+  const bob=Math.sin(time*8+h.x*0.02)*3;
+  // tail
+  ctx.fillStyle='#1586a0'; ctx.beginPath(); ctx.moveTo(-26,0); ctx.lineTo(-54,-18+bob); ctx.lineTo(-50,0); ctx.lineTo(-54,18+bob); ctx.closePath(); ctx.fill();
+  // body
+  ctx.fillStyle='#52e2dd'; ctx.beginPath(); ctx.ellipse(0,0,28,22,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#affff8'; ctx.beginPath(); ctx.ellipse(6,2,14,11,0,0,Math.PI*2); ctx.fill();
+  // fins
+  ctx.fillStyle='#ffd67a'; ctx.beginPath(); ctx.moveTo(-2,-18); ctx.lineTo(10,-35); ctx.lineTo(20,-12); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-2,18); ctx.lineTo(16,32); ctx.lineTo(18,12); ctx.closePath(); ctx.fill();
+  // arms
+  ctx.strokeStyle='#35b8b8'; ctx.lineWidth=8; ctx.beginPath(); ctx.moveTo(10,-2); ctx.lineTo(26,-8+bob*0.3); ctx.moveTo(6,6); ctx.lineTo(22,12-bob*0.3); ctx.stroke();
+  // belt
+  ctx.fillStyle='#ffcf68'; ctx.fillRect(-8,9,24,6);
+  // face
+  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(12,-6,6.5,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#082e42'; ctx.beginPath(); ctx.arc(14,-6,3,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#0d4c58'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(10,8); ctx.quadraticCurveTo(18,12,24,5); ctx.stroke();
+  labelText('FISHMAN',0,48,'#f4ffff',12,true);
+  ctx.restore();
+}
+function drawKai(h){
+  ctx.save(); ctx.translate(h.x,h.y); const bob=Math.sin(time*7+h.y*0.02)*2;
+  // prop fin/pack
+  ctx.fillStyle='#1b6b8a'; roundRect(-28,-6,18,30,6,true,false); ctx.fillStyle='#ffd87a'; ctx.fillRect(-23,3,8,8);
+  // body suit
+  ctx.fillStyle='#56bbff'; roundRect(-18,-10,36,44,14,true,false); ctx.fillStyle='#a8e7ff'; roundRect(-10,0,20,20,10,true,false);
+  // head
+  ctx.fillStyle='#ffd2af'; ctx.beginPath(); ctx.arc(0,-24,18,0,Math.PI*2); ctx.fill();
+  // hair
+  ctx.fillStyle='#ff9e45'; ctx.beginPath(); ctx.arc(-4,-29,15,Math.PI,Math.PI*2); ctx.lineTo(14,-24); ctx.quadraticCurveTo(4,-40,-15,-28); ctx.fill();
+  // goggles
+  ctx.fillStyle='#17496f'; roundRect(-14,-29,28,10,5,true,false); ctx.fillStyle='#bef7ff'; ctx.fillRect(-10,-27,8,6); ctx.fillRect(2,-27,8,6);
+  // limbs
+  ctx.strokeStyle='#56bbff'; ctx.lineWidth=8; ctx.beginPath(); ctx.moveTo(-10,10); ctx.lineTo(-22,24+bob); ctx.moveTo(10,10); ctx.lineTo(24,22-bob); ctx.moveTo(-8,34); ctx.lineTo(-12,52); ctx.moveTo(8,34); ctx.lineTo(14,50); ctx.stroke();
+  // gadget
+  ctx.fillStyle='#b895ff'; roundRect(18,-2,14,14,4,true,false);
+  labelText('KAI',0,66,'#f4ffff',12,true);
+  ctx.restore();
+}
+function drawSubmarine(h){
+  ctx.save(); ctx.translate(h.x,h.y); const bob=Math.sin(time*3)*2;
+  ctx.fillStyle='#ffd34e'; ctx.beginPath(); ctx.ellipse(0,0,78,42,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#ffe89a'; roundRect(-22,-54,40,24,5,true,false);
+  ctx.fillStyle='#274f73'; for(const dx of[-38,0,38]){ ctx.beginPath(); ctx.arc(dx,0,14,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#9cefff'; ctx.beginPath(); ctx.arc(dx,0,9,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#274f73'; }
+  ctx.fillStyle='#d79f2f'; ctx.fillRect(65,-8,18,16); ctx.fillStyle='#ffcf55'; ctx.beginPath(); ctx.moveTo(82,-10); ctx.lineTo(98,0); ctx.lineTo(82,10); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#d39a27'; ctx.fillRect(-18,32,38,8);
+  labelText('YOUR SUBMARINE',0,-70,'#fff4b7',16,true);
+  ctx.restore();
+}
+function drawHud(){
+  // minimap-ish progress bar bottom
+  ctx.fillStyle='rgba(4,18,28,0.55)'; ctx.fillRect(12,H-24,W-24,12); ctx.fillStyle='#55d9e5';
+  if(world){ ctx.fillRect(12,H-24,(W-24)*(world.hero.x/world.worldW),12); }
+  if(notification){ labelText(notification,W/2,H-36,'#effff0',16,true); }
+}
+
+function roundRect(x,y,w,h,r,fill,stroke){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); if(fill) ctx.fill(); if(stroke) ctx.stroke(); }
+function labelText(txt,x,y,color,size=16,center=false){ ctx.fillStyle='rgba(0,0,0,0.28)'; ctx.font=`900 ${size}px system-ui`; ctx.textAlign=center?'center':'left'; ctx.fillText(txt,x+1.5,y+1.5); ctx.fillStyle=color; ctx.fillText(txt,x,y); }
+function star(x,y,r1,r2,n){ ctx.beginPath(); for(let i=0;i<n*2;i++){ const a=-Math.PI/2 + i*Math.PI/n, rr=i%2?r1:r2; const px=x+Math.cos(a)*rr, py=y+Math.sin(a)*rr; if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);} ctx.closePath(); }
+
+function loop(ts){ const dt=Math.min(0.032,(ts-last||16)/1000); last=ts; update(dt); draw(); requestAnimationFrame(loop); }
+
+// controls
+function setStickFromEvent(el,knob,obj,e){ const rect=el.getBoundingClientRect(); const dx=e.clientX - (rect.left + rect.width/2); const dy=e.clientY - (rect.top + rect.height/2); const d=Math.hypot(dx,dy)||1; const limit=rect.width*0.28; const mag=Math.min(1,d/limit); obj.x = dx/d*mag; obj.y = dy/d*mag; knob.style.transform=`translate(-50%,-50%) translate(${obj.x*limit}px,${obj.y*limit}px)`; }
+function resetStick(knob,obj){ obj.x=0; obj.y=0; obj.id=null; knob.style.transform='translate(-50%,-50%)'; }
+moveStick.addEventListener('pointerdown',e=>{ e.preventDefault(); moveInput.id=e.pointerId; moveStick.classList.add('active'); try{moveStick.setPointerCapture(e.pointerId);}catch{} setStickFromEvent(moveStick,moveKnob,moveInput,e); });
+moveStick.addEventListener('pointermove',e=>{ if(e.pointerId===moveInput.id) setStickFromEvent(moveStick,moveKnob,moveInput,e); });
+for(const ev of ['pointerup','pointercancel','lostpointercapture']) moveStick.addEventListener(ev,e=>{ if(e.pointerId===moveInput.id){ moveStick.classList.remove('active'); resetStick(moveKnob,moveInput); } });
+attackBtn.addEventListener('pointerdown',e=>{e.preventDefault(); holdAttack=true; attack();});
+attackBtn.addEventListener('pointerup',()=>holdAttack=false); attackBtn.addEventListener('pointercancel',()=>holdAttack=false); attackBtn.addEventListener('lostpointercapture',()=>holdAttack=false);
+interactBtn.addEventListener('pointerdown',e=>{e.preventDefault(); interact();});
+specialBtn.addEventListener('pointerdown',e=>{e.preventDefault(); holdSpecial=true; special();});
+specialBtn.addEventListener('pointerup',()=>holdSpecial=false); specialBtn.addEventListener('pointercancel',()=>holdSpecial=false); specialBtn.addEventListener('lostpointercapture',()=>holdSpecial=false);
+menuBtn.addEventListener('click',()=>{ showMenu(); });
+window.addEventListener('keydown',e=>{ if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' ','Shift','Enter'].includes(e.key)) e.preventDefault(); if(e.key===' '&&!keys[e.key]) attack(); if((e.key==='e'||e.key==='Enter')&&!keys[e.key]) interact(); if((e.key==='q'||e.key==='Shift')&&!keys[e.key]) special(); keys[e.key]=true; });
+window.addEventListener('keyup',e=>{ keys[e.key]=false; });
+window.addEventListener('blur',()=>{ holdAttack=false; holdSpecial=false; for(const k in keys) delete keys[k]; resetStick(moveKnob,moveInput); moveStick.classList.remove('active'); });
+panel.addEventListener('click',e=>{ const b=e.target.closest('button[data-action]'); if(!b) return; const a=b.dataset.action; if(a==='playAquarium') startAquarium(); else if(a==='playSub') startSub(); else if(a==='briefs') showBriefs(); else if(a==='backMenu') showMenu(); else if(a==='retry') resetCurrent(); });
+
+showMenu(); requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
