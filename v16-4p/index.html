@@ -310,6 +310,23 @@ html.local-coop #localControllerBoard{display:grid!important;grid-template-colum
  #localControllerBoard .pad-buttons,#localControllerBoard .action-pair{gap:2px!important}
 }
 </style>
+
+<style id="weaponPowersStyle">
+#localControllerBoard .pad-weapon{border-color:#a99bff!important;color:#f7e9ff!important;background:radial-gradient(circle at 35% 25%,#9473d1,#3f3067)!important}
+#localControllerBoard .pad-heading{gap:3px}
+#localControllerBoard .pad-buttons,#localControllerBoard .action-pair{flex-wrap:wrap;max-width:99px!important;gap:4px!important}
+#localControllerBoard .pad-button,#localControllerBoard .touch-right .joy-button{flex:0 0 auto!important}
+#localControllerBoard #touchControl .touch-right{min-width:0!important;gap:3px!important}
+#localControllerBoard .pad-controls{gap:2px!important}
+#localControllerBoard .pad-controls .pad-stick-wrap{flex:none}
+#localControllerBoard .pad-heading select{width:42%;max-width:148px}
+#localControllerBoard .pad-heading .pad-player-name{font-size:11px;white-space:nowrap}
+.touch-right .weapon-action{border-color:#a08fd4;background:radial-gradient(circle at 30% 20%,#b89cf3,#62509d 70%,#322654)}
+@media(min-width:900px){#localControllerBoard .pad-buttons,#localControllerBoard .action-pair{max-width:114px!important}}
+@media(max-width:670px){#localControllerBoard .pad-button,#localControllerBoard .touch-right .joy-button{width:32px!important;height:32px!important;min-width:32px!important;min-height:32px!important}
+ #localControllerBoard .pad-buttons,#localControllerBoard .action-pair{gap:2px!important;max-width:68px!important}}
+@media(orientation:landscape) and (max-height:470px){#localControllerBoard .pad-buttons,#localControllerBoard .action-pair{max-width:79px!important}}
+</style>
 </head>
 <body>
 <main class="shell">
@@ -326,7 +343,7 @@ html.local-coop #localControllerBoard{display:grid!important;grid-template-colum
   <div class="stick-unit"><div id="joystick" class="stick-base" role="group" tabindex="0" aria-label="Move: drag the thumbstick in any direction"><div class="stick-arrows" aria-hidden="true"><span class="up">▲</span><span class="left">◀</span><span class="right">▶</span><span class="down">▼</span></div><div id="stickKnob" class="stick-knob"><span class="stick-grip"></span></div></div><span class="stick-caption">LEFT STICK<small>Slide your thumb<br>to move freely</small></span></div>
   <div class="touch-right" aria-label="Right joystick aims and fires">
   <div id="aimStick" class="stick-base aim-stick" role="group" tabindex="0" aria-label="Right thumbstick: aim and shoot in any direction"><div class="stick-arrows" aria-hidden="true"><span class="up">▲</span><span class="left">◀</span><span class="right">▶</span><span class="down">▼</span></div><div id="aimKnob" class="stick-knob"><span class="stick-grip"></span></div><span class="aim-mark">AIM · FIRE</span></div>
-  <div class="action-pair"><button class="joy-button" data-key="interact" aria-label="B button: use or dodge"><span class="button-letter">B</span><span class="button-name">USE</span></button><button class="joy-button action" data-key="action" aria-label="A button: fire toward target"><span class="button-letter">A</span><span class="button-name">FIRE</span></button><button class="joy-button skill-action" data-key="skill" id="skillBtn" aria-label="S button: special skill"><span class="button-letter">S</span><span class="button-name" id="skillName">SKILL</span><span id="skillCooldown" class="skill-cooldown"></span></button></div>
+  <div class="action-pair"><button class="joy-button" data-key="interact" aria-label="B button: use or dodge"><span class="button-letter">B</span><span class="button-name">USE</span></button><button class="joy-button action" data-key="action" aria-label="A button: fire toward target"><span class="button-letter">A</span><span class="button-name">FIRE</span></button><button class="joy-button skill-action" data-key="skill" id="skillBtn" aria-label="S button: special skill"><span class="button-letter">S</span><span class="button-name" id="skillName">SKILL</span><span id="skillCooldown" class="skill-cooldown"></span></button><button class="joy-button weapon-action" data-key="weapon" aria-label="W: switch collected weapon"><span class="button-letter">W</span><span class="button-name">WEAPON</span></button></div>
  </div>
  </div>
  <div class="under"><p>For the easiest play, turn your phone sideways. Left stick = move · Hold A = attack · B = interact · Keyboard controls also work.</p><div class="keys"><span class="key">W A S D / ↑ ↓ ← →</span><span class="key">SPACE Power</span><span class="key">E Interact</span><span class="key">1 2 3 Swap hero</span><span class="key">P Pause</span></div></div>
@@ -599,6 +616,7 @@ function ensureWeaponState(player=g){
  if(!Number.isFinite(player.weaponShield))player.weaponShield=0;
 }
 function cycleWeapon(player=g){
+ if(net()?.role==='guest'&&player===g){net()?.sendAction('weapon');return true;}
  if(scene!=='playing'||!player)return false;ensureWeaponState(player);
  const owned=player.weaponsOwned.filter(k=>WEAPON_KEYS.includes(k));if(owned.length<2)return false;
  const index=owned.indexOf(player.weapon);player.weapon=owned[(index+1)%owned.length];player.cool=0;
@@ -680,7 +698,7 @@ function menu(){scene='menu';g=null;cameraX=0;particles=[];toastLife=0;switchEl.
  const picks=chapters.map((ch,i)=>`<button class="chapterpick" data-start="${i}" ${i>=unlock?'disabled':''}><b>${i<unlock?'CHAPTER '+(i+1):'🔒 LOCKED'}</b><span>${ch.icon} ${ch.short}</span></button>`).join('');
  const rule=difficulty==='nightmare'?'☠ NIGHTMARE · 3 hearts in stages, 5 boss hearts, frantic volleys, extra trackers, fastest attacks and limited time.':difficulty==='expert'?'⚔ HERO · 6 items per area, chasers, tighter dodge timing, 7 boss hearts and timed objectives.':'🌟 EASY · 4 items per area, longer warnings, extra hearts, forgiving attacks and no boss timer.';
  const diffButtons=[['classic','🌟 EASY','Gentle · learn'],['expert','⚔ HERO','Tough · tactical'],['nightmare','☠ NIGHTMARE','Brutal · intense']].map(([key,name,desc])=>`<button class="diff-card ${difficulty===key?'active':''}" data-diff="${key}" aria-pressed="${difficulty===key}"><strong>${name}</strong><small>${desc}</small></button>`).join('');
- showScreen(`<span class="tag">9 CHAPTER BOSSES • FINAL BOSS RUSH • TWIN-STICK</span><h1><span>FISHMAN</span><br>THE UNDERWATER<br>ADVENTURE</h1><p>${rule}<br>Face a different boss every chapter, then all nine in the final arena. McTreeFace still has his three boss forms. LEFT STICK moves; RIGHT STICK aims and fires. Your health resets when you revive, using one of your limited lives. A attacks, B interacts/dodges, and S unleashes an upgradeable special skill. <strong style="color:#ffe18e">To play together on ONE screen, press the ONE V button to add P2, then P3, then P4. Every player receives their own MOVE joystick, AIM + FIRE joystick, A, B and S buttons.</strong> Collect ★ stars and character food! Tilt your phone sideways for Joy-Con-style play.</p><div class="difficulty-picks" aria-label="Choose one of three difficulty levels">${diffButtons}</div><div class="buttonrow">${button(unlock>1?'Continue Story':'Start Adventure','continue')}${button('⚡ Boss Practice','boss','secondary')}${button('🚤 Submarine Practice','submarine','secondary')}${button('👥 Play Together · 1–4 Players','online','secondary')}</div><div class="chaptergrid">${picks}</div><p class="tip">RIGHT STICK = AIM + FIRE • LEFT STICK = MOVE • B = DODGE / USE • Beware glowing RED warning zones.</p>`);
+ showScreen(`<span class="tag">9 CHAPTER BOSSES • FINAL BOSS RUSH • TWIN-STICK</span><h1><span>FISHMAN</span><br>THE UNDERWATER<br>ADVENTURE</h1><p>${rule}<br>Face a different boss every chapter, then all nine in the final arena. McTreeFace still has his three boss forms. LEFT STICK moves; RIGHT STICK aims and fires. Your health resets when you revive, using one of your limited lives. Collect v23 weapons: Rapid Blaster, Triple Barrel, Charge Cannon, Homing Pod and Electric Arc; find Shield Generators and Golden Upgrade Cores. Press W on your gamepad to switch weapons (X on a keyboard). Taking a hit can weaken or remove an unshielded special weapon. A attacks, B interacts/dodges, and S unleashes an upgradeable special skill. <strong style="color:#ffe18e">To play together on ONE screen, press the ONE V button to add P2, then P3, then P4. Every player receives their own MOVE joystick, AIM + FIRE joystick, A, B and S buttons.</strong> Collect ★ stars and character food! Tilt your phone sideways for Joy-Con-style play.</p><div class="difficulty-picks" aria-label="Choose one of three difficulty levels">${diffButtons}</div><div class="buttonrow">${button(unlock>1?'Continue Story':'Start Adventure','continue')}${button('⚡ Boss Practice','boss','secondary')}${button('🚤 Submarine Practice','submarine','secondary')}${button('👥 Play Together · 1–4 Players','online','secondary')}</div><div class="chaptergrid">${picks}</div><p class="tip">RIGHT STICK = AIM + FIRE • LEFT STICK = MOVE • B = DODGE / USE • Beware glowing RED warning zones.</p>`);
 }
 function intro(n){level=n;scene='intro';g=null;cameraX=0;particles=[];toastLife=0;keys={};held={};resetStick();const d=chapters[n];switchEl.style.display='none';
  const goal=n===9?'FINAL BOSS RUSH: Fight all NINE chapter bosses, one after the other in the battle arena. Aim with the right stick, dodge with B, use S for upgraded special skills. Earn a star and regain up to two HP after each boss. Lives only refill when the entire chapter is cleared.':n===4?'THREE TRIALS: I · BARKSHIP: dodge wing boomerangs, storm seeds and a charge. II · PORTAL TREE: evade crossfire, spirals and emerging roots. III · THORN CROWN: break its shield and escape huge laser beams, root cages and gravity vortices. HOLD A to fire, TAP B to dodge; the correct hero switches automatically. Each form must complete 1 attack pattern on Easy, 2 on Hero or 3 on Nightmare before its guard breaks.':nightmare()? n===5?'PART 1: Capture Naughty and find SIX passes. PART 2: Collect EIGHT cells. Avoid tracking shockwaves!':n===3?'Disarm EIGHT devices in EACH district, then escape before the timer expires.':'Collect EIGHT objects in EACH area. Evade targeting strikes before the timer expires.':hardMode?d.task.replace(/four/gi,'SIX').replace(/eight/gi,'TWELVE').replace(/two yellow passes/gi,'FOUR yellow passes').replace(/four power cells/gi,'SIX power cells'):d.task;
@@ -1607,7 +1625,7 @@ function objective(){let message='';
  else if(level===3)message=g.collect<g.total?`LONG CITY RUN ${g.wave+1}/2 · DISARM BOMBS ${g.collect}/${g.total} · PRESS B · RIGHT STICK = FIRE BREATH`:`DISTRICT CLEAR! EXIT GATE ON RIGHT · PRESS B`;
  else message=g.collect<g.total?`LONG RUN ${g.wave+1}/2 · ${g.collect}/${g.total} ${itemType(level,g.wave)==='shark'?'ALLIES':'ITEMS'} · ${nightmare()?'💀 ESCAPE TRACKING STRIKES!':hardMode?'WATCH RED HUNTERS!':'RIGHT STICK = AIM + FIRE'}`:`ALL OBJECTIVES COMPLETE! EXIT GATE ON RIGHT · PRESS B`;
  roundRect(19,568,962,39,11,'#051c31e8');txt(message,500,594,14,'#dcffff','center',850);}
-function draw(){c.clearRect(0,0,W,H);if(!g){grad('#08273c','#134d6a');seaScene();if(window.FishmanComicArt)window.FishmanComicArt.menuDec(c,t);fishman(300,391,1.9);shark(580,410,1.2);naughty(802,437,.8);txt('FISHMAN',501,187,75,'#a9fff2','center',1000);txt('TWIN STICKS · LONG SCROLLING RUNS · NIGHTMARE',500,226,19,'#ffecb6','center',850);return;}
+function draw(){c.clearRect(0,0,W,H);if(!g){grad('#08273c','#134d6a');seaScene();if(window.FishmanComicArt)window.FishmanComicArt.menuDec(c,t);fishman(300,391,1.9);shark(580,410,1.2);naughty(802,437,.8);txt('FISHMAN',501,187,75,'#a9fff2','center',1000);txt('TWIN STICKS · v23 POWER WEAPONS · UP TO 4 PLAYERS',500,226,19,'#ffecb6','center',850);return;}
  if(g.challenge){cameraX=0;drawChallengeArena();if(net()?.connected)drawCoopPlayers();drawTeamWeaponHud();return;}
  if(level===4){cameraX=0;drawBackground();drawStrike();for(const h of g.hazards)drawHazard(h);drawRewardsAndShots();drawBoss();drawPlayer();if(net()?.connected)drawCoopPlayers();}
  else{
@@ -1648,7 +1666,7 @@ screen.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)ret
 document.getElementById('menuBtn').addEventListener('click',()=>{if(net()?.role==='guest'){document.getElementById('mpOpen').click();return;}scene==='playing'?pause():menu();});document.getElementById('soundBtn').addEventListener('click',e=>{soundOn=!soundOn;e.currentTarget.textContent=soundOn?'♫ Music: On':'♫ Music: Off';if(soundOn)sfx('collect');window.FishmanMusic?.toggle(soundOn,{scene,level,difficulty});});
 switchEl.addEventListener('click',e=>{const b=e.target.closest('button[data-hero]');if(b)switchHero(b.dataset.hero);});
 const keymap={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',w:'up',a:'left',s:'down',d:'right',W:'up',A:'left',S:'down',D:'right',' ':'action',e:'interact',E:'interact'};
-window.addEventListener('keydown',e=>{if(keymap[e.key]||['p','P','1','2','3','Escape'].includes(e.key))e.preventDefault();if(e.repeat&&[' ','e','E','p','P'].includes(e.key))return;const k=keymap[e.key];if(k){if(!keys[k]){if(k==='action')attack();if(k==='interact')interact();}keys[k]=true;}if(e.key==='p'||e.key==='P'||e.key==='Escape')pause();if((e.key==='q'||e.key==='Q'||e.key==='Shift')&&!e.repeat){e.preventDefault();useSpecialSkill();}if(['1','2','3'].includes(e.key))switchHero({1:'fish',2:'kai',3:'roxy'}[e.key]);});
+window.addEventListener('keydown',e=>{if(keymap[e.key]||['p','P','1','2','3','Escape'].includes(e.key))e.preventDefault();if(e.repeat&&[' ','e','E','p','P'].includes(e.key))return;const k=keymap[e.key];if(k){if(!keys[k]){if(k==='action')attack();if(k==='interact')interact();}keys[k]=true;}if(e.key==='p'||e.key==='P'||e.key==='Escape')pause();if((e.key==='q'||e.key==='Q'||e.key==='Shift')&&!e.repeat){e.preventDefault();useSpecialSkill();}if(e.key.toLowerCase()==='x'&&!e.repeat){e.preventDefault();cycleWeapon();}if(['1','2','3'].includes(e.key))switchHero({1:'fish',2:'kai',3:'roxy'}[e.key]);});
 window.addEventListener('keyup',e=>{const k=keymap[e.key];if(k)keys[k]=false;});const aimKeys={i:[0,-1],j:[-1,0],k:[0,1],l:[1,0]};const pressedAim=new Set();
 function updateKeyboardAim(){let x=0,y=0;for(const key of pressedAim){x+=aimKeys[key][0];y+=aimKeys[key][1];}const d=Math.hypot(x,y);if(d){aim.manual=true;aim.point=null;aim.vx=x/d;aim.vy=y/d;keys.action=true;}else if(rightStick.pointerId===null){keys.action=false;aim.manual=false;}}
 window.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(aimKeys[k]&&!e.repeat){e.preventDefault();pressedAim.add(k);updateKeyboardAim();}});
@@ -1668,7 +1686,7 @@ aimStickEl.addEventListener('pointerdown',e=>{if(rightStick.pointerId!==null)ret
 aimStickEl.addEventListener('pointermove',e=>{if(e.pointerId!==rightStick.pointerId)return;e.preventDefault();moveRightStick(e);});
 for(const event of ['pointerup','pointercancel','lostpointercapture'])aimStickEl.addEventListener(event,e=>{if(e.pointerId===rightStick.pointerId)resetRightStick();});
 cv.addEventListener('pointerdown',e=>{if(scene==='playing'){setAimFromCanvas(e);e.preventDefault();}});
-document.querySelectorAll('.touch [data-key]').forEach(b=>{const k=b.dataset.key;const down=e=>{e.preventDefault();try{b.setPointerCapture(e.pointerId);}catch{}b.classList.add('down');if(k==='action'){aim.pointer={id:e.pointerId,x:e.clientX,y:e.clientY};held.action=true;attack();}else if(k==='interact')interact();else if(k==='skill')useSpecialSkill();else held[k]=true;};const up=e=>{e.preventDefault();b.classList.remove('down');held[k]=false;if(k==='action')aim.pointer=null;};if(k==='action')b.addEventListener('pointermove',e=>{if(!aim.pointer||e.pointerId!==aim.pointer.id)return;const dx=e.clientX-aim.pointer.x,dy=e.clientY-aim.pointer.y,d=Math.hypot(dx,dy);if(d>13){aim.manual=true;aim.point=null;aim.vx=dx/d;aim.vy=dy/d;}});b.addEventListener('pointerdown',down);for(const event of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(event,up);});
+document.querySelectorAll('.touch [data-key]').forEach(b=>{const k=b.dataset.key;const down=e=>{e.preventDefault();try{b.setPointerCapture(e.pointerId);}catch{}b.classList.add('down');if(k==='action'){aim.pointer={id:e.pointerId,x:e.clientX,y:e.clientY};held.action=true;attack();}else if(k==='interact')interact();else if(k==='skill')useSpecialSkill();else if(k==='weapon')cycleWeapon();else held[k]=true;};const up=e=>{e.preventDefault();b.classList.remove('down');held[k]=false;if(k==='action')aim.pointer=null;};if(k==='action')b.addEventListener('pointermove',e=>{if(!aim.pointer||e.pointerId!==aim.pointer.id)return;const dx=e.clientX-aim.pointer.x,dy=e.clientY-aim.pointer.y,d=Math.hypot(dx,dy);if(d>13){aim.manual=true;aim.point=null;aim.vx=dx/d;aim.vy=dy/d;}});b.addEventListener('pointerdown',down);for(const event of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(event,up);});
 // Optional test diagnostics only on local ?test=1; not needed to play.
 if(new URLSearchParams(location.search).has('test'))window.fishmanTest={get:()=>({scene,level,wave:g?.wave,collect:g?.collect,total:g?.total,captured:g?.captured,hp:g?.hp,maxHp:g?.maxHp,lives:g?.lives,maxLives:g?.maxLives,boss:g?.boss,timer:g?.timer,hardMode,difficulty,strike:g?.strike,challenge:g?.challenge?{index:g.challenge.index,final:g.challenge.final,hp:g.challenge.hp,maxHp:g.challenge.maxHp,pattern:g.challenge.pattern?.kind,bullets:g.challenge.bullet.length}:null,arena:g?.arena?{phase:g.arena.phase,attack:g.arena.attack,shield:g.arena.shield,orbs:g.arena.orbs.length,dodgeCool:g.dodgeCool,rest:g.arena.rest}:null,hazards:g?.hazards,items:g?.items,gate:worldGate(),runLength:g?.runLength,checkpoint:g?.checkpointIndex,cameraX,rightStick:{x:rightStick.x,y:rightStick.y,active:rightStick.pointerId!==null},unlock,position:g&&{x:g.x,y:g.y},hero:g?.hero,stars:progress.stars,upgrades:progress.upgrades,skillUpgrades:progress.skillUpgrades,skillCooldown:g?.skillCooldown,freezeTime:g?.freezeTime,skillCrystals:g?.skillCrystals,starPickups:g?.stars,awardPickups:g?.awards,aim}),intro:(n)=>intro(n),completeChapter:()=>chapterDone(),showMenu:()=>menu(),start:(n)=>start(n),teleport:(x,y)=>{if(g){g.x=x;g.y=y;g.inv=3;}},interact,attack,skill:useSpecialSkill,skillLevelUp:(h)=>skillLevelUp(h,'TEST'),step:(seconds=1)=>{for(let i=0;i<Math.ceil(seconds/.025);i++)tick(.025);},steer:(x,y,fire=false)=>{stick.x=x;stick.y=y;held.action=fire;},select:(d)=>{difficulty=d;hardMode=d!=='classic';},selectHero:(h)=>switchHero(h),giveStars:(n=5)=>{for(let i=0;i<n;i++){progress.stars++;if(progress.stars%5===0&&g){g.hp=Math.min(g.maxHp,g.hp+2);skillLevelUp(g.hero,'STAR BONUS');}}saveProgress();},completeCity:()=>unlockGozilla(),hit:()=>hit(),startChapterArena:(n=level,final=false)=>{if(g)startChapterArena(final,n);},finishChallenge:()=>{if(g?.challenge){g.challenge.hp=1;const a=g.challenge;g.proj.push({x:a.x-60,y:a.y,vx:3000,vy:0,age:0,life:1,kind:g.hero,damage:999,r:19});}},finishBoss:()=>{if(g&&level===4){g.arena.shield=0;g.boss=1;attack();}}};
 menu();updateSkillButton();requestAnimationFrame(drawFrame);
@@ -1682,7 +1700,7 @@ menu();updateSkillButton();requestAnimationFrame(drawFrame);
  const panel=$('mpScreen'),status=$('mpStatus'),connUI=$('mpConnected'),roomInput=$('mpRoom'),team=$('mpTeam'),
   rosterEl=$('mpRoster'),startBtn=$('mpStart'),chapter=$('mpChapter'),hero=$('mpHero'),opener=$('mpOpen');
  const heroNames={fish:'Fishman',kai:'Kai',roxy:'Roxy',humpty:'Humpty',gozilla:'Gozilla',sub:'Submarine'};
- const emptyInput=()=>({x:0,y:0,fire:false,aim:null,skill:false,interact:false,hero:null});
+ const emptyInput=()=>({x:0,y:0,fire:false,aim:null,skill:false,interact:false,weapon:false,hero:null});
  const n=window.FishmanNet={role:'solo',connected:false,peer:null,connection:null,players:{},roster:[],slot:null,code:'',
   input:emptyInput(),remoteHero:'kai',localHero:'fish',lastSend:0,lastControlSend:0,sendAction,sendInput,sendSnapshot};
  const proto='fishman-v16-four-';let joining=false;
@@ -1794,6 +1812,7 @@ menu();updateSkillButton();requestAnimationFrame(drawFrame);
    }else if(p.kind==='action'){
     if(p.action==='hero'&&heroNames[p.value]){room.input.hero=p.value;room.hero=p.value;refreshHost();}
     else if(p.action==='skill')room.input.skill=true;
+    else if(p.action==='weapon')room.input.weapon=true;
     else if(p.action==='interact')room.input.interact=true;
     else if(p.action==='fire')room.input.fire=true;
    }
@@ -1939,9 +1958,9 @@ menu();updateSkillButton();requestAnimationFrame(drawFrame);
  }
  function makeButton(slot,key,label){
   const button=document.createElement('button');button.type='button';
-  button.className='pad-button '+(key==='attack'?'pad-attack':key==='skill'?'pad-skill':'pad-use');
-  button.setAttribute('aria-label','Player '+slot+' '+(key==='attack'?'attack':key==='interact'?'use / dodge':'special skill'));
-  button.innerHTML='<span>'+(key==='attack'?'A':key==='interact'?'B':'S')+'</span><small>'+label+'</small>';
+  button.className='pad-button '+(key==='attack'?'pad-attack':key==='skill'?'pad-skill':key==='weapon'?'pad-weapon':'pad-use');
+  button.setAttribute('aria-label','Player '+slot+' '+(key==='attack'?'attack':key==='interact'?'use / dodge':key==='weapon'?'switch weapon':'special skill'));
+  button.innerHTML='<span>'+(key==='attack'?'A':key==='interact'?'B':key==='weapon'?'W':'S')+'</span><small>'+label+'</small>';
   let activePointer=null;
   button.addEventListener('pointerdown',ev=>{
    if(activePointer!==null)return;ev.preventDefault();activePointer=ev.pointerId;
@@ -1950,6 +1969,7 @@ menu();updateSkillButton();requestAnimationFrame(drawFrame);
    if(key!=='attack'&&window.FishmanMultiplayerBridge?.getScene?.()!=='playing')return;
    if(key==='attack'){p.input.buttonFire=true;p.input.fire=true;}
    else if(key==='interact')p.input.interact=true;
+   else if(key==='weapon')p.input.weapon=true;
    else p.input.skill=true;
    p.lastInputAt=Date.now();
   });
@@ -1976,7 +1996,7 @@ menu();updateSkillButton();requestAnimationFrame(drawFrame);
    const row=document.createElement('div');row.className='pad-controls';
    row.append(makeStick(slot,'move'),makeStick(slot,'aim'));
    const buttons=document.createElement('div');buttons.className='pad-buttons';
-   buttons.append(makeButton(slot,'interact','USE'),makeButton(slot,'attack','FIRE'),makeButton(slot,'skill','SKILL'));
+   buttons.append(makeButton(slot,'interact','USE'),makeButton(slot,'attack','FIRE'),makeButton(slot,'skill','SKILL'),makeButton(slot,'weapon','SWAP'));
    row.appendChild(buttons);pad.appendChild(row);
   }
   board.appendChild(pad);return pad;
@@ -1988,6 +2008,10 @@ menu();updateSkillButton();requestAnimationFrame(drawFrame);
    pad.querySelector('.pad-player-name').textContent='P'+slot+' · '+(icon[hero]||'🐟')+' '+(human[hero]||'Fishman')+(p?.down?' · DOWN':'');
    const sel=pad.querySelector('select');if(document.activeElement!==sel&&sel.value!==hero)sel.value=hero;
    const b=pad.querySelector('.pad-use small');if(b)b.textContent=getG()?.challenge||window.FishmanMultiplayerBridge?.getLevel?.()===4?'DODGE':'USE';
+   let info=pad.querySelector('.pad-weapon small');if(!info&&slot===1)info=pad.querySelector('.weapon-action .button-name');
+   if(info){const player=slot===1?getG():p,weapon=player?.weapon||'basic',owned=player?.weaponsOwned?.length||1;
+    info.textContent=owned>1?'Lv'+(player?.weaponLevels?.[weapon]||1):'LOCK';}
+   const special=pad.querySelector('.pad-skill small');if(special&&slot!==1){const player=p,cd=player?.skillCooldown||0;special.textContent=cd>.1?Math.ceil(cd)+'s':'SKILL';}
   }
  }
  function addPlayer(){
@@ -2002,7 +2026,7 @@ menu();updateSkillButton();requestAnimationFrame(drawFrame);
   const slot=++localCount;
   const defaults={2:'kai',3:'roxy',4:'humpty'};
   n.players[slot]={connection:{open:true},hero:defaults[slot],
-   input:{x:0,y:0,aim:null,fire:false,buttonFire:false,skill:false,interact:false,hero:defaults[slot]},lastInputAt:Date.now()};
+   input:{x:0,y:0,aim:null,fire:false,buttonFire:false,skill:false,interact:false,weapon:false,hero:defaults[slot]},lastInputAt:Date.now()};
   makePad(slot);
   btn.textContent=localCount<4?'ⓥ V · ADD P'+(localCount+1):'✓ 4 / 4 PLAYERS';
   btn.disabled=localCount>=4;
