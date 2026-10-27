@@ -56,7 +56,7 @@ for(const [label,engine] of [['chromium',chromium],['webkit',webkit]]){
    FishmanV29Art.fish=(canvas,opts)=>{window.__heroDraws.push({...opts});return modern(canvas,opts);};
    fishmanTest.intro(0);fishmanTest.start(0);fishmanTest.selectHero('fish');
   });
-  await page.waitForTimeout(300);
+  await page.waitForFunction(()=>window.__heroDraws.some(x=>x.type==='fish'&&x.fullBody===true),{timeout:6000});
   const land=await page.evaluate(()=>({
    mode:fishmanTest.modeFor('fish',400),
    draws:window.__heroDraws.filter(x=>x.type==='fish')
@@ -64,7 +64,7 @@ for(const [label,engine] of [['chromium',chromium],['webkit',webkit]]){
   assert.equal(land.mode,'hover');
   assert.ok(land.draws.some(x=>x.fullBody===true),'Chapter 1 hover pod cropped Fishman');
   await page.evaluate(()=>{window.__heroDraws=[];fishmanTest.teleport(1300,340);});
-  await page.waitForTimeout(260);
+  await page.waitForFunction(()=>window.__heroDraws.some(x=>x.type==='fish'&&x.fullBody===true),{timeout:6000});
   const sea=await page.evaluate(()=>({
    mode:fishmanTest.modeFor('fish',1300),
    draws:window.__heroDraws.filter(x=>x.type==='fish')
@@ -104,7 +104,7 @@ for(const [label,engine] of [['chromium',chromium],['webkit',webkit]]){
    const g=FishmanMultiplayerBridge.getG();
    return {x:g.x,p2x:g.coopP2.x,p2phase:g.coopP2.stepPhase};
   });
-  await page.waitForTimeout(360);
+  await page.waitForFunction(threshold=>{FishmanNet.lastInputAt=Date.now();return FishmanMultiplayerBridge.getG()?.coopP2?.x>threshold;},before.p2x+20,{timeout:8000,polling:100});
   const after=await page.evaluate(()=>{
    const g=FishmanMultiplayerBridge.getG(),p=g.coopP2;
    return {hostX:g.x,p2x:p.x,phase:p.stepPhase,poseFacing:p.poseFacing,poseAngle:p.poseAngle,aim:p.lastAim,mode:fishmanTest.modeFor(p.hero,p.x)};

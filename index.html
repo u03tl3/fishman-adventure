@@ -1215,7 +1215,7 @@ function useSpecialSkill(){if(net()?.role==='guest'){net()?.sendAction('skill');
  sfx('power');say('✦ '+skillNames[h].toUpperCase()+' Lv.'+L+'! S TO USE · '+Math.round(skillRecharge(h))+'s RECHARGE',2.7);updateSkillButton();return true;
 }
 
-function maySelect(hero){if(!g||scene!=='playing'||!terrainHeroAllowed(hero,g.x))return false;if(net()?.role==='host'&&net()?.connected)return hero==='sub'?(level===5):['fish','kai','roxy','humpty','gozilla'].includes(hero)&&(hero!=='gozilla'||progress.godzilla);if(level===5)return hero==='sub';if(level===3)return hero==='roxy'||hero==='humpty';if(level>=4)return ['fish','kai','roxy','humpty'].includes(hero)||(hero==='gozilla'&&progress.godzilla);return hero===g.hero;}
+function maySelect(hero){if(!g||scene!=='playing'||!terrainHeroAllowed(hero,g.x))return false;if(net()?.role==='host'&&net()?.connected)return hero==='sub'?(level===5):['fish','kai','roxy','humpty','gozilla'].includes(hero)&&(hero!=='gozilla'||progress.godzilla);if(level===5)return hero==='sub';if(level===0)return hero==='fish'||hero==='kai';if(level===3)return hero==='roxy'||hero==='humpty';if(level>=4)return ['fish','kai','roxy','humpty'].includes(hero)||(hero==='gozilla'&&progress.godzilla);return hero===g.hero;}
 function unlockGozilla(){if(!progress.godzilla){progress.godzilla=true;saveProgress();} }
 
 const joystickEl=document.getElementById('joystick'),stickKnob=document.getElementById('stickKnob'),stick={x:0,y:0,pointerId:null};const aimStickEl=document.getElementById('aimStick'),aimKnob=document.getElementById('aimKnob');
@@ -1292,7 +1292,7 @@ function die(why='Watch out for moving obstacles!'){
 function pause(){if(scene==='playing'){resetStick();held={};keys={};scene='paused';showScreen(`<span class="tag">GAME PAUSED</span><div class="portrait">⏸️</div><h1>PAUSED</h1><p>Ready for the next move?</p><div class="buttonrow">${button('Resume','resume')}${button('Restart Chapter','play','secondary')}${button('Main Menu','menu','secondary')}</div>`);}else if(scene==='paused'){scene='playing';hideScreen();}}
 function item(x,y,type){return {x,y,type,got:false};}
 function hazard(x,y,ax,ay,rate,phase,type='root',hunter=false){return {x,y,bx:x,by:y,ax,ay,rate,phase,type,stun:0,hunter};}
-function heroFor(n){return n===0||n===1?'kai':n===3||n===8?'roxy':n===5?'sub':'fish';}
+function heroFor(n){return n===0?'fish':n===1?'kai':n===3||n===8?'roxy':n===5?'sub':'fish';}
 function itemType(n,w){if(n===0)return w?'crystal':'flask';if(n===1)return w?'seed':'seed';if(n===2)return w?'pearl':'shark';if(n===3)return 'bomb';if(n===6)return 'relic';if(n===7)return 'pearl';if(n===8)return w?'crystal':'seed';return 'lantern';}
 
 function initRewards(w){
@@ -1837,7 +1837,7 @@ function start(checkpoint=0,remainingLives=null){scene='playing';aim.manual=fals
  else if(level===9)startChapterArena(true,0);
  else setupArea(checkpoint);
  ensureWeaponState();createWeaponDrops();
- switchEl.style.display=(level>=3&&!sub)?'flex':'none';updateHeroSwitch();say(level===9?'FINAL ARENA — NINE BOSSES IN A ROW! KEEP YOUR LIVES AND UPGRADE SKILLS!':boss?'TRIAL 1/3: FLYING BARKSHIP! SURVIVE ITS ATTACK PATTERNS, RIGHT STICK TO AIM, TAP B TO DODGE.':sub?'YOU ARE THE YELLOW SUBMARINE! '+(g.wave?'Find the power cells.':'Capture Naughty with B, then gather passes!'):'AREA '+(g.wave+1)+'/2 — '+g.total+' objectives. '+(nightmare()?'RED RINGS = RUN AWAY!':hardMode?'HUNTERS + TIME LIMIT!':''),5);
+ switchEl.style.display=(level===0||level>=3)&&!sub?'flex':'none';updateHeroSwitch();say(level===9?'FINAL ARENA — NINE BOSSES IN A ROW! KEEP YOUR LIVES AND UPGRADE SKILLS!':boss?'TRIAL 1/3: FLYING BARKSHIP! SURVIVE ITS ATTACK PATTERNS, RIGHT STICK TO AIM, TAP B TO DODGE.':sub?'YOU ARE THE YELLOW SUBMARINE! '+(g.wave?'Find the power cells.':'Capture Naughty with B, then gather passes!'):'AREA '+(g.wave+1)+'/2 — '+g.total+' objectives. '+(nightmare()?'RED RINGS = RUN AWAY!':hardMode?'HUNTERS + TIME LIMIT!':''),5);
 }
 function say(message,seconds=2.4){toast=message;toastLife=seconds;}
 function burst(x,y,color='#82f4e6',n=15){for(let i=0;i<n;i++)particles.push({x,y,vx:rand(-140,140),vy:rand(-150,90),life:rand(.35,.9),color,r:rand(2,6)});}
@@ -1869,7 +1869,7 @@ function attack(){if(net()?.role==='guest'){net()?.sendAction('fire');return;}if
 
 function bossPhase(){return g.boss>BOSS_MAX*2/3?0:g.boss>BOSS_MAX/3?1:2;}
 function switchHero(hero){if(net()?.role==='guest'){net()?.sendAction('hero',hero);return;}if(!maySelect(hero)){if(g&&!terrainHeroAllowed(hero,g.x))say((hero==='roxy'?'Roxy cannot swim.':hero==='sub'?'The submarine needs water.':'Not available in this terrain.'),1.8);return;}g.skillCooldowns[g.hero]=g.skillCooldown;g.hero=hero;g.skillCooldown=g.skillCooldowns[hero]||0;g.skillEffect=0;g.freezeTime=0;g.sonarTime=0;g.speedBoost=0;g.basicShotCount=0;g.rollBoost=1;g.sonarPulse=.4;updateHeroSwitch();sfx('collect');say(heroNames[hero]+' Lv.'+heroUpgrade(hero)+' · BASIC: '+basicSkillNames[hero],2.4);}
-function updateHeroSwitch(){switchEl.querySelectorAll('button').forEach(b=>{const h=b.dataset.hero;if(net()?.role==='guest'){const selected=g?.coopP2?.hero||net()?.remoteHero||'fish';b.classList.toggle('selected',selected===h);b.disabled=(level===5?h!=='sub':h==='gozilla'&&!progress.godzilla)||!terrainHeroAllowed(h,g?.coopP2?.x??g?.x);b.style.display=b.disabled?'none':'';return;}const active=g&&g.hero===h;b.classList.toggle('selected',!!active);b.disabled=!g||!terrainHeroAllowed(h,g.x)||level===5||!(level===3?['roxy','humpty'].includes(h):level>=4?(['fish','kai','roxy','humpty'].includes(h)||(h==='gozilla'&&progress.godzilla)):h===g.hero);b.style.display=b.disabled?'none':'';});}
+function updateHeroSwitch(){switchEl.querySelectorAll('button').forEach(b=>{const h=b.dataset.hero;if(net()?.role==='guest'){const selected=g?.coopP2?.hero||net()?.remoteHero||'fish';b.classList.toggle('selected',selected===h);b.disabled=(level===5?h!=='sub':h==='gozilla'&&!progress.godzilla)||!terrainHeroAllowed(h,g?.coopP2?.x??g?.x);b.style.display=b.disabled?'none':'';return;}const active=g&&g.hero===h;b.classList.toggle('selected',!!active);b.disabled=!g||!terrainHeroAllowed(h,g.x)||level===5||!(level===3?['roxy','humpty'].includes(h):level>=4?(['fish','kai','roxy','humpty'].includes(h)||(h==='gozilla'&&progress.godzilla)):level===0?['fish','kai'].includes(h):h===g.hero);b.style.display=b.disabled?'none':'';});}
 
 function hit(){if(g.inv>0||g.shield>0)return;g.hp--;penalizeWeapon(g);g.inv=nightmare()?0.97:hardMode?1.2:1.7;burst(g.x,g.y,'#ff8ca4',12);sparkBurst(g.x,g.y,'#ffca99',2);sfx('hit');if(g.hp<=0){g.deathMotion=.8;die(level===3?'The city needs Roxy! Retry this checkpoint.':level===4?'Naughty overwhelmed the heroes. Try moving CONSTANTLY while holding A.':'Watch for RED tracking circles and flashing hunters. Retry this checkpoint.');}else say('OUCH! '+g.hp+' hearts remain.',1.2);}
 function resetStrikes(){if(!g)return;g.strike=null;g.strikeClock=nightmare()?(level===4?6.0:4.7):99;}
