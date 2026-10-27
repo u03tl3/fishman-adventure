@@ -359,6 +359,12 @@ html.local-coop #localControllerBoard{display:grid!important;grid-template-colum
  font-weight:850;letter-spacing:.02em;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:570px){#localControllerBoard .pad-ability{font-size:8px}}
 </style>
+<style id="heroSuperModeHUD">
+#localControllerBoard .pad-loadout.super-active{color:#fff5ac!important;background:#6c245d!important;
+ border:1px solid #ffdc88;box-shadow:0 0 12px #f28af4a0}
+#skillBtn.super-active{border-color:#fff3b3!important;background:radial-gradient(circle at 35% 22%,#fff0a6,#e26dcc 54%,#5c308d)!important;
+ box-shadow:0 0 16px #ffbcf3!important}
+</style>
 </head>
 <body>
 <main class="shell">
@@ -589,11 +595,13 @@ function saveProgress(){try{localStorage.setItem('fishmanV9',JSON.stringify(prog
 function heroUpgrade(hero){return Math.max(1,progress.upgrades[hero]||1);}
 function heroSkillLevel(hero){return Math.max(1,progress.skillUpgrades[hero]||1);}
 function skillRecharge(hero){const base={fish:13.0,kai:15.0,roxy:12.0,humpty:10.0,gozilla:15.5,sub:12.5}[hero]||12;return Math.max(5.2,base-(heroSkillLevel(hero)-1)*1.12);}
-function updateSkillButton(){if(coopActionSlot!==1)return;const b=document.getElementById('skillBtn');if(!b)return;const key=g?.hero||heroFor(level),ready=scene==='playing'&&g&&(g.skillCooldown||0)<=0,cd=Math.max(0,g?.skillCooldown||0);
+function updateSkillButton(){if(coopActionSlot!==1)return;const b=document.getElementById('skillBtn');if(!b)return;
+ const p=net()?.role==='guest'?g?.coopPlayers?.[net()?.slot]||g:g;
+ const key=p?.hero||heroFor(level),superTime=Math.max(0,p?.skillEffect||0),ready=scene==='playing'&&p&&(p.skillCooldown||0)<=0,cd=Math.max(0,p?.skillCooldown||0);
  const label=document.getElementById('skillName'),counter=document.getElementById('skillCooldown');
- label.textContent=skillShort[key]||'SKILL';counter.textContent=cd>.05?cd.toFixed(1)+'s':'Lv'+heroSkillLevel(key);
- b.classList.toggle('cooling',cd>.05);b.setAttribute('aria-label',`${skillNames[key]||'Special skill'} level ${heroSkillLevel(key)}. ${cd>.05?'Recharges in '+cd.toFixed(1)+' seconds':'Ready. Tap to activate.'}`);
- b.title=(skillNames[key]||'Skill')+' · Lv.'+heroSkillLevel(key)+(ready?' · READY':' · '+cd.toFixed(1)+'s');}
+ label.textContent=superTime>.05?'SUPER!':skillShort[key]||'SKILL';counter.textContent=superTime>.05?superTime.toFixed(1)+'s':cd>.05?cd.toFixed(1)+'s':'READY';
+ b.classList.toggle('super-active',superTime>.05);b.classList.toggle('cooling',cd>.05&&superTime<=.05);b.setAttribute('aria-label',`${skillNames[key]||'Special skill'} level ${heroSkillLevel(key)}. ${cd>.05?'Recharges in '+cd.toFixed(1)+' seconds':'Ready. Tap to activate.'}`);
+ b.title=superTime>.05?'SUPER ATTACK TRANSFORMATION · '+superTime.toFixed(1)+' SECONDS LEFT':(skillNames[key]||'Skill')+' · Lv.'+heroSkillLevel(key)+(ready?' · READY':' · '+cd.toFixed(1)+'s');}
 function skillLevelUp(hero,reason){const was=heroSkillLevel(hero);if(was>=5){g.hp=Math.min(g.maxHp,g.hp+1);say(skillNames[hero]+' MASTERED! +1 HEALTH',2.5);return;}
  progress.skillUpgrades[hero]=Math.min(5,was+1);saveProgress();burst(g.x,g.y,'#c29aff',30);sfx('win');say('✦ '+skillNames[hero]+' SKILL Lv.'+progress.skillUpgrades[hero]+' — '+reason,3.6);updateSkillButton();}
 function skillStun(radius,duration,repel=0){for(const h of g.hazards){const dx=h.x-g.x,dy=h.y-g.y,d=Math.max(1,Math.hypot(dx,dy));if(d>radius)continue;h.stun=Math.max(h.stun,duration);if(repel){const shift=Math.min(repel,(radius-d)*.5);h.x=clamp(h.x+dx/d*shift,90,(g.runLength||W)-90);h.y=clamp(h.y+dy/d*shift,175,533);}}
@@ -739,9 +747,9 @@ function drawTeamWeaponHud(){
  const players=[{...g,slot:1},...Object.values(g.coopPlayers||{})].slice(0,4);
  c.save();
  players.forEach((p,i)=>{
-  const xx=22+i*243,yy=105;
-  roundRect(xx,yy,236,27,7,'#082e47d8');
-  txt('P'+p.slot+' '+(WEAPON_LABEL[p.weapon||'basic']||'Basic')+' Lv.'+(p.weaponLevels?.[p.weapon]||1)+(p.weaponShield>0?' ⬡':''),xx+8,yy+19,11,WEAPON_COLOR[p.weapon||'basic']||'#fff','left',870);
+  const xx=22+i*243,yy=105,superTime=Math.max(0,p.skillEffect||0);
+  roundRect(xx,yy,236,27,7,superTime>.05?'#6b356bdf':'#082e47d8');
+  txt('P'+p.slot+' '+(superTime>.05?'SUPER '+superTime.toFixed(1)+'s':(WEAPON_LABEL[p.weapon||'basic']||'Basic')+' Lv.'+(p.weaponLevels?.[p.weapon]||1))+(p.weaponShield>0?' ⬡':''),xx+8,yy+19,11,superTime>.05?'#ffe7ae':WEAPON_COLOR[p.weapon||'basic']||'#fff','left',870);
  });
  c.restore();
 }
@@ -2412,10 +2420,14 @@ menu();updateSkillButton();requestAnimationFrame(drawFrame);
    if(ability){
     const skills={fish:'🫧 BUBBLE STORM',kai:'❄ ICE NOVA',roxy:'🔥 FIRE METEORS',
      humpty:'💥 SHELL EARTHQUAKE',gozilla:'⚡ LIGHTNING STORM',sub:'🚀 SONAR MISSILES'};
-    const cd=Math.max(0,currentPlayer?.skillCooldown||0);
-    ability.textContent='S · '+(skills[hero]||'SPECIAL')+(cd>.1?' · '+Math.ceil(cd)+'s':' · READY');
+    const cd=Math.max(0,currentPlayer?.skillCooldown||0),superTime=Math.max(0,currentPlayer?.skillEffect||0);
+    ability.textContent='S · '+(skills[hero]||'SPECIAL')+(superTime>.1?' · SUPER '+Math.ceil(superTime)+'s':cd>.1?' · '+Math.ceil(cd)+'s':' · READY');
    }
-   const status=pad.querySelector('.pad-loadout');if(status){const currentWeapon=currentPlayer?.weapon||'basic';status.textContent='⚡ '+({basic:'BASIC',rapid:'RAPID',spread:'TRIPLE',charge:'CHARGE',homing:'HOMING',electric:'ELECTRIC'}[currentWeapon]||'BASIC')+' Lv.'+(currentPlayer?.weaponLevels?.[currentWeapon]||1)+(currentPlayer?.weaponShield>0?' · SHIELD':'')+(currentPlayer?.down?' · DOWN':'');}
+   const status=pad.querySelector('.pad-loadout');if(status){const currentWeapon=currentPlayer?.weapon||'basic',superTime=currentPlayer?.skillEffect||0;
+    status.textContent=superTime>.05?'⚡ SUPER MODE · '+superTime.toFixed(1)+'s':
+    '⚡ '+({basic:'BASIC',rapid:'RAPID',spread:'TRIPLE',charge:'CHARGE',homing:'HOMING',electric:'ELECTRIC'}[currentWeapon]||'BASIC')+' Lv.'+(currentPlayer?.weaponLevels?.[currentWeapon]||1)+(currentPlayer?.weaponShield>0?' · SHIELD':'')+(currentPlayer?.down?' · DOWN':'');
+    status.classList.toggle('super-active',superTime>.05);
+   }
    const special=pad.querySelector('.pad-skill small');if(special&&slot!==1){const player=p,cd=player?.skillCooldown||0;special.textContent=cd>.1?Math.ceil(cd)+'s':'SKILL';}
   }
  }
