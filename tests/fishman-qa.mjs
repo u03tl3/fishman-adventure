@@ -412,6 +412,63 @@ await suite('instant-weapon-access-and-super-ui', {width:1180,height:840}, async
  assert.ok(mode.mode>6&&mode.button,'P1 super-mode timer/UI should remain visible for 8 seconds');
 });
 
+
+await suite('four-player-sustained-combat-stress', {width:1280,height:860}, async page=>{
+ for(let slot=2;slot<=4;slot++)await engage(page,slot);
+ await page.evaluate(()=>{fishmanTest.intro(2);fishmanTest.start(0)});
+ await page.waitForFunction(()=>Object.keys(FishmanMultiplayerBridge.getG()?.coopPlayers||{}).length===3);
+ await page.evaluate(()=>{
+   const g=FishmanMultiplayerBridge.getG();
+   g.inv=600;
+   g.weapon='rapid';g.weaponLevels.rapid=5;g.cool=0;
+   // All players use different attacks and active SUPER forms.
+   g.hero='roxy';g.skillKind='roxy';g.skillEffect=600;
+   for(const [index,p] of Object.entries(g.coopPlayers)){
+    p.inv=600;p.weapon=['rapid','spread','charge'][+index-2]||'rapid';
+    p.skillKind=p.hero;p.skillEffect=600;p.hp=p.maxHp;
+    const ctrl=FishmanNet.players[index].input;
+    ctrl.fire=true;ctrl.x=.2;ctrl.y=.1;ctrl.aim={x:1,y:0};
+   }
+   fishmanTest.steer(.2,.1,true);
+ });
+ await page.waitForTimeout(3400);
+ const result=await page.evaluate(()=>{
+  const g=FishmanMultiplayerBridge.getG();
+  return {role:FishmanNet.role,scene:FishmanMultiplayerBridge.getScene(),
+   count:Object.keys(g.coopPlayers||{}).length,
+   projs:g.proj.length,fx:g.weaponFX?.length||0,
+   coords:[{x:g.x,y:g.y},...Object.values(g.coopPlayers).map(p=>({x:p.x,y:p.y}))],
+   stage:FishmanMultiplayerBridge.getLevel(),wave:g.wave};
+ });
+ assert.equal(result.scene,'playing','sustained combat crashed');
+ assert.equal(result.count,3,'teammate dropped during barrage');
+ assert.ok(result.projs<=200,'projectile cap failed: '+result.projs);
+ assert.ok(result.fx<=28,'FX cap failed: '+result.fx);
+ assert.ok(result.coords.every(p=>Number.isFinite(p.x)&&Number.isFinite(p.y)),'some players teleported to invalid coordinates');
+ assert.equal(result.stage,2,'continuous fire unexpectedly changed level');
+ await page.evaluate(()=>{
+  for(const p of Object.values(FishmanNet.players))p.input.fire=false;
+  fishmanTest.steer(0,0,false);
+ });
+});
+await suite('boss-signature-active-at-full-health', {width:1190,height:830}, async page=>{
+ await page.evaluate(()=>{fishmanTest.intro(9);fishmanTest.start(0)});
+ const report=await page.evaluate(()=>{
+  fishmanTest.startChapterArena(0,false);
+  const g=FishmanMultiplayerBridge.getG(),b=g.challenge;
+  g.inv=9999;g.hp=g.maxHp;b.rage=0;b.rest=9;b.signatureTimer=.03;
+  fishmanTest.step(.15);
+  const warned=b.specialWarning>.1;
+  fishmanTest.step(1.05);
+  return {warned,bullets:b.bullet.length,phase:b.rage,scene:FishmanMultiplayerBridge.getScene(),
+   signature:b.signatureName};
+ });
+ assert.equal(report.phase,0,'signature should work in regular first phase');
+ assert.equal(report.warned,true,'boss super was not visibly warned at full health');
+ assert.ok(report.bullets>=7,'boss signature attack did not launch at full health');
+ assert.equal(report.scene,'playing');
+});
+
 const peerSimulator=()=> {
  const tag='fishman-local-qa-bus';
  class Connection{
