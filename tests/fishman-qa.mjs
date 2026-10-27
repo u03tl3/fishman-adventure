@@ -108,6 +108,50 @@ await suite('mobile-landscape', {width:844,height:390}, async p=>{
  assert.ok(counts.game>200);
 });
 
+
+await suite('weapons-checkpoints-and-boss-finale', {width:1150,height:850}, async p=>{
+ await p.locator('#addPlayerBtn').click();
+ await p.evaluate(()=>{fishmanTest.intro(0);fishmanTest.start(0);});
+ await p.waitForFunction(()=>window.FishmanMultiplayerBridge.getG()?.coopPlayers?.[2]);
+ let before=await p.evaluate(()=>FishmanMultiplayerBridge.getG().weaponPickups?.map(x=>({x:x.x,y:x.y,type:x.type})));
+ assert.ok(before?.length>=5,'missing v23 weapon pickups');
+ await p.evaluate(()=>{
+  const g=FishmanMultiplayerBridge.getG(),d=g.weaponPickups[0];
+  g.x=d.x;g.y=d.y;g.inv=10;
+ });
+ await p.waitForTimeout(120);
+ let first=await p.evaluate(()=>({weapon:FishmanMultiplayerBridge.getG().weapon,owned:FishmanMultiplayerBridge.getG().weaponsOwned}));
+ assert.equal(first.weapon,'rapid','P1 cannot collect rapid weapon');
+ assert.ok(first.owned.includes('rapid'));
+ await p.locator('[data-key="weapon"]').dispatchEvent('pointerdown',{pointerId:104,pointerType:'touch'});
+ await p.waitForTimeout(75);
+ assert.equal(await p.evaluate(()=>FishmanMultiplayerBridge.getG().weapon),'basic','P1 W weapon switching failed');
+ await p.evaluate(()=>{
+  const g=FishmanMultiplayerBridge.getG(),drop=g.weaponPickups[1],ally=g.coopPlayers[2];
+  g.x=drop.x-140;g.y=drop.y;ally.x=drop.x;ally.y=drop.y;ally.inv=10;
+ });
+ await p.waitForTimeout(110);
+ const p2=await p.evaluate(()=>FishmanMultiplayerBridge.getG().coopPlayers[2]);
+ assert.ok(p2.weaponsOwned?.includes('spread'),'P2 cannot independently collect the spread weapon');
+ await p.evaluate(()=>{
+  const g=FishmanMultiplayerBridge.getG(),gate={x:g.runLength-135,y:252};
+  g.items.forEach(item=>item.got=true);g.collect=g.total;g.x=gate.x;g.y=gate.y;
+  fishmanTest.interact();
+ });
+ await p.waitForTimeout(90);
+ assert.equal(await p.evaluate(()=>FishmanMultiplayerBridge.getG().wave),1,'first area cannot advance');
+ await p.evaluate(()=>{
+  const g=FishmanMultiplayerBridge.getG();g.items.forEach(item=>item.got=true);
+  g.collect=g.total;g.x=g.runLength-135;g.y=252;fishmanTest.interact();
+ });
+ await p.waitForTimeout(90);
+ assert.ok(await p.evaluate(()=>!!FishmanMultiplayerBridge.getG()?.challenge),'boss does not start after two areas');
+ await p.evaluate(()=>fishmanTest.finishChallenge());
+ await p.waitForTimeout(130);
+ const scene=await p.evaluate(()=>FishmanMultiplayerBridge.getScene());
+ assert.ok(scene==='chapterWin'||scene==='playing','boss finale crashed: '+scene);
+});
+
 const peerSimulator=()=> {
  const tag='fishman-local-qa-bus';
  class Connection{
