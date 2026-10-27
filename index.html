@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="theme-color" content="#062a41"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
-<title>Fishman Adventure v29 — Visual Restoration & Full-Body Motion</title>
+<title>Fishman Adventure v30 — Full-Body Animation and Two-Player Co-op</title>
 <style>
 :root{color-scheme:dark;--bg:#061827;--panel:#102b43;--panel2:#173952;--ink:#f2fbff;--soft:#a9c6d8;--aqua:#62f5eb;--gold:#ffcf65;--pink:#ff7699}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:radial-gradient(ellipse at 50% -10%,#174969 0%,#071a2b 53%,#05121f 100%);color:var(--ink);font-family:ui-rounded,system-ui,-apple-system,Segoe UI,Arial,sans-serif}button{font:inherit;cursor:pointer}button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
@@ -997,9 +997,12 @@ function hero(c,o){
   if(o.type!=='fish'||!heroImage.complete||!heroImage.naturalWidth)return false;
   const movement=Math.max(0,Math.min(1,o.motion||0));
   const width=o.fullBody?128:143, height=width*heroImage.naturalHeight/heroImage.naturalWidth;
-  c.save();c.translate(o.x,o.y+Math.sin((o.phase||0)*1.25)*3*movement);
+  const phase=o.phase||0,mode=o.mode||'swim',wet=['swim','paddle','power-swim'].includes(mode);
+  // Keep every pixel of the approved full-body art visible through each pose.
+  const bob=mode==='hover'?Math.sin(phase*.85)*3.2:wet?Math.sin(phase*1.28)*5:-Math.abs(Math.sin(phase))*2.8;
+  c.save();c.translate(o.x,o.y+bob*movement);
   c.scale((o.face||1)<0?-1:1,1);
-  c.rotate((o.attack?Math.max(-.075,Math.min(.075,(o.aimY||0)*.045)):Math.sin((o.phase||0)*.85)*.05*movement));
+  c.rotate(o.attack?Math.max(-.12,Math.min(.12,(o.aimY||0)*.08)):Math.sin(phase*.8)*(wet?.075:.025)*movement);
   c.shadowColor='#001b3566';c.shadowBlur=7;c.shadowOffsetY=4;
   // The source artwork includes the complete two-lobed tail and both arms.
   // Uniform scaling and no clip region prevent the previous half-body bug.
@@ -2227,7 +2230,7 @@ function drawAquaHoverPod(x,y,moving,phase,attacking){
  // An open cockpit arch behind the hero replaces the old tight elliptical clip.
  c.save();c.strokeStyle='#a9ffff99';c.lineWidth=5;c.beginPath();c.arc(0,-8,57,Math.PI*1.08,Math.PI*1.92);c.stroke();c.restore();
  // Approved Fishman artwork at its real aspect ratio, drawn WITHOUT clipping.
- if(!(window.FishmanV29Art?.fish(c,{type:'fish',x:-7,y:-62,motion:Math.max(.24,moving),attack:attacking,fullBody:true,face:(g.lastDx||1)<0?-1:1,aimY:v.y,phase})||window.FishmanVisualMaster?.hero(c,{type:'fish',x:-7,y:-62,motion:Math.max(.24,moving),attack:attacking,fullBody:true,face:(g.lastDx||1)<0?-1:1,aimY:v.y,phase})))fishman(-7,-62,.76);
+ if(!(window.FishmanV29Art?.fish(c,{type:'fish',x:-7,y:-31,motion:Math.max(.24,moving),attack:attacking,mode:'hover',fullBody:true,face:(g.lastDx||1)<0?-1:1,aimY:v.y,phase})||window.FishmanVisualMaster?.hero(c,{type:'fish',x:-7,y:-31,motion:Math.max(.24,moving),attack:attacking,mode:'hover',fullBody:true,face:(g.lastDx||1)<0?-1:1,aimY:v.y,phase})))fishman(-7,-31,.76);
  c.save();c.strokeStyle='#ffffff85';c.lineWidth=3;c.beginPath();c.arc(0,-10,61,Math.PI*1.10,Math.PI*1.42);c.stroke();c.restore();
  if(attacking){glow(63,-11,31,'#b9ffff92');circle(64,-11,8,'#c6ffff');}
  if(moving>.12){for(let i=0;i<4;i++){const u=(t*.9+i*.25)%1;circle(-70-u*30,36+Math.sin(t*3+i)*6,2+u*3,'#9cffffa3');}}
@@ -2320,7 +2323,7 @@ function drawSkillAnimation(h){if(!g||g.skillEffect<=0)return;const progressPuls
  if(h==='sub'){for(let i=0;i<3;i++){c.beginPath();c.arc(0,0,70+i*32+Math.sin(t*3+i)*5,0,TAU);c.stroke();}}
  c.globalAlpha=1;c.restore();}
 
-const COOP_FIELDS=['weapon','weaponLevels','weaponsOwned','weaponShield','x','y','hero','hp','maxHp','lives','maxLives','inv','shield','cool','actionWave','skillCooldown','skillCooldowns','skillEffect','skillKind','skillFlash','freezeTime','sonarTime','speedBoost','attackFlash','lastAim','moveIntensity','stepPhase','lastDx','lastDy','facing','deathMotion','reviveMotion','dodge','dodgeCool'];
+const COOP_FIELDS=['weapon','weaponLevels','weaponsOwned','weaponShield','x','y','hero','hp','maxHp','lives','maxLives','inv','shield','cool','actionWave','skillCooldown','skillCooldowns','skillEffect','skillKind','skillFlash','freezeTime','sonarTime','speedBoost','attackFlash','lastAim','moveIntensity','stepPhase','lastDx','lastDy','facing','poseFacing','poseAngle','poseRecoil','rollBoost','sonarPulse','basicPulse','deathMotion','reviveMotion','dodge','dodgeCool'];
 function coopHeroAvailable(h,x=g?.coopP2?.x??g?.x){if(!terrainHeroAllowed(h,x))return false;if(level===5)return h==='sub';return ['fish','kai','roxy','humpty','gozilla'].includes(h)&&(h!=='gozilla'||progress.godzilla);}
 function createCoopPlayer(){
  if(!g||scene!=='playing'||net()?.role!=='host'||!net()?.connected)return null;
@@ -2328,7 +2331,7 @@ function createCoopPlayer(){
  const prev=g.coopP2;
  const p={hero:h,x:Math.max(110,g.x-45),y:clamp(g.y+85,185,518),hp:prev?Math.max(1,Math.min(g.maxHp,prev.hp+1)):g.maxHp,maxHp:g.maxHp,lives:prev?prev.lives:g.maxLives,maxLives:g.maxLives,
   inv:2,shield:0,cool:0,actionWave:0,skillCooldown:0,skillCooldowns:{fish:0,kai:0,roxy:0,humpty:0,gozilla:0,sub:0},skillEffect:0,skillKind:null,skillFlash:0,freezeTime:0,sonarTime:0,speedBoost:0,
-  attackFlash:0,lastAim:{x:1,y:0},moveIntensity:0,stepPhase:0,lastDx:1,lastDy:0,facing:1,deathMotion:0,reviveMotion:1.0,
+  attackFlash:0,lastAim:{x:1,y:0},moveIntensity:0,stepPhase:0,lastDx:1,lastDy:0,facing:1,poseFacing:1,poseAngle:0,poseRecoil:0,rollBoost:1,sonarPulse:.5,basicPulse:0,deathMotion:0,reviveMotion:1.0,
   ...freshWeaponState(),zone:g.wave||0,chapter:level,arena:!!g.challenge||level===4,respawn:0,down:false};
  g.coopP2=p;return p;
 }
@@ -2360,11 +2363,16 @@ function tickCoopSecond(dt){
  p.skillCooldown=p.skillCooldowns[p.hero]||0;
  if(p.down){if(p.respawn>0){p.respawn-=dt;if(p.respawn<=0)coopRevive('guest');}return;}
  ensureTerrainHero(p,false);const mag=Math.max(1,Math.hypot(mx,my)),pmode=movementMode(p.hero,p.x),pstats=heroMoveStats[p.hero]||heroMoveStats.fish;let speed=pstats.speed*(p.speedBoost>0?1.31:1);speed*=({hover:1.07,swim:1.14,paddle:.71,float:.60,'power-swim':.93,cruise:1.1,sprint:1.05,roll:1.03,stomp:.95,run:1}[pmode]||1);
- const limit=(g.challenge||level===4)?673:Math.max(673,(g.runLength||W)-(p.hero==='sub'?150:65));
- p.x=clamp(p.x+mx/mag*speed*dt,p.hero==='sub'?155:62,limit);
+ if(p.hero==='humpty'){p.rollBoost=Math.hypot(mx,my)>.2?Math.min(1.45,(p.rollBoost||1)+dt*.65):Math.max(1,(p.rollBoost||1)-dt*.55);speed*=p.rollBoost;}
+ const limit=(g.challenge||level===4)?673:Math.max(673,(g.runLength||W)-(p.hero==='sub'?150:p.hero==='fish'?110:65));
+ p.x=clamp(p.x+mx/mag*speed*dt,p.hero==='sub'?155:p.hero==='fish'?112:62,limit);
  p.y=clamp(p.y+my/mag*speed*dt*(pmode==='float'?.7:1),p.hero==='sub'?205:162,p.hero==='sub'?511:548);if(pmode==='float'&&Math.abs(my)<.2)p.y+=(376-p.y)*Math.min(.1,dt*.35);ensureTerrainHero(p,false);
  const moving=Math.min(1,Math.hypot(mx,my));p.moveIntensity+=(moving-p.moveIntensity)*Math.min(1,dt*12);p.stepPhase+=dt*pstats.phase*Math.max(.1,moving);
  if(moving>.12){p.lastDx=mx/mag;p.lastDy=my/mag;if(Math.abs(mx)>.1)p.facing=mx<0?-1:1;}
+ const aimFace=(p.attackFlash>0?p.lastAim?.x:mx)||p.facing||1;
+ p.poseFacing+=((aimFace<0?-1:1)-(p.poseFacing??1))*Math.min(1,dt*11);
+ p.poseAngle+=(clamp((p.attackFlash>0?p.lastAim?.y:my)||0,-1,1)-(p.poseAngle||0))*Math.min(1,dt*9);
+ p.poseRecoil=Math.max(0,(p.poseRecoil||0)-dt*3.1);
  if(keys.hero&&coopHeroAvailable(keys.hero)&&p.hero!==keys.hero){p.hero=keys.hero;net().remoteHero=keys.hero;p.cool=0;p.skillCooldown=p.skillCooldowns[p.hero]||0;}
  if(keys.skill){keys.skill=false;withCoopPlayer(()=>useSpecialSkill());}
  if(keys.interact){keys.interact=false;
@@ -2649,7 +2657,7 @@ function drawPlayer(){
  c.shadowColor='rgba(0,0,0,.18)';c.shadowBlur=10;c.shadowOffsetY=4;
  // Custom deluxe pose renderer handles side profiles and articulated limbs in world coordinates.
  c.restore();
- if(!(window.FishmanV29Art?.fish(c,{type:h,x:g.x,y:g.y,motion:moving,attack:attacking,face:heroVector().facing,aimY:aim.y,phase})||window.FishmanVisualMaster?.hero(c,{type:h,x:g.x,y:g.y,motion:moving,attack:attacking,face:heroVector().facing,aimY:aim.y,phase})))premiumHero(h,s,moving,phase,aim,attacking);
+ if(!(window.FishmanV29Art?.fish(c,{type:h,x:g.x,y:g.y,motion:moving,attack:attacking,face:heroVector().facing,aimY:aim.y,phase,mode})||window.FishmanVisualMaster?.hero(c,{type:h,x:g.x,y:g.y,motion:moving,attack:attacking,face:heroVector().facing,aimY:aim.y,phase,mode})))premiumHero(h,s,moving,phase,aim,attacking);
  drawCharacterMotion(h,s*.8,moving,phase);window.FishmanV29Art?.effects(c,{hero:h,x:g.x,y:g.y,motion:moving,phase,attack:attacking,mode,aim});if(mode==='float'){c.save();c.strokeStyle='#beffff99';c.lineWidth=3;c.beginPath();c.ellipse(g.x,g.y+22,45+Math.sin(t*4)*4,10,0,0,TAU);c.stroke();c.beginPath();c.ellipse(g.x,g.y+24,31,7,0,0,TAU);c.stroke();c.restore();}
  if((g.skillEffect||0)>0)drawSkillAnimation(h);
  if(attacking)drawAttackAnimation(h,s);
