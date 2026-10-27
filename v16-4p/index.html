@@ -864,10 +864,63 @@ function electricAttack(v,L,wl,power=false){
  }else if(!targets.length)weaponFX('beam',g.x,g.y,g.x+v.x*range*.7,g.y+v.y*range*.7,'#fff1a2',.3);
  g.cool=power?.25:Math.max(.35,.72-wl*.04);g.attackFlash=.4;sfx('power');
 }
+
+/* SUPER MODE replaces the currently selected W weapon with a distinctive form. */
+function superModeFire(hero,L,v,angle){
+ const col={fish:'#73f7ff',kai:'#b8e9ff',roxy:'#ff8f5a',humpty:'#fff0a2',gozilla:'#f8ff83',sub:'#a7ffcb'}[hero];
+ const sx=g.x,sy=g.y,fx=sx+v.x*160,fy=sy+v.y*160;
+ if(hero==='fish'){
+  // Radial aqua tidal wave: a growing protective, offensive bubble ring.
+  g.cool=.38;
+  for(let i=0;i<12;i++)spawnWeaponBullet(angle+i*TAU/12,'aqua',24+L*5,530,19,1.25,{splash:60});
+  weaponFX('shock',sx,sy,sx,sy,col,.60,230);
+ }else if(hero==='kai'){
+  // Piercing cryogenic rail: long, narrow parallel beams freeze their entire path.
+  g.cool=.43;
+  for(let i=-1;i<=1;i++)spawnWeaponBullet(angle+i*.085,'cryo',37+L*8,1150,18,1.75,{pierce:true,stun:3.7});
+  weaponFX('beam',sx,sy,sx+v.x*750,sy+v.y*750,col,.35);
+  const target=g.challenge;
+  if(target&&Math.hypot(target.x-sx,target.y-sy)<740){
+   const dx=target.x-sx,dy=target.y-sy,along=dx*v.x+dy*v.y,cross=Math.abs(dx*v.y-dy*v.x);
+   if(along>=0&&cross<80){target.stun=Math.max(target.stun,1.0);}
+  }
+ }else if(hero==='roxy'){
+  // Flame thrower: cone of short-range fire, many small fast pulses.
+  g.cool=.16;
+  for(let i=-4;i<=4;i++)spawnWeaponBullet(angle+i*.155,'flame',13+L*3,620,15,.83,{splash:36,stun:.45});
+  weaponFX('shock',sx+v.x*80,sy+v.y*80,sx,sy,'#ff774b',.21,105);
+ }else if(hero==='humpty'){
+  // Meteor eggs: slow giant rolling bombs that bounce off the screen edges.
+  g.cool=.71;
+  for(let i=-2;i<=2;i++){const egg=spawnWeaponBullet(angle+i*.22,'egg',42+L*9,520,25,2.7,{splash:125,stun:2.2});
+   egg.ricochet=3;
+  }
+  weaponFX('shock',sx,sy,sx,sy,'#fff1a6',.35,175);
+ }else if(hero==='gozilla'){
+  // Rail-laser: piercing rays supplemented with dramatic chain arcs.
+  g.cool=.47;
+  for(let i=-2;i<=2;i++)spawnWeaponBullet(angle+i*.12,'laser',42+L*8,1100,17,1.5,{pierce:true,stun:1});
+  weaponFX('beam',sx,sy,sx+v.x*840,sy+v.y*840,col,.40);
+  for(const h of g.hazards||[])if(Math.hypot(sx-h.x,sy-h.y)<340)h.stun=Math.max(h.stun,2.3);
+ }else if(hero==='sub'){
+  // Remote-guided sonar rockets fan out then rapidly converge on enemies.
+  g.cool=.66;
+  for(let i=-3;i<=3;i++)spawnWeaponBullet(angle+i*.30,'sonar',37+L*7,590,15,3.1,{homing:2.0,splash:60});
+  weaponFX('shock',sx,sy,sx,sy,'#d6fff0',.46,200);
+ }
+ g.attackFlash=.42;g.actionWave=.32;g.lastAim=v;
+ if(hero==='kai'||hero==='gozilla')burst(fx,fy,col,8);
+ sfx(hero==='roxy'?'attack':'power');
+ return true;
+}
+
 function weaponFire(){
  if(!g||scene!=='playing'||g.cool>0||g.down||(coopActionSlot===1&&g.hostDown))return;
  ensureWeaponState();const hero=g.hero,L=heroUpgrade(hero),wt=g.weapon||'basic',wl=g.weaponLevels[wt]||1;
- const v=aimVector(),angle=Math.atan2(v.y,v.x);g.lastAim=v;g.actionWave=.23;g.attackFlash=.33;
+ const v=aimVector(),angle=Math.atan2(v.y,v.x);
+ // S is a true transformation: the equipped weapon is replaced, not merely augmented.
+ if(g.skillEffect>0&&g.skillKind===hero)return superModeFire(hero,L,v,angle);
+ g.lastAim=v;g.actionWave=.23;g.attackFlash=.33;
  if(wt==='electric'){electricAttack(v,L,wl);return;}
  if(wt==='rapid'){
   g.cool=Math.max(.075,.13-wl*.007);
@@ -893,16 +946,7 @@ function weaponFire(){
   for(let i=0;i<n;i++)spawnWeaponBullet(angle+(i-(n-1)/2)*(hero==='roxy'?.14:.11),
    'basic',def[2]+(L-1)*5,def[1],hero==='humpty'?18:13,1.5,{pierce:hero==='gozilla'&&L>=3});
  }
- // Active hero skills change the projectile pattern as well as providing protection.
- if(g.skillEffect>0&&g.skillKind===hero&&(g.skillBurstCool||0)<=0){
-  g.skillBurstCool=hero==='roxy'?.33:hero==='gozilla'?.40:hero==='fish'?.27:.37;
-  const config={fish:['aqua',2,.55,14,600,13,1.3,38],kai:['cryo',3,.32,16,520,12,1.6,0],
-   roxy:['flame',5,.21,18,480,15,.75,35],humpty:['egg',1,0,30,710,22,1.1,65],
-   gozilla:['laser',3,.28,30,930,13,1.35,0],sub:['sonar',5,.3,24,530,15,1.6,42]};
-  const [name,count,space,damage,speed,r,life,splash]=config[hero]||config.fish;
-  for(let i=0;i<count;i++)spawnWeaponBullet(angle+(i-(count-1)/2)*space,name,damage+L*4,speed,r,life,
-   {splash,stun:hero==='kai'?2.7:0,pierce:hero==='gozilla',homing:hero==='sub'?.65:0});
- }
+ // Outside super mode, only the currently equipped weapon fires.
  if(hero==='humpty'&&wt==='basic'){g.inv=Math.max(g.inv,.23);
   g.x=clamp(g.x+v.x*42,62,(g.challenge||level===4)?673:(g.runLength||W)-65);
   g.y=clamp(g.y+v.y*42,170,540);}
