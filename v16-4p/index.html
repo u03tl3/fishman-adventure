@@ -605,20 +605,20 @@ function skillStun(radius,duration,repel=0){for(const h of g.hazards){const dx=h
  if(g.arena){for(let i=g.arena.orbs.length-1;i>=0;i--)if(Math.hypot(g.arena.orbs[i].x-g.x,g.arena.orbs[i].y-g.y)<radius){burst(g.arena.orbs[i].x,g.arena.orbs[i].y,'#c3edff',8);g.arena.orbs.splice(i,1);}}}
 function useSpecialSkill(){if(net()?.role==='guest'){net()?.sendAction('skill');return true;}if(scene!=='playing'||!g)return false;
  const h=g.hero,L=heroSkillLevel(h),cd=g.skillCooldown||0;if(cd>0){say(skillNames[h]+' recharging: '+cd.toFixed(1)+'s',1.0);return false;}
- g.skillCooldown=skillRecharge(h);g.skillCooldowns[h]=g.skillCooldown;g.skillBurstCool=0;g.skillEffect=1.0+.14*L;g.skillKind=h;g.skillFlash=1.05;g.attackFlash=Math.max(g.attackFlash||0,.4);g.lastAim=aimVector();const power=1+(L-1)*.23;
+ g.skillCooldown=skillRecharge(h);g.skillCooldowns[h]=g.skillCooldown;g.skillBurstCool=0;g.cool=0;g.skillEffect=8+L*.6;g.skillKind=h;g.skillFlash=1.05;g.attackFlash=Math.max(g.attackFlash||0,.4);g.lastAim=aimVector();const power=1+(L-1)*.23;
  if(h==='fish'){
-  g.shield=Math.max(g.shield,2.2+L*.62);g.speedBoost=2+L*.6;skillStun(130+L*24,1.0+L*.35,19+L*7);g.skillEffect=g.shield;burst(g.x,g.y,'#84fcff',24+L*4);
+  g.shield=Math.max(g.shield,2.2+L*.62);g.speedBoost=2+L*.6;skillStun(130+L*24,1.0+L*.35,19+L*7);g.skillEffect=8+L*.6;g.shield=Math.max(g.shield,6+L*.45);burst(g.x,g.y,'#84fcff',24+L*4);
  }else if(h==='kai'){
-  g.freezeTime=1.25+L*.52;g.skillEffect=g.freezeTime;skillStun(215+L*35,g.freezeTime+.12);burst(g.x,g.y,'#bb9aff',28+L*3);
+  g.freezeTime=3.2+L*.35;g.skillEffect=8+L*.6;skillStun(215+L*35,g.freezeTime+.12);burst(g.x,g.y,'#bb9aff',28+L*3);
  }else if(h==='roxy'){
-  const radius=175+L*38;skillStun(radius,1.3+L*.48,45+L*13);g.inv=Math.max(g.inv,.36+L*.12);g.skillEffect=.8+L*.2;burst(g.x,g.y,'#ffba61',35+L*4);
+  const radius=175+L*38;skillStun(radius,1.3+L*.48,45+L*13);g.inv=Math.max(g.inv,.36+L*.12);g.skillEffect=7.5+L*.5;burst(g.x,g.y,'#ffba61',35+L*4);
  }else if(h==='humpty'){
-  const vec=aimVector(),distance=112+L*30;g.x=clamp(g.x+vec.x*distance,60,(g.challenge||level===4)?673:(g.runLength||W)-65);g.y=clamp(g.y+vec.y*distance,167,541);g.inv=Math.max(g.inv,.55+L*.19);g.shield=Math.max(g.shield,.35+L*.16);g.skillEffect=.6+L*.18;skillStun(85+L*18,.6+L*.27,18);burst(g.x,g.y,'#fcebb9',27);
+  const vec=aimVector(),distance=112+L*30;g.x=clamp(g.x+vec.x*distance,60,(g.challenge||level===4)?673:(g.runLength||W)-65);g.y=clamp(g.y+vec.y*distance,167,541);g.inv=Math.max(g.inv,.55+L*.19);g.shield=Math.max(g.shield,.35+L*.16);g.skillEffect=7.5+L*.6;skillStun(85+L*18,.6+L*.27,18);burst(g.x,g.y,'#fcebb9',27);
  }else if(h==='gozilla'){
-  const radius=155+L*49;skillStun(radius,1.2+L*.4,10+L*5);g.skillEffect=1.1+L*.27;g.shield=Math.max(g.shield,.45+L*.15);
+  const radius=155+L*49;skillStun(radius,1.2+L*.4,10+L*5);g.skillEffect=7.2+L*.55;g.shield=Math.max(g.shield,.45+L*.15);
   for(const thing of [...(g.stars||[]),...(g.awards||[]),...(g.skillCrystals||[])]){if(thing.got||Math.hypot(thing.x-g.x,thing.y-g.y)>radius)continue;thing.x=g.x+rand(-21,21);thing.y=g.y+rand(-21,21);}burst(g.x,g.y,'#7feff9',39+L*4);
  }else if(h==='sub'){
-  g.shield=Math.max(g.shield,1.9+L*.73);g.sonarTime=2.1+L*.62;g.skillEffect=g.sonarTime;skillStun(185+L*36,1.0+L*.43);burst(g.x,g.y,'#ffec93',30+L*3);
+  g.shield=Math.max(g.shield,4+L*.65);g.sonarTime=4+L*.7;g.skillEffect=8+L*.5;skillStun(185+L*36,1.0+L*.43);burst(g.x,g.y,'#ffec93',30+L*3);
  }
  specialAttackBurst(h,L);sfx('power');updateSkillButton();return true;
 }
@@ -661,14 +661,15 @@ const WEAPON_KEYS=['basic','rapid','spread','charge','homing','electric'];
 const WEAPON_LABEL={basic:'Bubble / Gadget',rapid:'Rapid Blaster',spread:'Triple Barrel',charge:'Charge Cannon',homing:'Homing Pod',electric:'Electric Arc'};
 const WEAPON_COLOR={basic:'#8cefff',rapid:'#37e9ff',spread:'#ffac57',charge:'#e1a3ff',homing:'#7bf7a4',electric:'#ffeb73'};
 const WEAPON_SYMBOL={basic:'●',rapid:'➤',spread:'≋',charge:'◉',homing:'⌖',electric:'ϟ'};
-function freshWeaponState(){return {weapon:'basic',weaponLevels:{basic:1,rapid:1,spread:1,charge:1,homing:1,electric:1},weaponsOwned:['basic'],weaponShield:0};}
+function freshWeaponState(){return {weapon:'basic',weaponLevels:{basic:1,rapid:1,spread:1,charge:1,homing:1,electric:1},weaponsOwned:[...WEAPON_KEYS],weaponShield:0};}
 function ensureWeaponState(player=g){
  if(!player)return;
  const defaults=freshWeaponState();
  if(!WEAPON_KEYS.includes(player.weapon))player.weapon='basic';
  if(!player.weaponLevels||typeof player.weaponLevels!=='object')player.weaponLevels={...defaults.weaponLevels};
- if(!Array.isArray(player.weaponsOwned))player.weaponsOwned=['basic'];
- if(!player.weaponsOwned.includes('basic'))player.weaponsOwned.unshift('basic');
+ if(!Array.isArray(player.weaponsOwned))player.weaponsOwned=[...WEAPON_KEYS];
+ // The entire arsenal is available immediately; pickups increase its strength.
+ for(const weapon of WEAPON_KEYS)if(!player.weaponsOwned.includes(weapon))player.weaponsOwned.push(weapon);
  if(!player.weaponsOwned.includes(player.weapon))player.weapon='basic';
  if(!Number.isFinite(player.weaponShield))player.weaponShield=0;
 }
@@ -690,7 +691,7 @@ function penalizeWeapon(player=g){
  if(player.weapon==='basic'||player.weaponShield>0)return;
  const k=player.weapon,level=player.weaponLevels[k]||1;
  if(level>1){player.weaponLevels[k]=level-1;say('P'+(player.slot||1)+' '+WEAPON_LABEL[k]+' POWER DOWN',1.8);}
- else{player.weaponsOwned=player.weaponsOwned.filter(x=>x!==k);player.weapon='basic';say('P'+(player.slot||1)+' LOST '+WEAPON_LABEL[k]+' — FIND ANOTHER PICKUP!',2.4);}
+ else{player.cool=Math.max(player.cool,.32);say('P'+(player.slot||1)+' '+WEAPON_LABEL[k]+' JAMMED BRIEFLY — KEEP FIGHTING!',1.5);}
 }
 function createWeaponDrops(){
  if(!g)return;ensureWeaponState();g.weaponPickups=[];
@@ -715,9 +716,8 @@ function collectWeapons(player=g){
   if(a.type==='gold')upgradeWeapon(player,'GOLDEN CORE');
   else if(a.type==='shield'){player.weaponShield=Math.max(player.weaponShield,7);player.shield=Math.max(player.shield,7);say('P'+(player.slot||1)+' SHIELD GENERATOR · 7 SECONDS!',2);}
   else{
-   if(!player.weaponsOwned.includes(a.type))player.weaponsOwned.push(a.type);
-   player.weapon=a.type;player.weaponLevels[a.type]=Math.max(1,player.weaponLevels[a.type]||1);
-   say('P'+(player.slot||1)+' FOUND '+WEAPON_LABEL[a.type]+'! PRESS W TO SWITCH',2.4);
+   player.weapon=a.type;player.weaponLevels[a.type]=Math.min(5,(player.weaponLevels[a.type]||1)+1);
+   say('P'+(player.slot||1)+' UPGRADED '+WEAPON_LABEL[a.type]+' TO Lv.'+player.weaponLevels[a.type],2.4);
   }
  }
 }
@@ -754,7 +754,7 @@ function menu(){scene='menu';g=null;cameraX=0;particles=[];toastLife=0;switchEl.
  const picks=chapters.map((ch,i)=>`<button class="chapterpick" data-start="${i}" ${i>=unlock?'disabled':''}><b>${i<unlock?'CHAPTER '+(i+1):'🔒 LOCKED'}</b><span>${ch.icon} ${ch.short}</span></button>`).join('');
  const rule=difficulty==='nightmare'?'☠ NIGHTMARE · 3 hearts in stages, 5 boss hearts, frantic volleys, extra trackers, fastest attacks and limited time.':difficulty==='expert'?'⚔ HERO · 6 items per area, chasers, tighter dodge timing, 7 boss hearts and timed objectives.':'🌟 EASY · 4 items per area, longer warnings, extra hearts, forgiving attacks and no boss timer.';
  const diffButtons=[['classic','🌟 EASY','Gentle · learn'],['expert','⚔ HERO','Tough · tactical'],['nightmare','☠ NIGHTMARE','Brutal · intense']].map(([key,name,desc])=>`<button class="diff-card ${difficulty===key?'active':''}" data-diff="${key}" aria-pressed="${difficulty===key}"><strong>${name}</strong><small>${desc}</small></button>`).join('');
- showScreen(`<span class="tag">9 CHAPTER BOSSES • FINAL BOSS RUSH • TWIN-STICK</span><h1><span>FISHMAN</span><br>THE UNDERWATER<br>ADVENTURE</h1><p>${rule}<br>Face a different boss every chapter, then all nine in the final arena. McTreeFace still has his three boss forms. LEFT STICK moves; RIGHT STICK aims and fires. Your health resets when you revive, using one of your limited lives. Collect v23 weapons: Rapid Blaster, Triple Barrel, Charge Cannon, Homing Pod and Electric Arc; find Shield Generators and Golden Upgrade Cores. Press W on your gamepad to switch weapons (X on a keyboard). Taking a hit can weaken or remove an unshielded special weapon. A attacks, B interacts/dodges, and S unleashes an upgradeable special skill. <strong style="color:#ffe18e">To play together on ONE screen, press the ONE V button to add P2, then P3, then P4. Every player receives their own MOVE joystick, AIM + FIRE joystick, A, B and S buttons.</strong> Collect ★ stars and character food! Tilt your phone sideways for Joy-Con-style play.</p><div class="difficulty-picks" aria-label="Choose one of three difficulty levels">${diffButtons}</div><div class="buttonrow">${button(unlock>1?'Continue Story':'Start Adventure','continue')}${button('⚡ Boss Practice','boss','secondary')}${button('🚤 Submarine Practice','submarine','secondary')}${button('👥 Play Together · 1–4 Players','online','secondary')}</div><div class="chaptergrid">${picks}</div><p class="tip">RIGHT STICK = AIM + FIRE • LEFT STICK = MOVE • B = DODGE / USE • Beware glowing RED warning zones.</p>`);
+ showScreen(`<span class="tag">9 CHAPTER BOSSES • FINAL BOSS RUSH • TWIN-STICK</span><h1><span>FISHMAN</span><br>THE UNDERWATER<br>ADVENTURE</h1><p>${rule}<br>Face a different boss every chapter, then all nine in the final arena. McTreeFace still has his three boss forms. LEFT STICK moves; RIGHT STICK aims and fires. Your health resets when you revive, using one of your limited lives. Collect v23 weapons: Rapid Blaster, Triple Barrel, Charge Cannon, Homing Pod and Electric Arc; find Shield Generators and Golden Upgrade Cores. All six firing styles are available straight away: press W on a gamepad (X on a keyboard) to switch. Weapon pickups upgrade those attacks; damage can briefly jam them but never remove them. Press S to transform your attacks into a completely different SUPER MODE for several seconds. A attacks, B interacts/dodges, and S unleashes an upgradeable special skill. <strong style="color:#ffe18e">To play together on ONE screen, press the ONE V button to add P2, then P3, then P4. Every player receives their own MOVE joystick, AIM + FIRE joystick, A, B and S buttons.</strong> Collect ★ stars and character food! Tilt your phone sideways for Joy-Con-style play.</p><div class="difficulty-picks" aria-label="Choose one of three difficulty levels">${diffButtons}</div><div class="buttonrow">${button(unlock>1?'Continue Story':'Start Adventure','continue')}${button('⚡ Boss Practice','boss','secondary')}${button('🚤 Submarine Practice','submarine','secondary')}${button('👥 Play Together · 1–4 Players','online','secondary')}</div><div class="chaptergrid">${picks}</div><p class="tip">RIGHT STICK = AIM + FIRE • LEFT STICK = MOVE • B = DODGE / USE • Beware glowing RED warning zones.</p>`);
 }
 function intro(n){level=n;scene='intro';g=null;cameraX=0;particles=[];toastLife=0;keys={};held={};resetStick();const d=chapters[n];switchEl.style.display='none';
  const goal=n===9?'FINAL BOSS RUSH: Fight all NINE chapter bosses, one after the other in the battle arena. Aim with the right stick, dodge with B, use S for upgraded special skills. Earn a star and regain up to two HP after each boss. Lives only refill when the entire chapter is cleared.':n===4?'THREE TRIALS: I · BARKSHIP: dodge wing boomerangs, storm seeds and a charge. II · PORTAL TREE: evade crossfire, spirals and emerging roots. III · THORN CROWN: break its shield and escape huge laser beams, root cages and gravity vortices. HOLD A to fire, TAP B to dodge; the correct hero switches automatically. Each form must complete 1 attack pattern on Easy, 2 on Hero or 3 on Nightmare before its guard breaks.':nightmare()? n===5?'PART 1: Capture Naughty and find SIX passes. PART 2: Collect EIGHT cells. Avoid tracking shockwaves!':n===3?'Disarm EIGHT devices in EACH district, then escape before the timer expires.':'Collect EIGHT objects in EACH area. Evade targeting strikes before the timer expires.':hardMode?d.task.replace(/four/gi,'SIX').replace(/eight/gi,'TWELVE').replace(/two yellow passes/gi,'FOUR yellow passes').replace(/four power cells/gi,'SIX power cells'):d.task;
