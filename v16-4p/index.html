@@ -794,24 +794,90 @@ function aimVector(){if(coopAimOverride)return coopAimOverride;let dx=1,dy=0,tar
  else if(!aim.manual){dx=g.lastDx||1;dy=g.lastDy||0;}
  const n=Math.max(.001,Math.hypot(dx,dy));return {x:dx/n,y:dy/n};
 }
-function weaponFire(){if(!g||scene!=='playing'||g.cool>0)return;
- const h=g.hero,L=heroUpgrade(h),v=aimVector();ensureWeaponState();const wt=g.weapon||'basic',wl=g.weaponLevels[wt]||1;
- g.lastAim=v;g.actionWave=.22;g.attackFlash=g.hero==='roxy'?.33:g.hero==='gozilla'?.4:.27;
- const defs={fish:[.43,550,13],kai:[.65,420,17],roxy:[.19,410,10],humpty:[.8,530,31],gozilla:[.58,950,34],sub:[.45,530,21]};
- const def=defs[h]||defs.fish;g.cool=Math.max(.095,(def[0]-(L-1)*.035)*(wt==='rapid'?.57:wt==='spread'?.93:wt==='charge'?1.38:wt==='homing'?1.08:.96)*(1-.035*(wl-1)));
- const spread=wt==='spread'?(wl>=3?5:3):h==='roxy'?3:(L>=4&&h==='fish'?3:1);
- for(let n=0;n<spread;n++){
- const angle=Math.atan2(v.y,v.x)+(n-(spread-1)/2)*(h==='roxy'?.15:.09);
- const vx=Math.cos(angle)*def[1],vy=Math.sin(angle)*def[1];
- const proj={x:g.x+Math.cos(angle)*22,y:g.y-10+Math.sin(angle)*14,vx:vx*(1+.04*(wl-1)),vy:vy*(1+.04*(wl-1)),age:0,life:1.55,kind:h,weapon:wt,damage:def[2]+(L-1)*5+(wl-1)*4+(wt==='charge'?16+wl*5:wt==='electric'?8:0),r:(h==='roxy'?12:h==='gozilla'?15:14)+(wt==='charge'?wl*2:0),pierce:(h==='gozilla'&&L>=3)||(wt==='charge'&&wl>=5),homing:wt==='homing'?.08+wl*.035:0,chain:wt==='electric'?1+Math.floor(wl/3):0};
- if(level===4){const travel=Math.max(180,Math.hypot(g.arena.bossX-g.x,g.arena.bossY-g.y));
- g.shots.push({x:proj.x,y:proj.y,sx:proj.x,sy:proj.y,tx:proj.x+v.x*travel,ty:proj.y+v.y*travel,life:0,kind:h,damage:proj.damage,aimed:aim.manual});
- }else g.proj.push(proj);
- }
- if(h==='humpty'){g.inv=Math.max(g.inv,.35);g.x=clamp(g.x+v.x*62,62,(g.challenge||level===4)?673:((g.runLength||W)-65));g.y=clamp(g.y+v.y*62,170,540);}
- if(h==='gozilla'&&L>=2)burst(g.x+v.x*36,g.y+v.y*36,'#a6faff',6);
- sfx(h==='gozilla'?'power':'attack');
+
+/* Dedicated V23 combat styles. FX are shared so every teammate sees the attacks. */
+function weaponFX(type,x,y,tx,ty,col='#8effff',ttl=.32,r=90){
+ g.weaponFX=g.weaponFX||[];g.weaponFX.push({type,x,y,tx,ty,col,ttl,life:ttl,r});
+ if(g.weaponFX.length>42)g.weaponFX.splice(0,g.weaponFX.length-42);
 }
+function tickWeaponFX(dt){if(g?.weaponFX)g.weaponFX=g.weaponFX.filter(fx=>(fx.life-=dt)>0);}
+function drawWeaponFX(){for(const f of g?.weaponFX||[]){const a=Math.max(0,f.life/f.ttl);c.save();c.globalAlpha=a;c.strokeStyle=f.col;c.lineWidth=5*a+2;c.shadowBlur=12;c.shadowColor=f.col;
+ if(f.type==='beam'){c.beginPath();c.moveTo(f.x,f.y);for(let k=1;k<=7;k++){let u=k/7,wiggle=k===7?0:Math.sin(k*19+f.x*.01)*12*a;c.lineTo(f.x+(f.tx-f.x)*u+wiggle,f.y+(f.ty-f.y)*u-wiggle);}c.stroke();}
+ else{c.beginPath();c.arc(f.x,f.y,f.r*(.22+(1-a)*.85),0,TAU);c.stroke();if(f.type==='shock'){c.lineWidth=2;c.beginPath();c.arc(f.x,f.y,f.r*(.15+(1-a)*.6),0,TAU);c.stroke();}}
+ c.restore();}}
+function spawnWeaponBullet(angle,weapon,damage,speed,r,life,ex={}){
+ const x=g.x+Math.cos(angle)*30,y=g.y-9+Math.sin(angle)*18;
+ const p={x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,age:0,life,kind:g.hero,weapon,damage,r,
+   pierce:!!ex.pierce,homing:ex.homing||0,splash:ex.splash||0,stun:ex.stun||0,owner:coopActionSlot};
+ if(level===4){
+  const distance=Math.max(150,Math.hypot(g.arena.bossX-x,g.arena.bossY-y));
+  const reach=weapon==='spread'?Math.min(370,distance):distance;
+  g.shots.push({x,y,sx:x,sy:y,tx:x+Math.cos(angle)*reach,ty:y+Math.sin(angle)*reach,life:0,
+   kind:g.hero,weapon,damage,aimed:!!aim.manual,owner:coopActionSlot});
+ }else g.proj.push(p);
+ return p;
+}
+function electricAttack(v,L,wl,power=false){
+ const range=power?560:380+wl*25,targets=(g.hazards||[]).filter(h=>Math.hypot(h.x-g.x,h.y-g.y)<range)
+  .sort((a,b)=>Math.hypot(a.x-g.x,a.y-g.y)-Math.hypot(b.x-g.x,b.y-g.y)).slice(0,power?9:3+wl);
+ let x=g.x,y=g.y;
+ for(const h of targets){weaponFX('beam',x,y,h.x,h.y,'#ffea86',.34);h.stun=Math.max(h.stun,power?4:2+wl*.3);
+  h.hp=(h.hp??(hardMode?5:3))-(power?4:2);if(h.hp<=0){h.hp=hardMode?5:3;h.stun=6;}x=h.x;y=h.y;}
+ const a=g.challenge,damage=power?62+L*6:22+wl*7+L*3;
+ if(a&&Math.hypot(a.x-g.x,a.y-g.y)<range+90){weaponFX('beam',x,y,a.x,a.y,'#fff1ab',.4);
+  a.hp=Math.max(0,a.hp-damage);a.flash=.25;burst(a.x,a.y,'#fff7b7',12);if(a.hp<=0)challengeWin();}
+ else if(g.arena&&Math.hypot(g.arena.bossX-g.x,g.arena.bossY-g.y)<range+110){
+  const b=g.arena;weaponFX('beam',x,y,b.bossX,b.bossY,'#ffec9a',.32);
+  if(b.shield>0)b.shield=Math.max(0,b.shield-2);
+  else g.shots.push({x:g.x,y:g.y,sx:g.x,sy:g.y,tx:b.bossX,ty:b.bossY,life:.25,
+   kind:g.hero,weapon:'electric',damage,aimed:false,owner:coopActionSlot});
+ }else if(!targets.length)weaponFX('beam',g.x,g.y,g.x+v.x*range*.7,g.y+v.y*range*.7,'#fff1a2',.3);
+ g.cool=power?.25:Math.max(.35,.72-wl*.04);g.attackFlash=.4;sfx('power');
+}
+function weaponFire(){
+ if(!g||scene!=='playing'||g.cool>0||g.hostDown||g.down)return;
+ ensureWeaponState();const hero=g.hero,L=heroUpgrade(hero),wt=g.weapon||'basic',wl=g.weaponLevels[wt]||1;
+ const v=aimVector(),angle=Math.atan2(v.y,v.x);g.lastAim=v;g.actionWave=.23;g.attackFlash=.33;
+ if(wt==='electric'){electricAttack(v,L,wl);return;}
+ if(wt==='rapid'){
+  g.cool=Math.max(.075,.13-wl*.007);
+  for(let i=0;i<2;i++)spawnWeaponBullet(angle+(i-.5)*.07,'rapid',5+L*2+wl*2,910,6,1.3);
+  weaponFX('beam',g.x,g.y,g.x+v.x*57,g.y+v.y*57,'#39e9ff',.10);
+ }else if(wt==='spread'){
+  g.cool=Math.max(.37,.70-wl*.045);const n=wl>=4?9:7;
+  for(let i=0;i<n;i++)spawnWeaponBullet(angle+(i-(n-1)/2)*.16,'spread',12+L*2+wl*2,530,10,.58);
+  weaponFX('shock',g.x+v.x*40,g.y+v.y*40,g.x,g.y,'#ffaf65',.24,69);
+ }else if(wt==='charge'){
+  g.cool=Math.max(.67,1.23-wl*.08);
+  spawnWeaponBullet(angle,'charge',50+L*6+wl*12,390,25+wl*3,2.3,{splash:110+wl*16,stun:1.6});
+  weaponFX('shock',g.x+v.x*40,g.y+v.y*40,g.x,g.y,'#dea1ff',.38,96);
+ }else if(wt==='homing'){
+  g.cool=Math.max(.47,.88-wl*.05);const n=wl>=4?5:3;
+  for(let i=0;i<n;i++)spawnWeaponBullet(angle+(i-(n-1)/2)*.36,
+   'homing',18+L*3+wl*4,450,11,2.8,{homing:.50+wl*.13});
+  weaponFX('shock',g.x,g.y,g.x,g.y,'#87ffc0',.3,65);
+ }else{
+  const defs={fish:[.38,615,15],kai:[.47,530,21],roxy:[.2,450,14],humpty:[.59,580,33],gozilla:[.45,940,36],sub:[.41,610,27]};
+  const def=defs[hero]||defs.fish;g.cool=Math.max(.115,def[0]-(L-1)*.035);
+  const n=hero==='roxy'?4:hero==='fish'&&L>=4?3:1;
+  for(let i=0;i<n;i++)spawnWeaponBullet(angle+(i-(n-1)/2)*(hero==='roxy'?.14:.11),
+   'basic',def[2]+(L-1)*5,def[1],hero==='humpty'?18:13,1.5,{pierce:hero==='gozilla'&&L>=3});
+ }
+ // Active hero skills change the projectile pattern as well as providing protection.
+ if(g.skillEffect>0&&g.skillKind===hero){
+  const config={fish:['aqua',2,.55,14,600,13,1.3,38],kai:['cryo',3,.32,16,520,12,1.6,0],
+   roxy:['flame',5,.21,18,480,15,.75,35],humpty:['egg',1,0,30,710,22,1.1,65],
+   gozilla:['laser',3,.28,30,930,13,1.35,0],sub:['sonar',5,.3,24,530,15,1.6,42]};
+  const [name,count,space,damage,speed,r,life,splash]=config[hero]||config.fish;
+  for(let i=0;i<count;i++)spawnWeaponBullet(angle+(i-(count-1)/2)*space,name,damage+L*4,speed,r,life,
+   {splash,stun:hero==='kai'?2.7:0,pierce:hero==='gozilla',homing:hero==='sub'?.65:0});
+ }
+ if(hero==='humpty'&&wt==='basic'){g.inv=Math.max(g.inv,.23);
+  g.x=clamp(g.x+v.x*42,62,(g.challenge||level===4)?673:(g.runLength||W)-65);
+  g.y=clamp(g.y+v.y*42,170,540);}
+ sfx(wt==='charge'?'power':'attack');
+}
+
 function tickProjectiles(dt){if(!g||level===4)return;
  for(let i=g.proj.length-1;i>=0;i--){const p=g.proj[i];p.age+=dt;p.life-=dt;
  if(p.homing&&g.hazards?.length){const targets=g.hazards.filter(h=>h.stun<1&&Math.hypot(h.x-p.x,h.y-p.y)<340);
