@@ -158,5 +158,6 @@ function effects(c,opt){if(!opt)return;const {hero,x,y,motion=0,attack=false,pha
  }
  if(attack){const fx=(aim.x||1)*38,fy=(aim.y||0)*19-8;glimmer(c,fx,fy,hero==='gozilla'?13:7,hero==='roxy'?'#ffdd9c':'#dbffff');}
  c.restore();}
-window.FishmanV29Art={weapon,enemy,item,gate,fish,decor,effects,collect,version:'v29 art consistency'};
+const approvedEnemies=window.FishmanV29Art?.enemy;
+window.FishmanV29Art={weapon,enemy:(c,type,chapter,time,environment)=>(approvedEnemies?.(c,type,chapter,time,environment)||enemy(c,type,chapter,time,environment)),item,gate,fish,decor,effects,collect,version:'v29 illustrated art + original sculpted enemies'};
 })();
