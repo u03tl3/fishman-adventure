@@ -1634,7 +1634,7 @@ function applyCoopSnapshot(pkt){
  if(scene==='playing'&&g){hideScreen();switchEl.style.display='flex';updateHeroSwitch();}
  else if(oldScene!==scene||!overlay.classList.contains('hidden')){switchEl.style.display='none';showScreen('<h1>🐟 Co-op Room</h1><p>Waiting for P1 to start or continue the adventure.</p>');}
 }
-window.FishmanMultiplayerBridge={getPacket:coopSnapshot,applySnapshot:applyCoopSnapshot,startCoop:(n)=>{intro(n);start(0);},selectHero:(h)=>switchHero(h),goMenu:()=>menu(),getScene:()=>scene,getLevel:()=>level,getUnlock:()=>unlock,getG:()=>g,heroReady:coopHeroAvailable};
+window.FishmanMultiplayerBridge={getPacket:coopSnapshot,applySnapshot:applyCoopSnapshot,startCoop:(n)=>{intro(n);start(0);tickCoopPlayers(0);},selectHero:(h)=>switchHero(h),goMenu:()=>menu(),getScene:()=>scene,getLevel:()=>level,getUnlock:()=>unlock,getG:()=>g,heroReady:coopHeroAvailable,syncPlayersNow:()=>tickCoopPlayers(0)};
 
 function drawPlayer(){
  const h=g.hero,s=PLAYER_SIZES[h]||.6,moving=g.moveIntensity||0,phase=g.stepPhase||0,attacking=(g.attackFlash||0)>0;
@@ -1874,7 +1874,7 @@ menu();updateSkillButton();requestAnimationFrame(drawFrame);
    if(n.players[slot]!==room)return;
    room.lastInputAt=Date.now();conn.send({kind:'assigned',slot,maxPlayers:4,hero:room.hero});
    state('P'+slot+' joined! '+(1+Object.values(n.players).filter(p=>p.connection?.open).length)+'/4 connected.');
-   refreshHost();sendSnapshot(performance.now(),true);
+   refreshHost();window.FishmanMultiplayerBridge?.syncPlayersNow?.();sendSnapshot(performance.now(),true);
   });
   conn.on('data',p=>{
    if(!p||typeof p!=='object'||n.players[slot]!==room)return;
