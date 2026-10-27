@@ -165,7 +165,7 @@ async function testOnlineRooms(){
   await host.locator('#mpStart').click();
   await host.waitForFunction(()=>window.FishmanMultiplayerBridge.getScene()==='playing');
   for(let i=1;i<=3;i++){
-   await pages[i].waitForFunction(()=>window.FishmanMultiplayerBridge?.getScene?.()==='playing'&&!!window.FishmanMultiplayerBridge.getG(),{timeout:9000});
+   await pages[i].waitForFunction(()=>window.FishmanMultiplayerBridge?.getScene?.()==='playing'&&!!window.FishmanMultiplayerBridge.getG()?.coopPlayers?.[window.FishmanNet?.slot],null,{timeout:9000});
    const guest=await pages[i].evaluate(()=>({slot:FishmanNet.slot,scene:FishmanMultiplayerBridge.getScene(),hero:FishmanMultiplayerBridge.getG()?.coopPlayers?.[FishmanNet.slot]?.hero}));
    assert.equal(guest.slot,i+1);
    assert.ok(guest.hero);
