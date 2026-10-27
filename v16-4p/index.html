@@ -327,6 +327,14 @@ html.local-coop #localControllerBoard{display:grid!important;grid-template-colum
  #localControllerBoard .pad-buttons,#localControllerBoard .action-pair{gap:2px!important;max-width:68px!important}}
 @media(orientation:landscape) and (max-height:470px){#localControllerBoard .pad-buttons,#localControllerBoard .action-pair{max-width:79px!important}}
 </style>
+
+<style id="fishmanCoopStability">
+#localControllerBoard .pad-loadout{display:block;color:#f9e3a0;font-size:10px;font-weight:850;line-height:1.3;
+ text-align:center;border-radius:6px;background:#041d32c9;padding:2px 3px;margin-bottom:4px;letter-spacing:.02em}
+@media(orientation:landscape) and (max-height:470px){
+ #localControllerBoard .pad-loadout{font-size:9px;margin-bottom:2px;padding:0 2px}
+}
+</style>
 </head>
 <body>
 <main class="shell">
@@ -678,17 +686,16 @@ function drawWeaponModels(){
  c.restore();
 }
 function drawTeamWeaponHud(){
- if(!g||net()?.role==='solo'&&!g.weaponsOwned)return;
+ if(!g||net()?.role==='local')return; // Shared-screen players read their loadouts on their own control panels.
  const players=[{...g,slot:1},...Object.values(g.coopPlayers||{})].slice(0,4);
  c.save();
  players.forEach((p,i)=>{
-  const xx=23+(i%2)*263,yy=160+Math.floor(i/2)*45,w=252;
-  roundRect(xx,yy,w,36,9,'#082e47c9');
-  txt('P'+p.slot+' '+(WEAPON_LABEL[p.weapon||'basic']||'BASIC')+' Lv.'+(p.weaponLevels?.[p.weapon]||1)+(p.weaponShield>0?' ⬡':''),xx+9,yy+24,12,WEAPON_COLOR[p.weapon||'basic']||'#fff','left',870);
+  const xx=22+i*243,yy=105;
+  roundRect(xx,yy,236,27,7,'#082e47d8');
+  txt('P'+p.slot+' '+(WEAPON_LABEL[p.weapon||'basic']||'Basic')+' Lv.'+(p.weaponLevels?.[p.weapon]||1)+(p.weaponShield>0?' ⬡':''),xx+8,yy+19,11,WEAPON_COLOR[p.weapon||'basic']||'#fff','left',870);
  });
  c.restore();
 }
-
 function tone(freq=440,duration=.12,type='sine',gain=.065){if(!soundOn)return;try{ctxAudio=ctxAudio||new(window.AudioContext||window.webkitAudioContext)();if(ctxAudio.state==='suspended')ctxAudio.resume();const o=ctxAudio.createOscillator(),v=ctxAudio.createGain(),n=ctxAudio.currentTime;o.type=type;o.frequency.setValueAtTime(freq,n);v.gain.setValueAtTime(.001,n);v.gain.exponentialRampToValueAtTime(gain,n+.014);v.gain.exponentialRampToValueAtTime(.001,n+duration);o.connect(v).connect(ctxAudio.destination);o.start(n);o.stop(n+duration+.02);}catch{}}
 function sfx(which){if(which==='collect'){tone(660,.12);setTimeout(()=>tone(880,.16),60);}else if(which==='hit'){tone(155,.25,'sawtooth',.04);}else if(which==='win'){tone(523,.13);setTimeout(()=>tone(659,.13),95);setTimeout(()=>tone(784,.21),200);}else if(which==='power'){tone(415,.11,'triangle');}else if(which==='attack'){tone(260,.10,'square',.014);}else tone(440,.10);}
 function showScreen(html){screen.innerHTML=html;overlay.classList.remove('hidden');}
@@ -939,7 +946,7 @@ function drawChallengeArena(){
  // Flat ground plane with elliptical ambient shadow makes the arena spatially readable.
  ellipse(480,535,425,28,'#0414258c');
  roundRect(30,505,940,44,20,'#0a354aa1');
- drawWeaponModels();for(const o of a.bullet){glow(o.x,o.y,o.r*3,o.color+'6c');circle(o.x,o.y,o.r,o.color);circle(o.x-3,o.y-5,3,'#fffbe0');}
+ for(const o of a.bullet){glow(o.x,o.y,o.r*3,o.color+'6c');circle(o.x,o.y,o.r,o.color);circle(o.x-3,o.y-5,3,'#fffbe0');}
  const p=a.pattern;if(p){const warning=p.state==='warning',color=warning?'#ff5e88':'#ffe88e';c.save();
   c.strokeStyle=color;c.lineWidth=warning?4:9;c.fillStyle=warning?'#f54f6838':'#f9bb745c';c.setLineDash(warning?[12,7]:[]);
   if(p.kind==='roots'){c.fillRect(p.aimX-53,164,106,358);c.strokeRect(p.aimX-53,164,106,358);}
@@ -1582,13 +1589,15 @@ function drawPlayer(){
  const leanBase=swimmer?(.15*vec.y+.08*Math.sin(phase*.95)):(Math.sin(phase)*.08*moving);
  const lean=h==='humpty'&&attacking?Math.sin(t*19)*.48:leanBase;
  const aim=g.lastAim||{x:1,y:0};
- c.save();if(h!=='sub'&&g.inv>0&&Math.floor(t*13)%2)c.globalAlpha=.42;
+ c.save();if(h!=='sub'&&g.inv>0&&coopSize()===1&&Math.floor(t*13)%2)c.globalAlpha=.42;
+ if(g.hostDown||g.down)c.globalAlpha*=.5;
  let tx=g.x,ty=g.y+bob,rot=lean,drawScale=s;
  const faceScaleX=vec.facing<0?-1:1;
  if(attacking){tx+=aim.x*9;ty+=aim.y*6;rot+=Math.atan2(aim.y,aim.x)*0.12;drawScale*=1.04;}
  if(deathAmt>0){const u=1-deathAmt/.8;ty+=u*38;rot+=u*(swimmer?1.15:1.9);c.globalAlpha*=1-u*.78;drawScale*=(1-u*.22);} 
  if(reviveAmt>0){const u=1-reviveAmt/1.0;ty+=(1-u)*22;drawScale*=(.84+u*.22);c.globalAlpha*=Math.min(1,.48+u*.7);} 
- drawPseudo3D(h,drawScale,vec,bob,phase);
+ // One solid, readable sprite per player in co-op; extra silhouette layers caused blur and frame drops.
+ if(coopSize()===1)drawPseudo3D(h,drawScale,vec,bob,phase);
  c.translate(tx,ty); c.rotate(rot);
  if(h==='humpty'&&attacking)c.rotate(Math.sin(t*16)*.24);
  if(swimmer&&h!=='sub')c.rotate(Math.sin(phase*1.2)*.07*Math.max(.2,moving)+vec.y*.11);
@@ -1633,7 +1642,7 @@ function objective(){let message='';
  else message=g.collect<g.total?`LONG RUN ${g.wave+1}/2 · ${g.collect}/${g.total} ${itemType(level,g.wave)==='shark'?'ALLIES':'ITEMS'} · ${nightmare()?'💀 ESCAPE TRACKING STRIKES!':hardMode?'WATCH RED HUNTERS!':'RIGHT STICK = AIM + FIRE'}`:`ALL OBJECTIVES COMPLETE! EXIT GATE ON RIGHT · PRESS B`;
  roundRect(19,568,962,39,11,'#051c31e8');txt(message,500,594,14,'#dcffff','center',850);}
 function draw(){c.clearRect(0,0,W,H);if(!g){grad('#08273c','#134d6a');seaScene();if(window.FishmanComicArt)window.FishmanComicArt.menuDec(c,t);fishman(300,391,1.9);shark(580,410,1.2);naughty(802,437,.8);txt('FISHMAN',501,187,75,'#a9fff2','center',1000);txt('TWIN STICKS · v23 POWER WEAPONS · UP TO 4 PLAYERS',500,226,19,'#ffecb6','center',850);return;}
- if(g.challenge){cameraX=0;drawChallengeArena();if(net()?.connected)drawCoopPlayers();drawTeamWeaponHud();return;}
+ if(g.challenge){cameraX=0;drawChallengeArena();if(net()?.connected)drawCoopPlayers();return;}
  if(level===4){cameraX=0;drawBackground();drawStrike();for(const h of g.hazards)drawHazard(h);drawRewardsAndShots();drawBoss();drawPlayer();drawP1Marker();if(net()?.connected)drawCoopPlayers();}
  else{
   const positions=net()?.role==='local'?[g.x,...Object.values(g.coopPlayers||{}).filter(p=>!p.down&&p.lives>0).map(p=>p.x)]:[];
@@ -1995,6 +2004,7 @@ menu();updateSkillButton();requestAnimationFrame(drawFrame);
   const title=document.createElement('strong');title.className='pad-player-name';title.textContent='PLAYER '+slot;
   const select=makeSelector(slot,slot===1?n.localHero:room(slot).hero);
   heading.append(title,select);pad.appendChild(heading);
+  const summary=document.createElement('div');summary.className='pad-loadout';summary.textContent='WEAPON · BASIC Lv.1';pad.appendChild(summary);
   select.addEventListener('change',()=>{
    if(slot===1){n.localHero=select.value;window.FishmanMultiplayerBridge?.selectHero?.(select.value);}
    else{const p=room(slot);if(!p)return;p.hero=select.value;p.input.hero=select.value;p.lastInputAt=Date.now();}
@@ -2021,6 +2031,8 @@ menu();updateSkillButton();requestAnimationFrame(drawFrame);
    let info=pad.querySelector('.pad-weapon small');if(!info&&slot===1)info=pad.querySelector('.weapon-action .button-name');
    if(info){const player=slot===1?getG():p,weapon=player?.weapon||'basic',owned=player?.weaponsOwned?.length||1;
     info.textContent=owned>1?'Lv'+(player?.weaponLevels?.[weapon]||1):'LOCK';}
+   const currentPlayer=slot===1?getG():p;
+   const status=pad.querySelector('.pad-loadout');if(status){const currentWeapon=currentPlayer?.weapon||'basic';status.textContent='⚡ '+({basic:'BASIC',rapid:'RAPID',spread:'TRIPLE',charge:'CHARGE',homing:'HOMING',electric:'ELECTRIC'}[currentWeapon]||'BASIC')+' Lv.'+(currentPlayer?.weaponLevels?.[currentWeapon]||1)+(currentPlayer?.weaponShield>0?' · SHIELD':'')+(currentPlayer?.down?' · DOWN':'');}
    const special=pad.querySelector('.pad-skill small');if(special&&slot!==1){const player=p,cd=player?.skillCooldown||0;special.textContent=cd>.1?Math.ceil(cd)+'s':'SKILL';}
   }
  }
