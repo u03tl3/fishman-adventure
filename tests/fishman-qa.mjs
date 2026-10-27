@@ -122,17 +122,17 @@ await suite('weapons-checkpoints-and-boss-finale', {width:1150,height:850}, asyn
  await p.waitForTimeout(120);
  let first=await p.evaluate(()=>({weapon:FishmanMultiplayerBridge.getG().weapon,owned:FishmanMultiplayerBridge.getG().weaponsOwned}));
  assert.equal(first.weapon,'rapid','P1 cannot collect rapid weapon');
- assert.ok(first.owned.includes('rapid'));
+ assert.ok(first.owned.includes('rapid'));assert.ok((await p.evaluate(()=>FishmanMultiplayerBridge.getG().weaponLevels.rapid))>=2,'Rapid pickup should upgrade an unlocked weapon');
  await p.locator('[data-key="weapon"]').dispatchEvent('pointerdown',{pointerId:104,pointerType:'touch'});
  await p.waitForTimeout(75);
- assert.equal(await p.evaluate(()=>FishmanMultiplayerBridge.getG().weapon),'basic','P1 W weapon switching failed');
+ assert.equal(await p.evaluate(()=>FishmanMultiplayerBridge.getG().weapon),'spread','P1 W must immediately switch to the next available shotgun');
  await p.evaluate(()=>{
   const g=FishmanMultiplayerBridge.getG(),drop=g.weaponPickups[1],ally=g.coopPlayers[2];
   g.x=drop.x-140;g.y=drop.y;ally.x=drop.x;ally.y=drop.y;ally.inv=10;
  });
  await p.waitForTimeout(110);
  const p2=await p.evaluate(()=>FishmanMultiplayerBridge.getG().coopPlayers[2]);
- assert.ok(p2.weaponsOwned?.includes('spread'),'P2 cannot independently collect the spread weapon');
+ assert.ok(p2.weaponsOwned?.includes('spread')&&p2.weaponLevels?.spread>=2,'P2 must upgrade their own spread weapon');
  await p.evaluate(()=>{
   const g=FishmanMultiplayerBridge.getG(),gate={x:g.runLength-135,y:252};
   g.items.forEach(item=>item.got=true);g.collect=g.total;g.x=gate.x;g.y=gate.y;
@@ -312,6 +312,83 @@ await suite('all-six-hero-special-attacks', {width:1200,height:830}, async page=
   assert.ok(results[hero].fx>0,hero+' S skill visual shockwave missing');
   assert.ok(results[hero].cd>1,hero+' S skill cooldown never started');
  }
+});
+
+
+await suite('super-mode-transforms-all-six-attack-patterns', {width:1190,height:845}, async page=>{
+ await page.evaluate(()=>{fishmanTest.intro(2);fishmanTest.start(0);});
+ const styles=await page.evaluate(()=>{
+  const g=FishmanMultiplayerBridge.getG(),names=['fish','kai','roxy','humpty','gozilla','sub'];
+  const result={};
+  for(const hero of names){
+   g.hero=hero;g.skillKind=null;g.skillEffect=0;g.skillCooldowns[hero]=0;g.skillCooldown=0;
+   g.cool=0;g.proj=[];g.weaponFX=[];g.x=385;g.y=335;g.hp=g.maxHp;g.inv=100;
+   g.weapon='basic';
+   fishmanTest.skill();
+   const initial=g.proj.length;
+   g.cool=0;g.proj=[];g.weaponFX=[];
+   fishmanTest.attack();
+   result[hero]={duration:g.skillEffect,shotCount:g.proj.length,kinds:[...new Set(g.proj.map(b=>b.weapon))],
+    ricochet:g.proj.some(p=>p.ricochet>0),shotsPiercing:g.proj.some(p=>p.pierce),
+    beam:g.weaponFX.some(f=>f.type==='beam'),mode:g.skillKind,cool:g.cool};
+  }
+  return result;
+ });
+ const expected={fish:'aqua',kai:'cryo',roxy:'flame',humpty:'egg',gozilla:'laser',sub:'sonar'};
+ for(const [hero,weapon] of Object.entries(expected)){
+  const r=styles[hero];assert.ok(r.duration>=6,'Super mode must last at least six seconds: '+hero);
+  assert.equal(r.mode,hero);
+  assert.ok(r.kinds.includes(weapon),'S must REPLACE the equipped attack with a signature form: '+hero+' '+JSON.stringify(r));
+  assert.ok(r.shotCount>=3,'S should change the actual bullet pattern: '+hero);
+ }
+ assert.ok(styles.humpty.ricochet,'Humpty eggs must genuinely bounce');
+ assert.ok(styles.kai.beam&&styles.gozilla.beam,'Super laser attacks need prominent beams');
+ assert.ok(styles.gozilla.shotsPiercing,'Gozilla laser array should pierce');
+ assert.ok(styles.roxy.cool<styles.humpty.cool,'Roxy flame thrower and Humpty egg cannon must have different attack rates');
+});
+await suite('p2-can-attack-while-p1-down', {width:1190,height:840}, async p=>{
+ await engage(p,2);
+ await p.evaluate(()=>{fishmanTest.intro(2);fishmanTest.start(0)});
+ await p.waitForFunction(()=>!!FishmanMultiplayerBridge.getG()?.coopPlayers?.[2]);
+ const before=await p.evaluate(()=>{
+  const g=FishmanMultiplayerBridge.getG();g.hp=1;g.inv=0;fishmanTest.hit();
+  const ally=g.coopPlayers[2];ally.cool=0;ally.down=false;ally.hp=ally.maxHp;
+  ally.x=420;ally.y=330;
+  return {down:g.hostDown,projectiles:g.proj.length};
+ });
+ assert.equal(before.down,true,'P1 did not enter KO state');
+ await p.evaluate(()=>{FishmanNet.players[2].input.fire=true;});
+ await p.waitForTimeout(200);
+ const after=await p.evaluate(()=>{
+  const g=FishmanMultiplayerBridge.getG();
+  return {projectiles:g.proj.length,allyCooldown:g.coopPlayers[2].cool,
+    allyDown:g.coopPlayers[2].down};
+ });
+ assert.ok(after.projectiles>before.projectiles||after.allyCooldown>0,'P2 should fight while P1 is down');
+});
+await suite('nine-different-boss-super-attacks', {width:1180,height:840}, async page=>{
+ await page.evaluate(()=>{fishmanTest.intro(9);fishmanTest.start(0)});
+ const statuses=await page.evaluate(()=>{
+  const list=[];
+  for(let i=0;i<9;i++){
+   fishmanTest.startChapterArena(i,false);
+   const g=FishmanMultiplayerBridge.getG(),a=g.challenge;
+   g.inv=999;g.hp=g.maxHp;g.freezeTime=0;
+   a.hp=a.maxHp*.48;a.rage=1;a.signatureTimer=.01;a.rest=5;
+   fishmanTest.step(.18);
+   const warning=a.specialWarning;
+   fishmanTest.step(1.05);
+   list.push({index:i,warning,bullets:a.bullet.length,signature:a.signatureName,
+    rage:a.rage});
+  }
+  return list;
+ });
+ for(const b of statuses){
+  assert.ok(b.warning>.1, 'Missing warning for boss '+b.index);
+  assert.ok(b.bullets>=7,'Signature attack never spawned for boss '+b.index+': '+JSON.stringify(b));
+  assert.ok(b.signature,'Signature attack label missing for boss '+b.index);
+ }
+ assert.equal(new Set(statuses.map(b=>b.signature)).size,9,'Nine bosses must have distinct signature powers');
 });
 
 const peerSimulator=()=> {
