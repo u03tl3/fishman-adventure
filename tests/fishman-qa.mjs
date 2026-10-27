@@ -366,32 +366,6 @@ await suite('p2-can-attack-while-p1-down', {width:1190,height:840}, async p=>{
  });
  assert.ok(after.projectiles>before.projectiles||after.allyCooldown>0,'P2 should fight while P1 is down');
 });
-await suite('nine-different-boss-super-attacks', {width:1180,height:840}, async page=>{
- await page.evaluate(()=>{fishmanTest.intro(9);fishmanTest.start(0)});
- const statuses=await page.evaluate(()=>{
-  const list=[];
-  for(let i=0;i<9;i++){
-   fishmanTest.startChapterArena(i,false);
-   const g=FishmanMultiplayerBridge.getG(),a=g.challenge;
-   g.inv=999;g.hp=g.maxHp;g.freezeTime=0;
-   a.hp=a.maxHp*.48;a.rage=1;a.signatureTimer=.01;a.rest=5;
-   fishmanTest.step(.18);
-   const warning=a.specialWarning;
-   fishmanTest.step(1.05);
-   list.push({index:i,warning,bullets:a.bullet.length,signature:a.signatureName,
-    rage:a.rage});
-  }
-  return list;
- });
- for(const b of statuses){
-  assert.ok(b.warning>.1, 'Missing warning for boss '+b.index);
-  assert.ok(b.bullets>=7,'Signature attack never spawned for boss '+b.index+': '+JSON.stringify(b));
-  assert.ok(b.signature,'Signature attack label missing for boss '+b.index);
- }
- assert.equal(new Set(statuses.map(b=>b.signature)).size,9,'Nine bosses must have distinct signature powers');
-});
-
-
 await suite('instant-weapon-access-and-super-ui', {width:1180,height:840}, async p=>{
  await p.evaluate(()=>{fishmanTest.intro(0);fishmanTest.start(0)});
  const state=await p.evaluate(()=>{
@@ -451,22 +425,81 @@ await suite('four-player-sustained-combat-stress', {width:1280,height:860}, asyn
   fishmanTest.steer(0,0,false);
  });
 });
-await suite('boss-signature-active-at-full-health', {width:1190,height:830}, async page=>{
- await page.evaluate(()=>{fishmanTest.intro(9);fishmanTest.start(0)});
- const report=await page.evaluate(()=>{
-  fishmanTest.startChapterArena(0,false);
-  const g=FishmanMultiplayerBridge.getG(),b=g.challenge;
-  g.inv=9999;g.hp=g.maxHp;b.rage=0;b.rest=9;b.signatureTimer=.03;
-  fishmanTest.step(.15);
-  const warned=b.specialWarning>.1;
-  fishmanTest.step(1.05);
-  return {warned,bullets:b.bullet.length,phase:b.rage,scene:FishmanMultiplayerBridge.getScene(),
-   signature:b.signatureName};
+
+await suite('health-only-bosses-difficulty-and-four-player-scaling', {width:1200,height:835}, async page=>{
+ await page.evaluate(()=>{fishmanTest.intro(2);fishmanTest.start(0)});
+ const result=await page.evaluate(()=>{
+  const res={};
+  for(const difficulty of ['classic','expert','nightmare']){
+   fishmanTest.select(difficulty);
+   fishmanTest.intro(2);fishmanTest.start(0);
+   fishmanTest.startChapterArena(2,false);
+   const g=FishmanMultiplayerBridge.getG();
+   res[difficulty]={hp:g.challenge.hp,maxHp:g.challenge.maxHp,initialBullets:g.challenge.bullet.length};
+   g.challenge.signatureTimer=0.01;
+   g.inv=50;
+   g.challenge.rest=2;
+   fishmanTest.step(.5);
+   res[difficulty].bulletsAfterHalfSecond=g.challenge.bullet.length;
+   res[difficulty].signatureName=g.challenge.signatureName;
+   fishmanTest.intro(4);fishmanTest.start(0);
+   res[difficulty].treeBoss=FishmanMultiplayerBridge.getG().boss;
+  }
+  return res;
  });
- assert.equal(report.phase,0,'signature should work in regular first phase');
- assert.equal(report.warned,true,'boss super was not visibly warned at full health');
- assert.ok(report.bullets>=7,'boss signature attack did not launch at full health');
- assert.equal(report.scene,'playing');
+ assert.equal(result.classic.maxHp,650);
+ assert.equal(result.expert.maxHp,975);
+ assert.equal(result.nightmare.maxHp,1400);
+ assert.equal(result.classic.treeBoss,1400);
+ assert.equal(result.expert.treeBoss,2100);
+ assert.equal(result.nightmare.treeBoss,3000);
+ for(const d of Object.values(result)){
+  assert.equal(d.initialBullets,0);
+  assert.equal(d.bulletsAfterHalfSecond,0,'Boss unexpectedly fired an added signature volley');
+  assert.equal(d.signatureName,undefined,'Additional signature powers should be disabled');
+ }
+ await page.evaluate(()=>{fishmanTest.select('classic');fishmanTest.intro(2);fishmanTest.start(0)});
+ for(const slot of [2,3,4])await engage(page,slot);
+ const multi=await page.evaluate(()=>{
+  fishmanTest.startChapterArena(2,false);
+  const g=FishmanMultiplayerBridge.getG();
+  return {hp:g.challenge.maxHp,players:FishmanLocal.count};
+ });
+ assert.equal(multi.players,4);
+ assert.ok(multi.hp>1000,'4-player boss HP should scale for four players');
+});
+await suite('one-render-per-character-no-ghost-copy', {width:1220,height:840}, async page=>{
+ await page.evaluate(()=>{fishmanTest.intro(0);fishmanTest.start(0)});
+ const solo=await page.evaluate(()=>{
+  const fish=window.FishmanComicArt;
+  const record={kai:0,fishman:0};
+  for(const k of Object.keys(record)){const orig=fish[k];fish[k]=(...args)=>{record[k]++;return orig(...args)};}
+  fishmanTest.render();
+  return record;
+ });
+ assert.equal(solo.kai,1,'P1 is drawn twice in solo (full-body ghost/shadow)');
+ assert.equal(solo.fishman,0,'Unexpected extra fishman sprite in chapter 1');
+ for(const slot of [2,3,4])await engage(page,slot);
+ const multi=await page.evaluate(()=>{
+  const g=FishmanMultiplayerBridge.getG();
+  const counts={fish:0,kai:0,roxy:0,humpty:0};
+  const art=window.FishmanComicArt;
+  const drawn={kai:0,fishman:0,roxy:0,submarine:0};
+  for(const k of Object.keys(drawn)){const orig=art[k];art[k]=(...args)=>{drawn[k]++;return orig(...args)}}
+  fishmanTest.render();
+  for(const p of [g,...Object.values(g.coopPlayers||{})]){
+   if(counts[p.hero]!==undefined)counts[p.hero]++;
+  }
+  return {drawn,counts,p2Hero:g.coopPlayers[2].hero,
+    positions:[{x:g.x,y:g.y},...Object.values(g.coopPlayers).map(p=>({x:p.x,y:p.y}))]};
+ });
+ assert.equal(multi.p2Hero,'fish','P1 and P2 should not look identical by default');
+ assert.equal(multi.drawn.kai,multi.counts.kai,'Kai character was drawn more than once');
+ assert.equal(multi.drawn.fishman,multi.counts.fish,'Fishman character was drawn more than once');
+ assert.equal(multi.drawn.roxy,multi.counts.roxy,'Roxy character was drawn more than once');
+ for(let i=0;i<multi.positions.length;i++)for(let j=i+1;j<multi.positions.length;j++)
+  assert.ok(Math.hypot(multi.positions[i].x-multi.positions[j].x,
+    multi.positions[i].y-multi.positions[j].y)>80,'Teammates spawn so close they look like ghost copies');
 });
 
 const peerSimulator=()=> {
