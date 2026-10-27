@@ -165,8 +165,11 @@ await suite('p1-hit-respawn-and-final-life', {width:1180,height:820}, async p=>{
  await p.waitForTimeout(120);
  let before=await p.evaluate(()=>({x:FishmanMultiplayerBridge.getG().x,lives:FishmanMultiplayerBridge.getG().lives}));
  await p.evaluate(()=>{
-   const g=FishmanMultiplayerBridge.getG();g.hp=1;g.inv=0;
-   fishmanTest.hit();
+   const g=FishmanMultiplayerBridge.getG(),enemy=g.hazards[0];
+   if(!enemy)throw Error('Chapter 3 should have an enemy');
+   // Reproduce the actual enemy collision, not a direct call to the damage helper.
+   g.hp=1;g.inv=0;g.x=enemy.x;g.y=enemy.y;
+   fishmanTest.step(.025);
  });
  let afterHit=await p.evaluate(()=>({scene:FishmanMultiplayerBridge.getScene(),down:FishmanMultiplayerBridge.getG().hostDown,remaining:FishmanMultiplayerBridge.getG().lives,respawn:FishmanMultiplayerBridge.getG().hostRespawn}));
  assert.equal(afterHit.scene,'playing');assert.equal(afterHit.down,true);
