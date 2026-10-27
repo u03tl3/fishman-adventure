@@ -3,13 +3,15 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const html=fs.readFileSync('index.html','utf8');
+const art=fs.readFileSync('art-v29.js','utf8');
+assert.match(art,/window\.FishmanV29Art=/,'Missing approved v29 art layer');
 assert.match(html,/FishmanVisualMaster/);
 assert.match(html,/FishmanV28Art/);
 assert.match(html,/drawAquaHoverPod/);
 assert.match(html,/TERRAIN_CHAPTERS/);
 assert.match(html,/CHAPTER_BOSSES/);
 assert.match(html,/drawSyncedFrame|drawPlayer/);
-const webps=[...html.matchAll(/data:image\/webp;base64,([A-Za-z0-9+/=]+)/g)];
+const webps=[...[html,art].flatMap(source=>[...source.matchAll(/data:image\/webp;base64,([A-Za-z0-9+/=]+)/g)])];
 assert.ok(webps.length>=20,'Approved illustration assets have disappeared');
 for(const m of webps){
  const data=Buffer.from(m[1],'base64');
@@ -116,17 +118,35 @@ for(const [label,engine] of [['chromium',chromium],['webkit',webkit]]){
   assert.ok(after.aim.x<-.7,'P2 independent right-stick aim lost');
   const synced=await page.evaluate(()=>{
    const packet=structuredClone(FishmanMultiplayerBridge.getPacket());
+   const authoritativeX=packet.g.coopP2.x;
    FishmanNet.role='guest';FishmanNet.connected=true;
    FishmanMultiplayerBridge.applySnapshot(packet);
    const g=FishmanMultiplayerBridge.getG();
    return {scene:FishmanMultiplayerBridge.getScene(),p2:g.coopP2.hero,
-    hostX:g.x,p2x:g.coopP2.x,p2Pose:g.coopP2.poseFacing,remote:FishmanNet.remoteHero};
+    hostX:g.x,p2x:g.coopP2.x,authoritativeX,p2Pose:g.coopP2.poseFacing,remote:FishmanNet.remoteHero};
   });
   assert.equal(synced.scene,'playing');
   assert.equal(synced.p2,'kai');
   assert.equal(synced.remote,'kai');
   assert.ok(Number.isFinite(synced.p2Pose));
-  assert.equal(synced.p2x,after.p2x);
+  assert.equal(synced.p2x,synced.authoritativeX,'snapshot changed authoritative P2 position');
+  await page.waitForTimeout(200);
+  assert.equal(await page.evaluate(()=>FishmanMultiplayerBridge.getG().coopP2.x),synced.authoritativeX,
+   'guest visual interpolation mutated authoritative coordinates');
+  const ordered=await page.evaluate(()=>{
+   const n=FishmanNet,sent=[];
+   n.connection={open:true,dataChannel:{bufferedAmount:0},send:packet=>sent.push(packet)};
+   n.role='host';n.connected=true;n.nextSnapshotSeq=0;
+   n.sendSnapshot(performance.now(),true);n.sendSnapshot(performance.now()+90,true);
+   n.role='guest';n.nextInputSeq=0;n.lastControlSend=0;
+   n.sendInput(performance.now()+1000,{x:1,y:0,fire:false,aim:null});
+   n.sendInput(performance.now()+1100,{x:.2,y:0,fire:true,aim:{x:1,y:0}});
+   n.connection=null;
+   return {snapshots:sent.filter(x=>x.kind==='sync').map(x=>x.seq),
+    inputs:sent.filter(x=>x.kind==='input').map(x=>x.seq)};
+  });
+  assert.deepEqual(ordered.snapshots,[1,2],'snapshots lack monotonic sequence');
+  assert.deepEqual(ordered.inputs,[1,2],'guest joystick commands lack sequence');
  });
  await browser.close();
 }
