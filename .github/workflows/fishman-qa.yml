@@ -5,6 +5,7 @@ on:
     paths:
       - 'v16-4p/**'
       - 'tests/fishman-qa.mjs'
+      - 'tests/fishman-webkit.mjs'
       - '.github/workflows/fishman-qa.yml'
   workflow_dispatch:
 
@@ -23,7 +24,7 @@ jobs:
       - name: Install browser tester
         run: |
           npm install --no-save playwright@1.56.1
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium webkit
       - name: Serve Fishman locally
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/fishman-web.log 2>&1 &
@@ -31,3 +32,5 @@ jobs:
           sleep 2
       - name: Test multiplayer and visual layouts
         run: node tests/fishman-qa.mjs
+      - name: Test Safari-style WebKit touch interactions
+        run: node tests/fishman-webkit.mjs
