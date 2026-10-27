@@ -605,7 +605,7 @@ function skillStun(radius,duration,repel=0){for(const h of g.hazards){const dx=h
  if(g.arena){for(let i=g.arena.orbs.length-1;i>=0;i--)if(Math.hypot(g.arena.orbs[i].x-g.x,g.arena.orbs[i].y-g.y)<radius){burst(g.arena.orbs[i].x,g.arena.orbs[i].y,'#c3edff',8);g.arena.orbs.splice(i,1);}}}
 function useSpecialSkill(){if(net()?.role==='guest'){net()?.sendAction('skill');return true;}if(scene!=='playing'||!g)return false;
  const h=g.hero,L=heroSkillLevel(h),cd=g.skillCooldown||0;if(cd>0){say(skillNames[h]+' recharging: '+cd.toFixed(1)+'s',1.0);return false;}
- g.skillCooldown=skillRecharge(h);g.skillCooldowns[h]=g.skillCooldown;g.skillEffect=1.0+.14*L;g.skillKind=h;g.skillFlash=1.05;g.attackFlash=Math.max(g.attackFlash||0,.4);g.lastAim=aimVector();const power=1+(L-1)*.23;
+ g.skillCooldown=skillRecharge(h);g.skillCooldowns[h]=g.skillCooldown;g.skillBurstCool=0;g.skillEffect=1.0+.14*L;g.skillKind=h;g.skillFlash=1.05;g.attackFlash=Math.max(g.attackFlash||0,.4);g.lastAim=aimVector();const power=1+(L-1)*.23;
  if(h==='fish'){
   g.shield=Math.max(g.shield,2.2+L*.62);g.speedBoost=2+L*.6;skillStun(130+L*24,1.0+L*.35,19+L*7);g.skillEffect=g.shield;burst(g.x,g.y,'#84fcff',24+L*4);
  }else if(h==='kai'){
@@ -894,7 +894,8 @@ function weaponFire(){
    'basic',def[2]+(L-1)*5,def[1],hero==='humpty'?18:13,1.5,{pierce:hero==='gozilla'&&L>=3});
  }
  // Active hero skills change the projectile pattern as well as providing protection.
- if(g.skillEffect>0&&g.skillKind===hero){
+ if(g.skillEffect>0&&g.skillKind===hero&&(g.skillBurstCool||0)<=0){
+  g.skillBurstCool=hero==='roxy'?.33:hero==='gozilla'?.40:hero==='fish'?.27:.37;
   const config={fish:['aqua',2,.55,14,600,13,1.3,38],kai:['cryo',3,.32,16,520,12,1.6,0],
    roxy:['flame',5,.21,18,480,15,.75,35],humpty:['egg',1,0,30,710,22,1.1,65],
    gozilla:['laser',3,.28,30,930,13,1.35,0],sub:['sonar',5,.3,24,530,15,1.6,42]};
@@ -1264,7 +1265,7 @@ function setupSub(w){cameraX=0;g.hero='sub';g.skillCooldown=0;g.skillEffect=0;g.
 function start(checkpoint=0,remainingLives=null){scene='playing';aim.manual=false;aim.point=null;resetStick();held={};keys={};hideScreen();t=0;particles=[];toastLife=0;const bbtn=document.querySelector('[data-key=interact]');bbtn.querySelector('.button-name').textContent=level===4?'◌ DODGE':'USE ✦';bbtn.setAttribute('aria-label',level===4?'B button: dodge attacks':'B button: interact');
  const boss=level===4,sub=level===5; if(level>3)unlockGozilla();BOSS_MAX=Math.round((nightmare()?1000:hardMode?720:455)*(1+.47*(coopSize()-1)));
  const hearts=nightmare()?(boss?5:sub?4:3):hardMode?(boss?7:sub?5:4):(boss?12:sub?7:6);
- g={...freshWeaponState(),skillCooldown:0,skillCooldowns:{fish:0,kai:0,roxy:0,humpty:0,gozilla:0,sub:0},skillEffect:0,skillFlash:0,freezeTime:0,sonarTime:0,speedBoost:0,skillKind:null,skillCrystals:[],maxLives:chapterLives(),lives:remainingLives===null?chapterLives():Math.max(1,Math.min(chapterLives(),remainingLives)),runLength:0,hero:heroFor(level),x:116,y:425,hp:hearts,maxHp:hearts,inv:0,cool:0,shield:0,items:[],hazards:[],proj:[],shots:[],stars:[],awards:[],collect:0,total:nightmare()?8:hardMode?6:4,deadline:level===3&&!hardMode?190:0,timer:hardMode?(boss?(nightmare()?195:165):85):0,maxTimer:0,boss:BOSS_MAX,bossAtt:nightmare()?1.3:hardMode?1.3:2.3,captured:false,actionWave:0,wave:0,dodge:0,dodgeCool:0,strike:null,strikeClock:3.8,deathMotion:0,reviveMotion:0};
+ g={...freshWeaponState(),skillBurstCool:0,skillCooldown:0,skillCooldowns:{fish:0,kai:0,roxy:0,humpty:0,gozilla:0,sub:0},skillEffect:0,skillFlash:0,freezeTime:0,sonarTime:0,speedBoost:0,skillKind:null,skillCrystals:[],maxLives:chapterLives(),lives:remainingLives===null?chapterLives():Math.max(1,Math.min(chapterLives(),remainingLives)),runLength:0,hero:heroFor(level),x:116,y:425,hp:hearts,maxHp:hearts,inv:0,cool:0,shield:0,items:[],hazards:[],proj:[],shots:[],stars:[],awards:[],collect:0,total:nightmare()?8:hardMode?6:4,deadline:level===3&&!hardMode?190:0,timer:hardMode?(boss?(nightmare()?195:165):85):0,maxTimer:0,boss:BOSS_MAX,bossAtt:nightmare()?1.3:hardMode?1.3:2.3,captured:false,actionWave:0,wave:0,dodge:0,dodgeCool:0,strike:null,strikeClock:3.8,deathMotion:0,reviveMotion:0};
  if(net()?.role==='local'&&coopHeroAvailable(net().localHero))g.hero=net().localHero;
  createWeaponDrops();if(boss){g.x=155;g.y=355;g.boss=BOSS_MAX;g.hazards=[];initRewards(0);
   g.arena={phase:0,attack:null,attackIndex:0,rest:2.6,orbs:[],bossX:807,bossY:342,shield:0,shieldMax:0,clearedCount:0,required:nightmare()?3:hardMode?2:1,phaseClock:0,combo:0,beamFlash:0,dodgeFlash:0};
@@ -1436,7 +1437,7 @@ function tick(dt){t+=dt;if(toastLife>0)toastLife-=dt;for(let i=particles.length-
  tickWeaponFX(dt);
  if(g.hostDown){if(g.lives<=0){g.hostDown=false;g.hostRespawn=0;die('P1 is out of lives. Restart the chapter.');return;}
   g.hostRespawn=Math.max(0,(g.hostRespawn||0)-dt);if(g.hostRespawn<=0)coopRevive(1);
- }g.inv=Math.max(0,g.inv-dt);g.weaponShield=Math.max(0,(g.weaponShield||0)-dt);for(const hero of Object.keys(g.skillCooldowns||{}))g.skillCooldowns[hero]=Math.max(0,g.skillCooldowns[hero]-dt);g.skillCooldown=g.skillCooldowns?.[g.hero]||0;g.skillEffect=Math.max(0,(g.skillEffect||0)-dt);g.skillFlash=Math.max(0,(g.skillFlash||0)-dt);g.freezeTime=Math.max(0,(g.freezeTime||0)-dt);g.sonarTime=Math.max(0,(g.sonarTime||0)-dt);g.speedBoost=Math.max(0,(g.speedBoost||0)-dt);g.cool=Math.max(0,g.cool-dt);g.shield=Math.max(0,g.shield-dt);g.actionWave=Math.max(0,g.actionWave-dt);g.attackFlash=Math.max(0,(g.attackFlash||0)-dt);g.reviveMotion=Math.max(0,(g.reviveMotion||0)-dt);g.deathMotion=Math.max(0,(g.deathMotion||0)-dt);
+ }g.inv=Math.max(0,g.inv-dt);g.skillBurstCool=Math.max(0,(g.skillBurstCool||0)-dt);g.weaponShield=Math.max(0,(g.weaponShield||0)-dt);for(const hero of Object.keys(g.skillCooldowns||{}))g.skillCooldowns[hero]=Math.max(0,g.skillCooldowns[hero]-dt);g.skillCooldown=g.skillCooldowns?.[g.hero]||0;g.skillEffect=Math.max(0,(g.skillEffect||0)-dt);g.skillFlash=Math.max(0,(g.skillFlash||0)-dt);g.freezeTime=Math.max(0,(g.freezeTime||0)-dt);g.sonarTime=Math.max(0,(g.sonarTime||0)-dt);g.speedBoost=Math.max(0,(g.speedBoost||0)-dt);g.cool=Math.max(0,g.cool-dt);g.shield=Math.max(0,g.shield-dt);g.actionWave=Math.max(0,g.actionWave-dt);g.attackFlash=Math.max(0,(g.attackFlash||0)-dt);g.reviveMotion=Math.max(0,(g.reviveMotion||0)-dt);g.deathMotion=Math.max(0,(g.deathMotion||0)-dt);
  if(!g.hostDown&&(held.action||keys.action||(rightStick.pointerId!==null&&Math.hypot(rightStick.x,rightStick.y)>.13))&&g.cool<=0)attack();
  const kx=(keys.right||held.right?1:0)-(keys.left||held.left?1:0),ky=(keys.down||held.down?1:0)-(keys.up||held.up?1:0),kb=kx!==0||ky!==0,dx=g.hostDown?0:(kb?kx:stick.x),dy=g.hostDown?0:(kb?ky:stick.y),mag=Math.max(1,Math.hypot(dx,dy)),speed=(g.hero==='sub'?235:g.hero==='roxy'?219:242)*((g.speedBoost||0)>0?1.31:1);
  const motion=clamp(Math.hypot(dx,dy),0,1);g.moveIntensity+=(motion-(g.moveIntensity||0))*Math.min(1,dt*12);g.stepPhase=(g.stepPhase||0)+dt*(g.hero==='sub'?5:g.hero==='fish'?8:11)*Math.max(.1,motion);if(motion>.15){g.lastDx=dx/mag;g.lastDy=dy/mag;if(Math.abs(dx)>.22)g.facing=dx<0?-1:1;}
@@ -1665,7 +1666,7 @@ function drawSkillAnimation(h){if(!g||g.skillEffect<=0)return;const progressPuls
  c.globalAlpha=1;c.restore();}
 
 
-const COOP_FIELDS=['slot','down','weapon','weaponLevels','weaponsOwned','weaponShield','x','y','hero','hp','maxHp','lives','maxLives','inv','shield','cool','actionWave','skillCooldown','skillCooldowns','skillEffect','skillKind','skillFlash','freezeTime','sonarTime','speedBoost','attackFlash','lastAim','moveIntensity','stepPhase','lastDx','lastDy','facing','deathMotion','reviveMotion','dodge','dodgeCool'];
+const COOP_FIELDS=['slot','down','skillBurstCool','weapon','weaponLevels','weaponsOwned','weaponShield','x','y','hero','hp','maxHp','lives','maxLives','inv','shield','cool','actionWave','skillCooldown','skillCooldowns','skillEffect','skillKind','skillFlash','freezeTime','sonarTime','speedBoost','attackFlash','lastAim','moveIntensity','stepPhase','lastDx','lastDy','facing','deathMotion','reviveMotion','dodge','dodgeCool'];
 const COOP_COLORS={1:'#a6f8ff',2:'#9effdf',3:'#ffdb91',4:'#edb2ff'};
 function coopHeroAvailable(h){if(level===5)return h==='sub';return ['fish','kai','roxy','humpty','gozilla'].includes(h)&&(h!=='gozilla'||progress.godzilla);}
 function createCoopPlayer(slot){
@@ -1673,7 +1674,7 @@ function createCoopPlayer(slot){
  g.coopPlayers=g.coopPlayers||{};const prev=g.coopPlayers[slot],requested=room.hero;
  const h=coopHeroAvailable(requested)?requested:level===5?'sub':slot===2?'kai':slot===3?'roxy':'fish';
  const lifeCount=prev?prev.lives:g.maxLives;
- const p={...freshWeaponState(),slot,hero:h,x:clamp(g.x+(slot-2)*54-48,90,Math.max(673,(g.runLength||W)-80)),y:clamp(g.y+(slot-2)*67,185,520),
+ const p={...freshWeaponState(),skillBurstCool:0,slot,hero:h,x:clamp(g.x+(slot-2)*54-48,90,Math.max(673,(g.runLength||W)-80)),y:clamp(g.y+(slot-2)*67,185,520),
   hp:prev?Math.max(0,Math.min(g.maxHp,prev.hp+1)):g.maxHp,maxHp:g.maxHp,lives:lifeCount,maxLives:g.maxLives,inv:2,
   shield:0,cool:0,actionWave:0,skillCooldown:0,
   skillCooldowns:prev?.skillCooldowns||{fish:0,kai:0,roxy:0,humpty:0,gozilla:0,sub:0},
@@ -1730,7 +1731,7 @@ function tickCoopPlayers(dt){
   let p=g.coopPlayers[slot];if(!p||p.chapter!==level||p.zone!==(g.wave||0)||p.arena!==(!!g.challenge||level===4))p=createCoopPlayer(slot);
   if(!p)continue;
   const stale=n.role==='local'?false:Date.now()-(remote.lastInputAt||0)>1800,mx=stale?0:clamp(Number(input.x)||0,-1,1),my=stale?0:clamp(Number(input.y)||0,-1,1);
-  p.inv=Math.max(0,p.inv-dt);p.weaponShield=Math.max(0,(p.weaponShield||0)-dt);p.cool=Math.max(0,p.cool-dt);p.shield=Math.max(0,p.shield-dt);p.dodgeCool=Math.max(0,(p.dodgeCool||0)-dt);
+  p.inv=Math.max(0,p.inv-dt);p.skillBurstCool=Math.max(0,(p.skillBurstCool||0)-dt);p.weaponShield=Math.max(0,(p.weaponShield||0)-dt);p.cool=Math.max(0,p.cool-dt);p.shield=Math.max(0,p.shield-dt);p.dodgeCool=Math.max(0,(p.dodgeCool||0)-dt);
   p.skillEffect=Math.max(0,(p.skillEffect||0)-dt);p.attackFlash=Math.max(0,(p.attackFlash||0)-dt);
   p.reviveMotion=Math.max(0,(p.reviveMotion||0)-dt);p.skillFlash=Math.max(0,(p.skillFlash||0)-dt);
   p.freezeTime=Math.max(0,(p.freezeTime||0)-dt);p.sonarTime=Math.max(0,(p.sonarTime||0)-dt);
