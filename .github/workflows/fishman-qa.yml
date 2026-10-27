@@ -1,12 +1,16 @@
-name: Fishman 4P browser QA
+name: Fishman main game and 4P browser QA
 on:
   push:
     branches: [main]
     paths:
+      - 'index.html'
       - 'v16-4p/**'
       - 'tests/fishman-qa.mjs'
       - 'tests/fishman-webkit.mjs'
+      - 'tests/fishman-v30-qa.mjs'
       - '.github/workflows/fishman-qa.yml'
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -34,3 +38,5 @@ jobs:
         run: node tests/fishman-qa.mjs
       - name: Test Safari-style WebKit touch interactions
         run: node tests/fishman-webkit.mjs
+      - name: Test ten chapters, approved art, Aqua Hover Pod and two-player synchronisation
+        run: node tests/fishman-v30-qa.mjs
