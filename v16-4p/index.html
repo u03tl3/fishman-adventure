@@ -733,7 +733,16 @@ function intro(n){level=n;scene='intro';g=null;cameraX=0;particles=[];toastLife=
 function chapterDone(){resetStick();if(g){g.lives=g.maxLives;g.hp=g.maxHp;for(const p of Object.values(g.coopPlayers||{})){p.lives=p.maxLives;p.hp=p.maxHp;p.down=false;}}if(level===3)unlockGozilla();scene=level===N-1?'gameWin':'chapterWin';if(level+2>unlock){unlock=Math.min(N,level+2);try{localStorage.setItem('fishmanUnlock',String(unlock));}catch{}}sfx('win');switchEl.style.display='none';const d=chapters[level];if(level===3)say('CRACK! HUMPTY BECOMES GOZILLA — LASER UNLOCKED!',5);if(level===N-1){showScreen(`<span class="tag">EVERY CHAPTER COMPLETE!</span><div class="portrait">🏆</div><h1>OCEAN <span>CHAMPION!</span></h1><p>${d.ending}</p><div class="goals"><strong>Ten chapters mastered</strong><div>Replay any chapter, master the boss fight, and return for the next Fishman adventure.</div></div><div class="buttonrow">${button('Play Again','new')}${button('Chapter Select','menu','secondary')}</div>`);}else{showScreen(`<span class="tag">CHAPTER ${level+1} CLEARED ★</span><div class="portrait">${d.icon}</div><h1>MISSION <span>COMPLETE!</span></h1><p>${d.ending}</p><div class="goals"><strong>All lives and health restored!</strong><div>${g.maxLives} lives · Full HP for the next chapter</div></div><div class="buttonrow">${button('Next: '+chapters[level+1].short,'next')}${button('Chapter Select','menu','secondary')}</div>`);}}
 function die(why='Watch out for moving obstacles!'){
  if(!g||scene!=='playing')return;
- if((net()?.role==='host'||net()?.role==='local')&&net()?.connected&&!g.hostDown&&!/time is up|countdown/i.test(why)&&Object.values(g.coopPlayers||{}).some(p=>!p.down&&p.lives>0)){g.lives=Math.max(0,g.lives-1);g.hp=0;g.inv=999;g.hostDown=true;g.hostRespawn=g.lives>0?2.8:0;say('P1 DOWN! TEAMMATES CAN REVIVE WITH B. '+g.lives+' LIVES LEFT.',3);return;}
+ // Co-op P1 must either respawn, or see a restart menu after their last life.
+ const teammatesActive=(net()?.role==='host'||net()?.role==='local')&&net()?.connected&&Object.values(g.coopPlayers||{}).some(p=>!p.down&&p.lives>0);
+ if(teammatesActive&&!g.hostDown&&!/time is up|countdown/i.test(why)){
+  g.lives=Math.max(0,g.lives-1);g.hp=0;g.deathMotion=.8;resetStick();keys={};held={};
+  if(g.lives>0){g.inv=3.2;g.hostDown=true;g.hostRespawn=2.2;
+   say('P1 DOWN — AUTO-REVIVE IN 2 SECONDS · '+g.lives+' LIVES LEFT.',2.4);return;}
+  g.hostDown=false;g.hostRespawn=0;g.inv=0;scene='gameOver';switchEl.style.display='none';sfx('hit');
+  showScreen(`<span class="tag">P1 OUT OF LIVES</span><div class="portrait">💔</div><h1>CHAPTER <span>RESTART</span></h1><p>P1 has no lives remaining. Restart this chapter to bring the whole team back with full health.</p><div class="buttonrow">${button('↻ Restart Chapter — All Players','retry')}${button('Chapter Select','menu','secondary')}</div>`);
+  return;
+ }
  g.lives=Math.max(0,g.lives-1);resetStick();keys={};held={};scene='gameOver';sfx('hit');switchEl.style.display='none';
  const retry=g.lives>0,hearts='♥'.repeat(g.lives)+'♡'.repeat(g.maxLives-g.lives);
  showScreen(`<span class="tag">${retry?'One life lost':'Out of lives'}</span><div class="portrait">${retry?'💫':'💔'}</div><h1>${retry?'READY TO':'GAME'} <span>${retry?'REVIVE!':'OVER'}</span></h1><p>${why}<br>${retry?(g.challenge?'This boss round will restart with FULL health.':'Your checkpoint is saved. You will return with a FULL health bar.'):'No lives remain. Restart the chapter for a fresh set of lives.'}</p><div class="goals"><strong>${retry?'LIVES REMAINING':'CHAPTER RESTART'}</strong><div style="font-size:20px;color:#ff9aaa">${hearts} · ${g.lives}/${g.maxLives}</div></div><div class="buttonrow">${button(retry?'♥ Revive — Full Health':'↻ Restart Chapter — Full Lives','retry')}${button('Chapter Select','menu','secondary')}</div>`);
@@ -1095,6 +1104,7 @@ function burst(x,y,color='#82f4e6',n=15){for(let i=0;i<n;i++)particles.push({x,y
 function near(o,r=78){return Math.hypot(g.x-o.x,g.y-o.y)<r;}
 function gateReady(){return g.collect>=g.total&&(level!==5||g.wave===1||g.captured);}
 function interact(){if(net()?.role==='guest'){net()?.sendAction('interact');return;}if(scene!=='playing')return;
+ if(coopActionSlot===1&&g?.hostDown)return;
  if(coopActionSlot===1&&(net()?.role==='host'||net()?.role==='local')&&net()?.connected){const ally=Object.values(g?.coopPlayers||{}).find(p=>p.down&&p.lives>0&&Math.hypot(p.x-g.x,p.y-g.y)<138);if(ally){coopRevive(ally.slot);return;}}
  if(g.challenge){const a=g.challenge;
   const cooldown=coopActionSlot===1?a.dodgeCool:g.dodgeCool||0;
@@ -1233,7 +1243,9 @@ function drawBossCombat(){const a=g.arena,k=a?.attack;
 }
 
 function tick(dt){t+=dt;if(toastLife>0)toastLife-=dt;for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=240*dt;p.life-=dt;if(p.life<=0)particles.splice(i,1);}if(scene!=='playing'||!g)return;
- if(g.hostDown){if(g.hostRespawn>0){g.hostRespawn-=dt;if(g.hostRespawn<=0)coopRevive(1);}}g.inv=Math.max(0,g.inv-dt);g.weaponShield=Math.max(0,(g.weaponShield||0)-dt);for(const hero of Object.keys(g.skillCooldowns||{}))g.skillCooldowns[hero]=Math.max(0,g.skillCooldowns[hero]-dt);g.skillCooldown=g.skillCooldowns?.[g.hero]||0;g.skillEffect=Math.max(0,(g.skillEffect||0)-dt);g.skillFlash=Math.max(0,(g.skillFlash||0)-dt);g.freezeTime=Math.max(0,(g.freezeTime||0)-dt);g.sonarTime=Math.max(0,(g.sonarTime||0)-dt);g.speedBoost=Math.max(0,(g.speedBoost||0)-dt);g.cool=Math.max(0,g.cool-dt);g.shield=Math.max(0,g.shield-dt);g.actionWave=Math.max(0,g.actionWave-dt);g.attackFlash=Math.max(0,(g.attackFlash||0)-dt);g.reviveMotion=Math.max(0,(g.reviveMotion||0)-dt);g.deathMotion=Math.max(0,(g.deathMotion||0)-dt);
+ if(g.hostDown){if(g.lives<=0){g.hostDown=false;g.hostRespawn=0;die('P1 is out of lives. Restart the chapter.');return;}
+  g.hostRespawn=Math.max(0,(g.hostRespawn||0)-dt);if(g.hostRespawn<=0)coopRevive(1);
+ }g.inv=Math.max(0,g.inv-dt);g.weaponShield=Math.max(0,(g.weaponShield||0)-dt);for(const hero of Object.keys(g.skillCooldowns||{}))g.skillCooldowns[hero]=Math.max(0,g.skillCooldowns[hero]-dt);g.skillCooldown=g.skillCooldowns?.[g.hero]||0;g.skillEffect=Math.max(0,(g.skillEffect||0)-dt);g.skillFlash=Math.max(0,(g.skillFlash||0)-dt);g.freezeTime=Math.max(0,(g.freezeTime||0)-dt);g.sonarTime=Math.max(0,(g.sonarTime||0)-dt);g.speedBoost=Math.max(0,(g.speedBoost||0)-dt);g.cool=Math.max(0,g.cool-dt);g.shield=Math.max(0,g.shield-dt);g.actionWave=Math.max(0,g.actionWave-dt);g.attackFlash=Math.max(0,(g.attackFlash||0)-dt);g.reviveMotion=Math.max(0,(g.reviveMotion||0)-dt);g.deathMotion=Math.max(0,(g.deathMotion||0)-dt);
  if(!g.hostDown&&(held.action||keys.action||(rightStick.pointerId!==null&&Math.hypot(rightStick.x,rightStick.y)>.13))&&g.cool<=0)attack();
  const kx=(keys.right||held.right?1:0)-(keys.left||held.left?1:0),ky=(keys.down||held.down?1:0)-(keys.up||held.up?1:0),kb=kx!==0||ky!==0,dx=g.hostDown?0:(kb?kx:stick.x),dy=g.hostDown?0:(kb?ky:stick.y),mag=Math.max(1,Math.hypot(dx,dy)),speed=(g.hero==='sub'?235:g.hero==='roxy'?219:242)*((g.speedBoost||0)>0?1.31:1);
  const motion=clamp(Math.hypot(dx,dy),0,1);g.moveIntensity+=(motion-(g.moveIntensity||0))*Math.min(1,dt*12);g.stepPhase=(g.stepPhase||0)+dt*(g.hero==='sub'?5:g.hero==='fish'?8:11)*Math.max(.1,motion);if(motion>.15){g.lastDx=dx/mag;g.lastDy=dy/mag;if(Math.abs(dx)>.22)g.facing=dx<0?-1:1;}
