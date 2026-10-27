@@ -1770,7 +1770,7 @@ menu();updateSkillButton();requestAnimationFrame(drawFrame);
  const heroNames={fish:'Fishman',kai:'Kai',roxy:'Roxy',humpty:'Humpty',gozilla:'Gozilla',sub:'Submarine'};
  const emptyInput=()=>({x:0,y:0,fire:false,aim:null,skill:false,interact:false,weapon:false,hero:null});
  const n=window.FishmanNet={role:'solo',connected:false,peer:null,connection:null,players:{},roster:[],slot:null,code:'',
-  input:emptyInput(),remoteHero:'kai',localHero:'fish',lastSend:0,lastControlSend:0,sendAction,sendInput,sendSnapshot};
+  input:emptyInput(),remoteHero:'kai',localHero:'fish',userPickedHero:false,lastSend:0,lastControlSend:0,sendAction,sendInput,sendSnapshot};
  const proto='fishman-v16-four-';let joining=false;
  function state(message){status.textContent=message;}
  function show(open=true){panel.hidden=!open;if(open)updateUI();}
@@ -1822,7 +1822,7 @@ menu();updateSkillButton();requestAnimationFrame(drawFrame);
   const hadGuest=n.role==='guest';
   try{n.connection?.close();for(const p of Object.values(n.players))p.connection?.close();n.peer?.destroy();}catch{}
   n.role='solo';n.connected=false;n.peer=null;n.connection=null;n.players={};n.roster=[];n.slot=null;n.code='';n.input=emptyInput();
-  n.lastSend=0;n.lastControlSend=0;joining=false;
+  n.lastSend=0;n.lastControlSend=0;n.userPickedHero=false;joining=false;
   if(hadGuest)window.FishmanMultiplayerBridge?.goMenu?.();
   state(message);updateUI();
  }
@@ -1863,13 +1863,13 @@ menu();updateSkillButton();requestAnimationFrame(drawFrame);
   const room=n.players[slot];if(!room)return;
   conn.on('open',()=>{
    if(n.players[slot]!==room)return;
-   room.lastInputAt=Date.now();conn.send({kind:'assigned',slot,maxPlayers:4});
+   room.lastInputAt=Date.now();conn.send({kind:'assigned',slot,maxPlayers:4,hero:room.hero});
    state('P'+slot+' joined! '+(1+Object.values(n.players).filter(p=>p.connection?.open).length)+'/4 connected.');
    refreshHost();sendSnapshot(performance.now(),true);
   });
   conn.on('data',p=>{
    if(!p||typeof p!=='object'||n.players[slot]!==room)return;
-   if(p.kind==='hello'){if(heroNames[p.hero])room.hero=p.hero;refreshHost();return;}
+   if(p.kind==='hello'){if(p.customHero===true&&heroNames[p.hero])room.hero=p.hero;refreshHost();return;}
    room.lastInputAt=Date.now();
    if(p.kind==='input'){
     const x=Number(p.x),y=Number(p.y);
@@ -1895,12 +1895,15 @@ menu();updateSkillButton();requestAnimationFrame(drawFrame);
   conn.on('open',()=>{
    joining=false;n.connected=true;n.lastControlSend=0;
    state('Connected! Waiting for the host to assign you a player slot…');
-   conn.send({kind:'hello',hero:n.remoteHero,version:'16-4p'});updateUI();
+   conn.send({kind:'hello',hero:n.remoteHero,customHero:n.userPickedHero,version:'16-4p'});updateUI();
   });
   conn.on('data',pkt=>{
    if(!pkt||typeof pkt!=='object')return;
    if(pkt.kind==='error'){clearRoom(pkt.message||'Room unavailable');return;}
-   if(pkt.kind==='assigned'){n.slot=pkt.slot;state('You are Player '+n.slot+'! Control your own hero while P1 guides the adventure.');updateUI();return;}
+   if(pkt.kind==='assigned'){n.slot=pkt.slot;
+    if(!n.userPickedHero&&heroNames[pkt.hero])n.remoteHero=pkt.hero;
+    else if(n.userPickedHero)sendAction('hero',n.remoteHero);
+    state('You are Player '+n.slot+'! Control your own hero while P1 guides the adventure.');updateUI();return;}
    if(pkt.kind==='roster'){n.roster=Array.isArray(pkt.players)?pkt.players:[];updateUI();return;}
    if(pkt.kind==='sync'){
     window.FishmanMultiplayerBridge?.applySnapshot(pkt);
@@ -1933,7 +1936,7 @@ menu();updateSkillButton();requestAnimationFrame(drawFrame);
  function roomChange(){
   const value=hero.value;if(!heroNames[value])return;
   if(n.role==='host'){n.localHero=value;window.FishmanMultiplayerBridge?.selectHero?.(value);refreshHost();}
-  else if(n.role==='guest'){n.remoteHero=value;sendAction('hero',value);}
+  else if(n.role==='guest'){n.userPickedHero=true;n.remoteHero=value;sendAction('hero',value);}
   updateUI();
  }
  async function copyInvite(){
