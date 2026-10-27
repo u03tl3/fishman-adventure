@@ -354,6 +354,11 @@ html.local-coop #localControllerBoard{display:grid!important;grid-template-colum
  #localControllerBoard .pad-loadout{font-size:8px!important}
 }
 </style>
+<style id="fishmanV23AbilityLabels">
+#localControllerBoard .pad-ability{color:#bca6ff;text-align:center;font-size:9px;line-height:1.3;
+ font-weight:850;letter-spacing:.02em;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:570px){#localControllerBoard .pad-ability{font-size:8px}}
+</style>
 </head>
 <body>
 <main class="shell">
@@ -823,7 +828,7 @@ function aimVector(){if(coopAimOverride)return coopAimOverride;let dx=1,dy=0,tar
 /* Dedicated V23 combat styles. FX are shared so every teammate sees the attacks. */
 function weaponFX(type,x,y,tx,ty,col='#8effff',ttl=.32,r=90){
  g.weaponFX=g.weaponFX||[];g.weaponFX.push({type,x,y,tx,ty,col,ttl,life:ttl,r});
- if(g.weaponFX.length>42)g.weaponFX.splice(0,g.weaponFX.length-42);
+ if(g.weaponFX.length>28)g.weaponFX.splice(0,g.weaponFX.length-28);
 }
 function tickWeaponFX(dt){if(g?.weaponFX)g.weaponFX=g.weaponFX.filter(fx=>(fx.life-=dt)>0);}
 function drawWeaponFX(){for(const f of g?.weaponFX||[]){const a=Math.max(0,f.life/f.ttl);c.save();c.globalAlpha=a;c.strokeStyle=f.col;c.lineWidth=5*a+2;c.shadowBlur=12;c.shadowColor=f.col;
@@ -839,7 +844,7 @@ function spawnWeaponBullet(angle,weapon,damage,speed,r,life,ex={}){
   const reach=weapon==='spread'?Math.min(370,distance):distance;
   g.shots.push({x,y,sx:x,sy:y,tx:x+Math.cos(angle)*reach,ty:y+Math.sin(angle)*reach,life:0,
    kind:g.hero,weapon,damage,aimed:!!aim.manual,owner:coopActionSlot});
- }else g.proj.push(p);
+ }else {g.proj.push(p);if(g.proj.length>200)g.proj.splice(0,g.proj.length-200);}
  return p;
 }
 function electricAttack(v,L,wl,power=false){
@@ -1332,7 +1337,7 @@ function enterBossPhase(phase){let a=g.arena;a.phase=phase;a.attack=null;a.attac
  g.skillCooldowns[g.hero]=g.skillCooldown;g.hero=['fish','kai','roxy'][phase];g.skillCooldown=g.skillCooldowns[g.hero]||0;if(phase>0)initRewards(phase);g.hp=Math.min(g.maxHp,g.hp+1);g.proj=[];g.shots=[];g.cool=.05;updateHeroSwitch();
  say(['TRIAL 1: FLYING BARKSHIP — WATCH THE WINGS!','TRIAL 2: NAUGHTY OPENS DIMENSIONAL PORTALS!','TRIAL 3: THORN CROWN! SHATTER THE GOLD SHIELD WITH A!'][phase],5);sfx('win');burst(a.bossX,a.bossY,['#74fff7','#c29bff','#ffe78b'][phase],33);
 }
-function fireBossOrb(x,y,vx,vy,r=15,type='seed',lifetime=5){g.arena.orbs.push({x,y,vx,vy,r,type,lifetime,age:0});}
+function fireBossOrb(x,y,vx,vy,r=15,type='seed',lifetime=5){if(g.arena.orbs.length>=110)return;g.arena.orbs.push({x,y,vx,vy,r,type,lifetime,age:0});}
 function spawnBossVolley(atk){const a=g.arena,hero=chooseBossTarget(a.attackIndex);
  if(atk.kind==='fan'){const count=nightmare()?9:hardMode?7:5;const aim=Math.atan2(hero.y-a.bossY,hero.x-a.bossX);const sp=nightmare()?355:hardMode?297:253;
   for(let i=0;i<count;i++){const ang=aim+(i-(count-1)/2)*(nightmare()?.14:hardMode?.15:.18);fireBossOrb(a.bossX-20,a.bossY,Math.cos(ang)*sp,Math.sin(ang)*sp,nightmare()?15:13,'seed');}}
@@ -2269,6 +2274,7 @@ menu();updateSkillButton();requestAnimationFrame(drawFrame);
   const select=makeSelector(slot,slot===1?n.localHero:room(slot).hero);
   heading.append(title,select);pad.appendChild(heading);
   const summary=document.createElement('div');summary.className='pad-loadout';summary.textContent='WEAPON · BASIC Lv.1';pad.appendChild(summary);
+  const ability=document.createElement('div');ability.className='pad-ability';ability.textContent='S · SPECIAL';pad.appendChild(ability);
   select.addEventListener('change',()=>{
    if(slot===1){n.localHero=select.value;window.FishmanMultiplayerBridge?.selectHero?.(select.value);}
    else{const p=room(slot);if(!p)return;p.hero=select.value;p.input.hero=select.value;p.lastInputAt=Date.now();}
@@ -2296,6 +2302,13 @@ menu();updateSkillButton();requestAnimationFrame(drawFrame);
    if(info){const player=slot===1?getG():p,weapon=player?.weapon||'basic',owned=player?.weaponsOwned?.length||1;
     info.textContent=owned>1?'Lv'+(player?.weaponLevels?.[weapon]||1):'LOCK';}
    const currentPlayer=slot===1?getG():p;
+   const ability=pad.querySelector('.pad-ability');
+   if(ability){
+    const skills={fish:'🫧 BUBBLE STORM',kai:'❄ ICE NOVA',roxy:'🔥 FIRE METEORS',
+     humpty:'💥 SHELL EARTHQUAKE',gozilla:'⚡ LIGHTNING STORM',sub:'🚀 SONAR MISSILES'};
+    const cd=Math.max(0,currentPlayer?.skillCooldown||0);
+    ability.textContent='S · '+(skills[hero]||'SPECIAL')+(cd>.1?' · '+Math.ceil(cd)+'s':' · READY');
+   }
    const status=pad.querySelector('.pad-loadout');if(status){const currentWeapon=currentPlayer?.weapon||'basic';status.textContent='⚡ '+({basic:'BASIC',rapid:'RAPID',spread:'TRIPLE',charge:'CHARGE',homing:'HOMING',electric:'ELECTRIC'}[currentWeapon]||'BASIC')+' Lv.'+(currentPlayer?.weaponLevels?.[currentWeapon]||1)+(currentPlayer?.weaponShield>0?' · SHIELD':'')+(currentPlayer?.down?' · DOWN':'');}
    const special=pad.querySelector('.pad-skill small');if(special&&slot!==1){const player=p,cd=player?.skillCooldown||0;special.textContent=cd>.1?Math.ceil(cd)+'s':'SKILL';}
   }
