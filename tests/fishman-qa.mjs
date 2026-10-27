@@ -107,6 +107,82 @@ await suite('mobile-landscape', {width:844,height:390}, async p=>{
  assert.equal(counts.pads,4);
  assert.ok(counts.game>200);
 });
+
+const peerSimulator=()=> {
+ const tag='fishman-local-qa-bus';
+ class Connection{
+  constructor(owner,peer){this.owner=owner;this.peer=peer;this.open=false;this.handlers={};this.dataChannel={bufferedAmount:0};}
+  on(event,callback){(this.handlers[event]??=[]).push(callback);return this;}
+  emit(event,data){for(const fn of this.handlers[event]||[])fn(data);}
+  send(data){if(this.open)this.owner.bc.postMessage({type:'data',from:this.owner.id,to:this.peer,payload:data});}
+  close(fromLocal=true){if(!this.open)return;this.open=false;this.emit('close');if(fromLocal)this.owner.bc.postMessage({type:'close',from:this.owner.id,to:this.peer});}
+ }
+ window.Peer=class {
+  constructor(id){this.id=id||'guest-'+Math.random().toString(36).slice(2);this.handlers={};this.connections={};
+   this.bc=new BroadcastChannel(tag);this.bc.onmessage=(ev)=>this.receive(ev.data);
+   setTimeout(()=>this.emit('open',this.id),20);
+  }
+  on(event,callback){(this.handlers[event]??=[]).push(callback);return this;}
+  emit(event,data){for(const fn of this.handlers[event]||[])fn(data);}
+  connect(target){const c=new Connection(this,target);this.connections[target]=c;
+   setTimeout(()=>this.bc.postMessage({type:'connect',from:this.id,to:target}),15);return c;
+  }
+  receive(msg){if(!msg||msg.to!==this.id)return;
+   if(msg.type==='connect'){
+    const c=new Connection(this,msg.from);this.connections[msg.from]=c;this.emit('connection',c);
+    setTimeout(()=>{c.open=true;c.emit('open');this.bc.postMessage({type:'ack',from:this.id,to:msg.from});},30);
+   }else if(msg.type==='ack'){const c=this.connections[msg.from];if(c){c.open=true;c.emit('open');}}
+   else if(msg.type==='data'){this.connections[msg.from]?.emit('data',msg.payload);}
+   else if(msg.type==='close'){this.connections[msg.from]?.close(false);}
+  }
+  destroy(){for(const c of Object.values(this.connections))c.close();this.bc.close();}
+ };
+};
+async function testOnlineRooms(){
+ const context=await browser.newContext({viewport:{width:1180,height:820}});
+ const pages=[],browserErrors=[];
+ try{
+  for(let i=0;i<5;i++){
+   const page=await context.newPage();pages.push(page);
+   page.on('pageerror',e=>browserErrors.push('P'+(i+1)+' '+e.stack));
+   await page.addInitScript(peerSimulator);
+   await page.goto(base,{waitUntil:'domcontentloaded'});
+   await page.waitForFunction(()=>!!window.FishmanNet);
+  }
+  const host=pages[0];
+  await host.locator('#mpOpen').click();await host.locator('#mpHost').click();
+  await host.waitForFunction(()=>FishmanNet.role==='host'&&FishmanNet.code.length===7);
+  const code=await host.evaluate(()=>FishmanNet.code);
+  for(let i=1;i<=3;i++){
+   const p=pages[i];await p.locator('#mpOpen').click();
+   await p.locator('#mpRoom').fill(code);
+   await p.locator('#mpJoin').click();
+   await p.waitForFunction(slot=>FishmanNet.slot===slot,i+1,{timeout:10000});
+  }
+  await host.waitForFunction(()=>FishmanNet.connected&&Object.values(FishmanNet.players).filter(p=>p.connection?.open).length===3);
+  const roster=await host.evaluate(()=>Object.entries(FishmanNet.players).map(([slot,p])=>[+slot,p.hero]));
+  assert.deepEqual(roster,[[2,'kai'],[3,'roxy'],[4,'humpty']]);
+  await host.locator('#mpStart').click();
+  await host.waitForFunction(()=>window.FishmanMultiplayerBridge.getScene()==='playing');
+  for(let i=1;i<=3;i++){
+   await pages[i].waitForFunction(()=>window.FishmanMultiplayerBridge?.getScene?.()==='playing'&&!!window.FishmanMultiplayerBridge.getG(),{timeout:9000});
+   const guest=await pages[i].evaluate(()=>({slot:FishmanNet.slot,scene:FishmanMultiplayerBridge.getScene(),hero:FishmanMultiplayerBridge.getG()?.coopPlayers?.[FishmanNet.slot]?.hero}));
+   assert.equal(guest.slot,i+1);
+   assert.ok(guest.hero);
+  }
+  await pages[2].evaluate(()=>FishmanNet.sendAction('skill'));
+  await host.waitForFunction(()=>FishmanMultiplayerBridge.getG()?.coopPlayers?.[3]?.skillCooldown>0);
+  // Attempt a fifth participant; room should reject it without affecting four existing players.
+  await pages[4].locator('#mpOpen').click();await pages[4].locator('#mpRoom').fill(code);await pages[4].locator('#mpJoin').click();
+  await pages[4].waitForFunction(()=>FishmanNet.role==='solo'||/full/i.test(document.getElementById('mpStatus')?.textContent||''),{timeout:10000});
+  assert.equal((await host.evaluate(()=>Object.values(FishmanNet.players).filter(p=>p.connection?.open).length)),3);
+  if(browserErrors.length)throw Error(browserErrors.join('\n'));
+  results.push('PASS online-4-slots, sync, hero defaults, skills, 5th player rejected');
+ }catch(e){failures.push({name:'online-four-peer-simulation',error:String(e.stack||e),browserErrors});}
+ finally{await context.close();}
+}
+await testOnlineRooms();
+
 await browser.close();
 for(const item of results) console.log(item);
 for(const bad of failures) console.error('FAIL',JSON.stringify(bad));
