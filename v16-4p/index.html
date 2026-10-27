@@ -1491,9 +1491,18 @@ function withCoopPlayer(p,inp,fn){
  }
 }
 function coopRevive(slot){
- if(slot===1){if(g.lives<=0||!g.hostDown)return false;g.hostRespawn=0;g.hostDown=false;g.hp=g.maxHp;g.inv=2.6;g.reviveMotion=1;burst(g.x,g.y,COOP_COLORS[1],24);say('P1 REVIVED BY A TEAMMATE!',2);return true;}
+ if(slot===1){if(g.lives<=0||!g.hostDown)return false;
+  if(net()?.role==='local'){
+   const ally=Object.values(g.coopPlayers||{}).find(p=>!p.down&&p.lives>0);
+   if(ally){g.x=clamp(ally.x-55,62,(g.challenge||level===4)?673:(g.runLength||W)-65);g.y=clamp(ally.y,162,548);}
+  }
+  g.hostRespawn=0;g.hostDown=false;g.hp=g.maxHp;g.inv=2.6;g.reviveMotion=1;burst(g.x,g.y,COOP_COLORS[1],24);say('P1 REVIVED BY A TEAMMATE!',2);return true;}
  const p=g.coopPlayers?.[slot];if(!p||p.lives<=0||!p.down)return false;
- p.down=false;p.respawn=0;p.hp=p.maxHp;p.inv=2.5;p.reviveMotion=1;burst(p.x,p.y,COOP_COLORS[slot],24);say('P'+slot+' IS BACK IN THE FIGHT!',2);return true;
+ p.down=false;p.respawn=0;p.hp=p.maxHp;p.inv=2.5;p.reviveMotion=1;
+ if(net()?.role==='local'){
+  p.x=clamp(g.x+slot*24-55,p.hero==='sub'?155:62,(g.challenge||level===4)?673:(g.runLength||W)-65);
+  p.y=clamp(g.y+(slot-2)*34,p.hero==='sub'?205:162,p.hero==='sub'?511:548);
+ }burst(p.x,p.y,COOP_COLORS[slot],24);say('P'+slot+' IS BACK IN THE FIGHT!',2);return true;
 }
 function coopHitPlayer(p){
  if(!p||p.inv>0||p.shield>0||p.down)return;
