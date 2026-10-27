@@ -1308,22 +1308,31 @@ function enterBossPhase(phase){let a=g.arena;a.phase=phase;a.attack=null;a.attac
  say(['TRIAL 1: FLYING BARKSHIP — WATCH THE WINGS!','TRIAL 2: NAUGHTY OPENS DIMENSIONAL PORTALS!','TRIAL 3: THORN CROWN! SHATTER THE GOLD SHIELD WITH A!'][phase],5);sfx('win');burst(a.bossX,a.bossY,['#74fff7','#c29bff','#ffe78b'][phase],33);
 }
 function fireBossOrb(x,y,vx,vy,r=15,type='seed',lifetime=5){g.arena.orbs.push({x,y,vx,vy,r,type,lifetime,age:0});}
-function spawnBossVolley(atk){const a=g.arena,hero={x:g.x,y:g.y};
- if(atk.kind==='fan'){const count=nightmare()?7:hardMode?5:3;const aim=Math.atan2(hero.y-a.bossY,hero.x-a.bossX);const sp=nightmare()?315:hardMode?264:215;
+function spawnBossVolley(atk){const a=g.arena,hero=chooseBossTarget(a.attackIndex);
+ if(atk.kind==='fan'){const count=nightmare()?9:hardMode?7:5;const aim=Math.atan2(hero.y-a.bossY,hero.x-a.bossX);const sp=nightmare()?355:hardMode?297:253;
   for(let i=0;i<count;i++){const ang=aim+(i-(count-1)/2)*(nightmare()?.14:hardMode?.15:.18);fireBossOrb(a.bossX-20,a.bossY,Math.cos(ang)*sp,Math.sin(ang)*sp,nightmare()?15:13,'seed');}}
- if(atk.kind==='boomerang'){const sp=nightmare()?365:hardMode?300:236;for(let i=0;i<2;i++){const y=i?atk.aim+100:atk.aim-100;fireBossOrb(890,clamp(y,205,518),-sp,0,22,'blade',4);}}
- if(atk.kind==='portals'){const sp=nightmare()?290:hardMode?250:215;for(let row=0;row<(nightmare()?5:hardMode?4:3);row++){const y=204+row*74;const side=row%2;fireBossOrb(side?960:39,y,side?-sp:sp,Math.sin(row*2+atk.life)*42,13,'portal',4.2);}}
- if(atk.kind==='spiral'){const count=nightmare()?20:hardMode?16:12;const offset=atk.life*2.25;const sp=nightmare()?265:hardMode?232:196;for(let i=0;i<count;i++){const angle=i*TAU/count+offset;fireBossOrb(a.bossX-10,a.bossY,Math.cos(angle)*sp,Math.sin(angle)*sp,nightmare()?13:11,'star',4);}}
+ if(atk.kind==='boomerang'){const sp=nightmare()?406:hardMode?337:266;for(let i=0;i<2;i++){const y=i?atk.aim+100:atk.aim-100;fireBossOrb(890,clamp(y,205,518),-sp,0,22,'blade',4);}}
+ if(atk.kind==='portals'){const sp=nightmare()?290:hardMode?250:215;for(let row=0;row<(nightmare()?6:hardMode?5:4);row++){const y=204+row*74;const side=row%2;fireBossOrb(side?960:39,y,side?-sp:sp,Math.sin(row*2+atk.life)*42,13,'portal',4.2);}}
+ if(atk.kind==='spiral'){const count=nightmare()?24:hardMode?19:15;const offset=atk.life*2.25;const sp=nightmare()?265:hardMode?232:196;for(let i=0;i<count;i++){const angle=i*TAU/count+offset;fireBossOrb(a.bossX-10,a.bossY,Math.cos(angle)*sp,Math.sin(angle)*sp,nightmare()?13:11,'star',4);}}
 }
-function createBossAttack(){const a=g.arena,phase=bossPhase(),kind=BOSS_ATTACKS[phase][a.attackIndex%3],title=BOSS_NAMES[phase][a.attackIndex%3];a.attackIndex++;
- const warn=nightmare() ? 0.65 : (hardMode ? 0.9 : 1.35), len=({fan:2.0,boomerang:2.1,charge:1.7,portals:2.25,spikes:1.6,spiral:1.9,beam:1.7,vortex:2.6,maze:2})[kind];
- a.attack={kind,title,state:'warn',life:0,warn,duration:len,shots:0,aim:clamp(g.y,232,486),aimX:clamp(g.x,145,655),x:960,follow:0,crush:false};
+function createBossAttack(){const a=g.arena,phase=bossPhase(),kind=BOSS_ATTACKS[phase][a.attackIndex%3],title=BOSS_NAMES[phase][a.attackIndex%3],focus=chooseBossTarget(a.attackIndex);a.attackIndex++;
+ const warn=nightmare() ? .62 : (hardMode ? .85 : 1.17), len=({fan:2.0,boomerang:2.1,charge:1.7,portals:2.25,spikes:1.6,spiral:1.9,beam:1.7,vortex:2.6,maze:2})[kind];
+ a.attack={kind,title,state:'warn',life:0,warn,duration:len,shots:0,aim:clamp(focus.y,232,486),aimX:clamp(focus.x,145,655),x:960,follow:0,crush:false};
  if(phase===1){a.bossX=795+Math.sin(a.attackIndex*2.4)*38;a.bossY=308+Math.cos(a.attackIndex*2)*38;}
  if(phase===2){a.bossX=800+Math.sin(a.attackIndex*2)*42;a.bossY=294+Math.cos(a.attackIndex)*36;}
  say('⚠ '+title+' — WATCH THE GLOWING WARNING ZONES!',Math.max(1,warn));
 }
 function orbTouch(o){if(Math.hypot(o.x-g.x,o.y-g.y)<o.r+(g.hero==='roxy'?22:19)){hit();return true;}return false;}
 function tickBossCombat(dt){const a=g.arena;if(!a)return;if(g.freezeTime>0)return;
+ const rage=bossPhase(); // McTreeFace gains extra storms in its last two forms.
+ if(rage>0){
+  a.rageClock=(a.rageClock||2.9)-dt;
+  if(a.rageClock<=0&&a.orbs.length<72){
+   spawnBossVolley({kind:'fan',life:0,aim:chooseBossTarget(a.attackIndex).y});
+   a.rageClock=rage===2?1.95:2.75;
+   if(rage===2)say('⚠ THORN CROWN · RAGE VOLLEY!',1);
+  }
+ }else a.rageClock=2.9;
  g.dodgeCool=Math.max(0,g.dodgeCool-dt);g.dodge=Math.max(0,g.dodge-dt);a.dodgeFlash=Math.max(0,a.dodgeFlash-dt);a.phaseClock+=dt;
  // Orbs remain dangerous even while the boss prepares a different move.
  for(let i=a.orbs.length-1;i>=0;i--){const o=a.orbs[i];o.age+=dt;o.lifetime-=dt;
@@ -1339,7 +1348,7 @@ function tickBossCombat(dt){const a=g.arena;if(!a)return;if(g.freezeTime>0)retur
  // Different original Fishman attacks: spreads, boomerangs, charging ship, paired portals, spikes, stars, cannon, vortex and prison.
  if(['fan','boomerang','portals','spiral'].includes(k.kind)){
   const cadence=k.kind==='fan'?.6:k.kind==='portals'?.8:k.kind==='spiral'?.95:1.2;
-  if(k.life>=cadence*k.shots&&k.shots<(nightmare()?3:hardMode?2:1)){spawnBossVolley(k);k.shots++;}
+  if(k.life>=cadence*k.shots&&k.shots<(nightmare()?4:hardMode?3:2)){spawnBossVolley(k);k.shots++;}
  }
  if(k.kind==='charge'){
   k.x=920-k.life*(nightmare()?780:hardMode?650:535);
@@ -1361,7 +1370,7 @@ function tickBossCombat(dt){const a=g.arena;if(!a)return;if(g.freezeTime>0)retur
    if(Math.abs(g.x-x)<(nightmare()?47:hardMode?40:32)&&Math.abs(g.y-opening)>56)hit();
   }
  }
- if(k.life>=k.duration){a.attack=null;a.clearedCount++;a.rest=nightmare()?.44:hardMode?.65:1.0;if(a.clearedCount===a.required)say('GUARD BROKEN! Keep firing A to finish this form!',2.4);}
+ if(k.life>=k.duration){a.attack=null;a.clearedCount++;a.rest=nightmare()?.29:hardMode?.48:.79;if(a.clearedCount===a.required)say('GUARD BROKEN! Keep firing A to finish this form!',2.4);}
 }
 function drawBossCombat(){const a=g.arena,k=a?.attack;
  for(const o of a.orbs){glow(o.x,o.y,o.r*2.2,o.type==='portal'?'#d99dff44':o.type==='star'?'#ffff944a':'#ffb08840');circle(o.x,o.y,o.r,o.type==='blade'?'#ffd180':o.type==='portal'?'#be9fff':o.type==='star'?'#e7fa88':'#ff7c8b');
