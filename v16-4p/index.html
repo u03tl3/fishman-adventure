@@ -972,10 +972,10 @@ function startChapterArena(finalRush=false,number=finalRush?0:level){
  const def=CHAPTER_BOSSES[number];if(!def)return;
  if(finalRush&&number===0)g.finalBossRush=true;
  g.challenge={index:number,final:!!finalRush,round:finalRush?number+1:1,total:finalRush?CHAPTER_BOSSES.length:1,def,
-   x:767,y:348,r:69,hp:1,maxHp:1,bullet:[],pattern:null,patternIndex:0,rest:2.0,
+   x:767,y:348,r:69,hp:1,maxHp:1,bullet:[],pattern:null,patternIndex:0,rest:1.3,rage:0,rageClock:0,
    cooldown:0,dodgeCool:0,stun:0,clock:0,flash:0,regen:0};
  const a=g.challenge;
- a.maxHp=Math.round((nightmare()?270:hardMode?205:145)*(finalRush?.85:1)*(number===8?1.3:1)*(1+.47*(coopSize()-1)));
+ a.maxHp=Math.round((nightmare()?480:hardMode?365:245)*(finalRush?.85:1)*(number===8?1.3:1)*(1+.47*(coopSize()-1)));
  a.hp=a.maxHp;
  g.runLength=0;g.checkpointState=null;g.checkpointIndex=0;g.x=140;g.y=340;g.inv=2;
  g.proj=[];g.shots=[];g.hazards=[];g.items=[];g.stars=[];g.awards=[];g.skillCrystals=[];
@@ -1011,23 +1011,31 @@ function challengeWin(){
   say('BOSS '+(id+1)+' DEFEATED! +1 STAR · +2 HP · NEXT: '+CHAPTER_BOSSES[id+1].short.toUpperCase(),4.5);
  }else{g.challenge=null;chapterDone();}
 }
-function challengeOrb(a,x,y,vx,vy,r=14,col){a.bullet.push({x,y,vx,vy,r,color:col||a.def.color,life:5,age:0});}
+function chooseBossTarget(index=0){
+ const options=[g,...Object.values(g.coopPlayers||{}).filter(p=>!p.down&&p.lives>0)];
+ const active=options.filter(p=>p&&(p===g?!g.hostDown&&g.hp>0:true));
+ return active.length?active[Math.abs(index)%active.length]:g;
+}
+function challengeOrb(a,x,y,vx,vy,r=14,col,tracking=0){
+ if(a.bullet.length>=92)return;
+ a.bullet.push({x,y,vx,vy,r,color:col||a.def.color,life:5,age:0,tracking});
+}
 function releaseChallengePattern(a){
- const pat=a.pattern,ang=Math.atan2(g.y-a.y,g.x-a.x),sp=nightmare()?300:hardMode?250:204;
+ const pat=a.pattern,target=chooseBossTarget(a.patternIndex),ang=Math.atan2(target.y-a.y,target.x-a.x),sp=(nightmare()?345:hardMode?292:245)*(1+.10*(a.rage||0));
  if(pat.kind==='fan'||pat.kind==='portals'){
-  const n=pat.kind==='portals'?(nightmare()?8:6):(nightmare()?7:hardMode?5:3);
+  const n=pat.kind==='portals'?(nightmare()?10:hardMode?8:7):(nightmare()?9:hardMode?7:5);
   for(let i=0;i<n;i++){const degree=ang+(i-(n-1)/2)*(pat.kind==='portals'?.20:.17);
     const px=pat.kind==='portals'?(i%2?943:63):a.x,py=pat.kind==='portals'?188+(i%5)*76:a.y;
-    const aim=pat.kind==='portals'?Math.atan2(g.y-py,g.x-px):degree;
+    const aim=pat.kind==='portals'?Math.atan2(target.y-py,target.x-px):degree;
     challengeOrb(a,px,py,Math.cos(aim)*sp,Math.sin(aim)*sp,pat.kind==='portals'?13:15);}
  }
  if(pat.kind==='ring'){
-  const n=nightmare()?18:hardMode?14:10;
+  const n=nightmare()?22:hardMode?18:14;
   for(let i=0;i<n;i++){const theta=i*Math.PI*2/n+pat.clock*.4;
    challengeOrb(a,a.x,a.y,Math.cos(theta)*sp*.75,Math.sin(theta)*sp*.75,12);}
  }
  if(pat.kind==='mines'){
-  for(let i=0;i<(nightmare()?7:hardMode?5:3);i++){
+  for(let i=0;i<(nightmare()?9:hardMode?7:5);i++){
    const yy=205+i*59, xx=i%2?490:305;
    challengeOrb(a,xx,yy,Math.sin(i)*28,Math.cos(i)*18,19,'#ffac77');
   }
@@ -1036,6 +1044,11 @@ function releaseChallengePattern(a){
 function tickChallenge(dt){
  const a=g.challenge;if(!a)return;
  collectWeapons();a.clock+=dt;a.flash=Math.max(0,a.flash-dt);a.dodgeCool=Math.max(0,a.dodgeCool-dt);
+ const fraction=a.hp/Math.max(1,a.maxHp),nextRage=fraction<=.3?2:fraction<=.64?1:0;
+ if(nextRage>(a.rage||0)){
+  a.rage=nextRage;a.rageClock=.5;burst(a.x,a.y,nextRage===2?'#ff5d91':'#ffb76e',31);
+  say('⚠ '+a.def.name.toUpperCase()+' ENRAGED — PHASE '+(nextRage+1)+'!',2.6);
+ }
  a.stun=Math.max(0,a.stun-dt);a.x=768+Math.sin(a.clock*.85+a.index)*24;
  a.y=344+Math.sin(a.clock*1.18+a.index*.6)*48;
  // Player shots are genuinely aimed; only a projectile touching the boss deals damage.
@@ -1054,6 +1067,11 @@ function tickChallenge(dt){
  }
  if(g.freezeTime>0||a.stun>0)return;
  for(let i=a.bullet.length-1;i>=0;i--){const o=a.bullet[i];o.age+=dt;o.life-=dt;
+  if(o.tracking){
+   const enemy=chooseBossTarget(i),wanted=Math.atan2(enemy.y-o.y,enemy.x-o.x),old=Math.atan2(o.vy,o.vx),speed=Math.hypot(o.vx,o.vy);
+   const delta=Math.atan2(Math.sin(wanted-old),Math.cos(wanted-old)),next=old+delta*Math.min(.08,dt*o.tracking);
+   o.vx=Math.cos(next)*speed;o.vy=Math.sin(next)*speed;
+  }
   o.x+=o.vx*dt;o.y+=o.vy*dt;
   if(o.life<=0||o.x<-70||o.x>1080||o.y<145||o.y>610){a.bullet.splice(i,1);continue;}
   if(Math.hypot(o.x-g.x,o.y-g.y)<o.r+(g.hero==='sub'?42:20)){
@@ -1062,9 +1080,21 @@ function tickChallenge(dt){
  }
  if(a.rest>0){a.rest-=dt;return;}
  if(!a.pattern){const kind=a.def.attacks[a.patternIndex%a.def.attacks.length];a.patternIndex++;
-  a.pattern={kind,state:'warning',clock:0,warn:nightmare()?.57:hardMode?.82:1.15,duration:kind==='mines'?1.5:kind==='dash'?1.15:1.5,
-    aimX:clamp(g.x,105,650),aimY:clamp(g.y,208,503),released:false};return;}
+  const focus=chooseBossTarget(a.patternIndex);
+  a.pattern={kind,state:'warning',clock:0,warn:nightmare()?.65:hardMode?.85:1.05,duration:kind==='mines'?1.6:kind==='dash'?1.25:1.5,
+   aimX:clamp(focus.x,105,650),aimY:clamp(focus.y,208,503),released:false};
+  return;}
  const p=a.pattern;p.clock+=dt;
+ if(a.rage>0&&p.state==='active'){
+  a.rageClock=(a.rageClock||0)-dt;
+  if(a.rageClock<=0&&a.bullet.length<75){
+   const focus=chooseBossTarget(a.patternIndex+a.rage),speed=(nightmare()?296:hardMode?260:224);
+   const direction=Math.atan2(focus.y-a.y,focus.x-a.x),amount=a.rage===2?3:2;
+   for(let i=0;i<amount;i++){const ang=direction+(i-(amount-1)/2)*.23;
+    challengeOrb(a,a.x,a.y,Math.cos(ang)*speed,Math.sin(ang)*speed,12,'#ff78d7',.88);}
+   a.rageClock=a.rage===2?.66:.96;
+  }
+ }
  if(p.state==='warning'){
   if(p.clock>=p.warn){p.state='active';p.clock=0;sfx('power');
    if(['fan','ring','mines','portals'].includes(p.kind))releaseChallengePattern(a);}
@@ -1079,7 +1109,7 @@ function tickChallenge(dt){
   if(Math.abs(g.y-p.aimY)<(nightmare()?66:hardMode?53:40))hit();
  }
  if(scene!=='playing')return;
- if(p.clock>=p.duration){a.pattern=null;a.rest=nightmare()?.25:hardMode?.42:.7;}
+ if(p.clock>=p.duration){a.pattern=null;a.rest=nightmare()?.2:hardMode?.34:.54;}
 }
 function drawChallengeArena(){
  const a=g.challenge,idx=a.index,def=a.def;
@@ -1202,7 +1232,7 @@ function setupSub(w){cameraX=0;g.hero='sub';g.skillCooldown=0;g.skillEffect=0;g.
  resetStrikes();initRewards(w);g.notice=null;makeLongRun();
 }
 function start(checkpoint=0,remainingLives=null){scene='playing';aim.manual=false;aim.point=null;resetStick();held={};keys={};hideScreen();t=0;particles=[];toastLife=0;const bbtn=document.querySelector('[data-key=interact]');bbtn.querySelector('.button-name').textContent=level===4?'◌ DODGE':'USE ✦';bbtn.setAttribute('aria-label',level===4?'B button: dodge attacks':'B button: interact');
- const boss=level===4,sub=level===5; if(level>3)unlockGozilla();BOSS_MAX=Math.round((nightmare()?660:hardMode?420:240)*(1+.47*(coopSize()-1)));
+ const boss=level===4,sub=level===5; if(level>3)unlockGozilla();BOSS_MAX=Math.round((nightmare()?1000:hardMode?720:455)*(1+.47*(coopSize()-1)));
  const hearts=nightmare()?(boss?5:sub?4:3):hardMode?(boss?7:sub?5:4):(boss?12:sub?7:6);
  g={...freshWeaponState(),skillCooldown:0,skillCooldowns:{fish:0,kai:0,roxy:0,humpty:0,gozilla:0,sub:0},skillEffect:0,skillFlash:0,freezeTime:0,sonarTime:0,speedBoost:0,skillKind:null,skillCrystals:[],maxLives:chapterLives(),lives:remainingLives===null?chapterLives():Math.max(1,Math.min(chapterLives(),remainingLives)),runLength:0,hero:heroFor(level),x:116,y:425,hp:hearts,maxHp:hearts,inv:0,cool:0,shield:0,items:[],hazards:[],proj:[],shots:[],stars:[],awards:[],collect:0,total:nightmare()?8:hardMode?6:4,deadline:level===3&&!hardMode?190:0,timer:hardMode?(boss?(nightmare()?195:165):85):0,maxTimer:0,boss:BOSS_MAX,bossAtt:nightmare()?1.3:hardMode?1.3:2.3,captured:false,actionWave:0,wave:0,dodge:0,dodgeCool:0,strike:null,strikeClock:3.8,deathMotion:0,reviveMotion:0};
  if(net()?.role==='local'&&coopHeroAvailable(net().localHero))g.hero=net().localHero;
@@ -1648,10 +1678,10 @@ function tickCoopPlayers(dt){
  const teamSize=coopSize(),scale=1+.47*(teamSize-1);
  if(g.challenge){
   const a=g.challenge;
-  const target=Math.round((nightmare()?270:hardMode?205:145)*(a.final?.85:1)*(a.index===8?1.3:1)*scale);
+  const target=Math.round((nightmare()?480:hardMode?365:245)*(a.final?.85:1)*(a.index===8?1.3:1)*scale);
   if(a.maxHp!==target&&a.maxHp>0){a.hp=Math.max(1,Math.ceil(target*a.hp/a.maxHp));a.maxHp=target;}
  }else if(level===4&&g.arena){
-  const target=Math.round((nightmare()?660:hardMode?420:240)*scale);
+  const target=Math.round((nightmare()?1000:hardMode?720:455)*scale);
   if(BOSS_MAX!==target&&BOSS_MAX>0){g.boss=Math.max(1,Math.ceil(target*g.boss/BOSS_MAX));BOSS_MAX=target;}
  }
  const live=new Set(Object.entries(n.players||{}).filter(([,v])=>v.connection?.open).map(([slot])=>String(slot)));
