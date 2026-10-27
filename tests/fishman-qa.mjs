@@ -391,6 +391,27 @@ await suite('nine-different-boss-super-attacks', {width:1180,height:840}, async 
  assert.equal(new Set(statuses.map(b=>b.signature)).size,9,'Nine bosses must have distinct signature powers');
 });
 
+
+await suite('instant-weapon-access-and-super-ui', {width:1180,height:840}, async p=>{
+ await p.evaluate(()=>{fishmanTest.intro(0);fishmanTest.start(0)});
+ const state=await p.evaluate(()=>{
+  const g=FishmanMultiplayerBridge.getG();return {owned:g.weaponsOwned,weapon:g.weapon};
+ });
+ assert.deepEqual(state.owned,['basic','rapid','spread','charge','homing','electric'],
+  'All six different weapon styles must be playable without collecting a pickup');
+ assert.equal(state.weapon,'basic');
+ const first=await p.evaluate(()=>{document.querySelector('[data-key="weapon"]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:44}));return FishmanMultiplayerBridge.getG().weapon});
+ assert.equal(first,'rapid','W must change to a noticeably different attack style immediately');
+ await p.evaluate(()=>{fishmanTest.skill()});
+ await p.waitForTimeout(120);
+ const mode=await p.evaluate(()=>({label:document.getElementById('skillName').textContent,
+  timer:document.getElementById('skillCooldown').textContent,
+  mode:FishmanMultiplayerBridge.getG().skillEffect,
+  button:document.getElementById('skillBtn').classList.contains('super-active')}));
+ assert.equal(mode.label,'SUPER!','P1 should see a huge SUPER label when ability is transformed');
+ assert.ok(mode.mode>6&&mode.button,'P1 super-mode timer/UI should remain visible for 8 seconds');
+});
+
 const peerSimulator=()=> {
  const tag='fishman-local-qa-bus';
  class Connection{
@@ -455,6 +476,9 @@ async function testOnlineRooms(){
   }
   await pages[2].evaluate(()=>FishmanNet.sendAction('skill'));
   await host.waitForFunction(()=>FishmanMultiplayerBridge.getG()?.coopPlayers?.[3]?.skillCooldown>0);
+  await pages[2].waitForFunction(()=>document.getElementById('skillName')?.textContent==='SUPER!',null,{timeout:5000});
+  assert.equal(await pages[2].evaluate(()=>document.getElementById('skillName').textContent),'SUPER!',
+   'Online guest must see their own ability activate, not the host’s skill HUD');
   // Attempt a fifth participant; room should reject it without affecting four existing players.
   await pages[4].locator('#mpOpen').click();await pages[4].locator('#mpRoom').fill(code);await pages[4].locator('#mpJoin').click();
   await pages[4].waitForFunction(()=>FishmanNet.role==='solo'||/full/i.test(document.getElementById('mpStatus')?.textContent||''),{timeout:10000});
