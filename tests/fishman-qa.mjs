@@ -139,17 +139,85 @@ await suite('weapons-checkpoints-and-boss-finale', {width:1150,height:850}, asyn
   fishmanTest.interact();
  });
  await p.waitForTimeout(90);
- assert.equal(await p.evaluate(()=>FishmanMultiplayerBridge.getG().wave),1,'first area cannot advance');
+ assert.equal(await p.evaluate(()=>FishmanMultiplayerBridge.getG().wave),0,'P1 first B should only arm group exit');
+ await p.evaluate(()=>fishmanTest.interact());
+ await p.waitForTimeout(90);
+ assert.equal(await p.evaluate(()=>FishmanMultiplayerBridge.getG().wave),1,'second P1 B must advance first area');
  await p.evaluate(()=>{
   const g=FishmanMultiplayerBridge.getG();g.items.forEach(item=>item.got=true);
   g.collect=g.total;g.x=g.runLength-135;g.y=252;fishmanTest.interact();
  });
+ await p.waitForTimeout(70);
+ assert.ok(!await p.evaluate(()=>!!FishmanMultiplayerBridge.getG()?.challenge),'boss should not start on first P1 B');
+ await p.evaluate(()=>fishmanTest.interact());
  await p.waitForTimeout(90);
- assert.ok(await p.evaluate(()=>!!FishmanMultiplayerBridge.getG()?.challenge),'boss does not start after two areas');
+ assert.ok(await p.evaluate(()=>!!FishmanMultiplayerBridge.getG()?.challenge),'boss does not start after second P1 B');
  await p.evaluate(()=>fishmanTest.finishChallenge());
  await p.waitForTimeout(130);
  const scene=await p.evaluate(()=>FishmanMultiplayerBridge.getScene());
  assert.ok(scene==='chapterWin'||scene==='playing','boss finale crashed: '+scene);
+});
+
+
+await suite('p1-hit-respawn-and-final-life', {width:1180,height:820}, async p=>{
+ await engage(p,2);await engage(p,3);
+ await p.evaluate(()=>{fishmanTest.intro(2);fishmanTest.start(0)});
+ await p.waitForTimeout(120);
+ let before=await p.evaluate(()=>({x:FishmanMultiplayerBridge.getG().x,lives:FishmanMultiplayerBridge.getG().lives}));
+ await p.evaluate(()=>{
+   const g=FishmanMultiplayerBridge.getG();g.hp=1;g.inv=0;
+   fishmanTest.hit();
+ });
+ let afterHit=await p.evaluate(()=>({scene:FishmanMultiplayerBridge.getScene(),down:FishmanMultiplayerBridge.getG().hostDown,remaining:FishmanMultiplayerBridge.getG().lives,respawn:FishmanMultiplayerBridge.getG().hostRespawn}));
+ assert.equal(afterHit.scene,'playing');assert.equal(afterHit.down,true);
+ assert.equal(afterHit.remaining,before.lives-1);
+ assert.ok(afterHit.respawn>0);
+ await p.evaluate(()=>fishmanTest.step(2.65));
+ await p.waitForTimeout(110);
+ const recovered=await p.evaluate(()=>({down:FishmanMultiplayerBridge.getG().hostDown,hp:FishmanMultiplayerBridge.getG().hp,lives:FishmanMultiplayerBridge.getG().lives}));
+ assert.equal(recovered.down,false,'P1 remained frozen after enemy hit');
+ assert.ok(recovered.hp>0,'P1 must be alive after respawn');
+ // P1 movement must remain independent of companions over 1,000 game units away.
+ await p.evaluate(()=>{const g=FishmanMultiplayerBridge.getG();g.x=650;g.y=330;g.inv=5;g.coopPlayers[2].x=2200;g.coopPlayers[3].x=3000;fishmanTest.steer(1,0);});
+ const x0=await p.evaluate(()=>FishmanMultiplayerBridge.getG().x);
+ await p.evaluate(()=>fishmanTest.step(.35));
+ const x1=await p.evaluate(()=>FishmanMultiplayerBridge.getG().x);
+ assert.ok(x1>x0+35,'P1 is movement-locked by distant teammates');
+ await p.evaluate(()=>{const g=FishmanMultiplayerBridge.getG();g.lives=1;g.hp=1;g.inv=0;fishmanTest.hit();});
+ await p.waitForTimeout(100);
+ const last=await p.evaluate(()=>({scene:FishmanMultiplayerBridge.getScene(),lives:FishmanMultiplayerBridge.getG().lives,hostDown:FishmanMultiplayerBridge.getG().hostDown,overlay:document.querySelector('#overlay')?.classList.contains('hidden')}));
+ assert.equal(last.scene,'gameOver','Final P1 life should show restart menu instead of freezing');
+ assert.equal(last.lives,0);assert.equal(last.hostDown,false);
+ assert.equal(last.overlay,false);
+ await p.evaluate(()=>{fishmanTest.start(0)});
+ await p.waitForTimeout(85);
+ assert.equal(await p.evaluate(()=>FishmanMultiplayerBridge.getScene()),'playing','Restart should restore gameplay');
+});
+await suite('no-guest-surprise-level-jump', {width:1180,height:820}, async p=>{
+ for(let sl=2;sl<=4;sl++)await engage(p,sl);
+ await p.evaluate(()=>{fishmanTest.intro(2);fishmanTest.start(0)});
+ await p.waitForTimeout(130);
+ const initial=await p.evaluate(()=>({
+  chapter:FishmanMultiplayerBridge.getLevel(),wave:FishmanMultiplayerBridge.getG().wave
+ }));
+ await p.evaluate(()=>{
+  const g=FishmanMultiplayerBridge.getG();g.collect=g.total;g.items.forEach(i=>i.got=true);
+  const gateX=g.runLength-135;
+  g.coopPlayers[2].x=gateX;g.coopPlayers[2].y=300;
+  g.coopPlayers[3].x=gateX;g.coopPlayers[3].y=300;
+  g.coopPlayers[4].x=gateX;g.coopPlayers[4].y=300;
+  for(const k of [2,3,4])FishmanNet.players[k].input.interact=true;
+ });
+ await p.waitForTimeout(140);
+ const noJump=await p.evaluate(()=>({chapter:FishmanMultiplayerBridge.getLevel(),wave:FishmanMultiplayerBridge.getG().wave,challenge:!!FishmanMultiplayerBridge.getG().challenge}));
+ assert.deepEqual({chapter:noJump.chapter,wave:noJump.wave},{chapter:initial.chapter,wave:initial.wave},
+   'Other players B at the exit changed levels without P1 agreement');
+ assert.equal(noJump.challenge,false);
+ // The first P1 B only arms the exit; only P1's second B completes it.
+ await p.evaluate(()=>{const g=FishmanMultiplayerBridge.getG();g.x=g.runLength-135;g.y=300;fishmanTest.interact();});
+ assert.equal(await p.evaluate(()=>FishmanMultiplayerBridge.getG().wave),0);
+ await p.evaluate(()=>fishmanTest.interact());
+ assert.equal(await p.evaluate(()=>FishmanMultiplayerBridge.getG().wave),1);
 });
 
 const peerSimulator=()=> {
