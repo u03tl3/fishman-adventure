@@ -223,6 +223,72 @@ await suite('no-guest-surprise-level-jump', {width:1180,height:820}, async p=>{
  assert.equal(await p.evaluate(()=>FishmanMultiplayerBridge.getG().wave),1);
 });
 
+
+await suite('v23-weapon-style-and-boss-rage', {width:1280,height:870}, async p=>{
+ for(let k=2;k<=4;k++)await engage(p,k);
+ await p.evaluate(()=>{fishmanTest.intro(2);fishmanTest.start(0);});
+ await p.waitForTimeout(100);
+ const variants=await p.evaluate(()=>{
+  const g=FishmanMultiplayerBridge.getG();
+  // Close-range enemy means even instantaneous chain lightning must be visible.
+  g.x=420;g.y=360;g.inv=20;g.hazards[0].x=550;g.hazards[0].y=360;g.hazards[0].stun=0;
+  const types=['basic','rapid','spread','charge','homing','electric'],out={};
+  for(const type of types){
+   g.weapon=type;g.weaponsOwned=['basic',type];g.weaponLevels[type]=3;
+   g.cool=0;g.proj=[];g.weaponFX=[];g.hazards[0].stun=0;
+   fishmanTest.attack();
+   out[type]={count:g.proj.length,cooldown:g.cool,fx:g.weaponFX.length,
+    weapons:g.proj.map(z=>z.weapon),maxRadius:Math.max(0,...g.proj.map(z=>z.r)),
+    splash:g.proj.some(z=>z.splash>0),homing:g.proj.some(z=>z.homing>0),enemyStun:g.hazards[0].stun};
+  }
+  return out;
+ });
+ assert.ok(variants.rapid.count>=2,'Rapid must be a burst, not the same bullet as basic');
+ assert.ok(variants.rapid.cooldown<variants.basic.cooldown,'Rapid should shoot faster than basic');
+ assert.ok(variants.spread.count>=7,'Shotgun needs seven wide spread pellets');
+ assert.ok(variants.charge.splash&&variants.charge.maxRadius>=30,'Cannon needs a giant explosive orb');
+ assert.ok(variants.homing.count>=3&&variants.homing.homing,'Homing should launch a tracking missile swarm');
+ assert.equal(variants.electric.count,0,'Electric should be instant chain lightning instead of ordinary bullets');
+ assert.ok(variants.electric.enemyStun>0&&variants.electric.fx>0,'Electric did not chain to nearby bad guy');
+ await p.evaluate(()=>{
+  const g=FishmanMultiplayerBridge.getG();g.weapon='basic';g.cool=0;g.proj=[];g.weaponFX=[];
+  FishmanNet.players[2].hero='kai';FishmanNet.players[2].input.hero='kai';
+  FishmanNet.players[2].input.skill=true;FishmanNet.players[2].input.fire=false;
+ });
+ await p.waitForTimeout(100);
+ const skill=await p.evaluate(()=>{
+  const g=FishmanMultiplayerBridge.getG();
+  return {p2Cd:g.coopPlayers[2]?.skillCooldown,projectiles:g.proj.filter(z=>z.owner===2).length,fx:g.weaponFX?.length||0};
+ });
+ assert.ok(skill.p2Cd>0,'P2 did not activate its independent special skill');
+ assert.ok(skill.projectiles>=12,'Kai skill should produce an ice nova instead of just changing a timer');
+ assert.ok(skill.fx>0,'Kai special visual shockwave missing');
+ await p.evaluate(()=>fishmanTest.startChapterArena(2,false));
+ await p.waitForTimeout(100);
+ const initial=await p.evaluate(()=>{
+  const a=FishmanMultiplayerBridge.getG().challenge;
+  return {hp:a.hp,maxHp:a.maxHp};
+ });
+ assert.ok(initial.maxHp>=245,'Boss health did not increase');
+ await p.evaluate(()=>{
+  const a=FishmanMultiplayerBridge.getG().challenge;
+  a.hp=a.maxHp*.60;
+  fishmanTest.step(.1);
+ });
+ let phase=await p.evaluate(()=>FishmanMultiplayerBridge.getG().challenge.rage);
+ assert.equal(phase,1,'Boss did not enter its second attack phase');
+ await p.evaluate(()=>{
+  const a=FishmanMultiplayerBridge.getG().challenge;
+  a.hp=a.maxHp*.28;
+  fishmanTest.step(.1);
+ });
+ phase=await p.evaluate(()=>FishmanMultiplayerBridge.getG().challenge.rage);
+ assert.equal(phase,2,'Boss did not enter its final enraged phase');
+ await p.evaluate(()=>fishmanTest.step(2.1));
+ const arena=await p.evaluate(()=>FishmanMultiplayerBridge.getG().challenge);
+ assert.ok(arena.pattern||arena.bullet.length,'Enraged boss did not prepare any attack');
+});
+
 const peerSimulator=()=> {
  const tag='fishman-local-qa-bus';
  class Connection{
