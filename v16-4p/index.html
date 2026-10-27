@@ -1065,7 +1065,7 @@ function startChapterArena(finalRush=false,number=finalRush?0:level){
  const def=CHAPTER_BOSSES[number];if(!def)return;
  if(finalRush&&number===0)g.finalBossRush=true;
  g.challenge={index:number,final:!!finalRush,round:finalRush?number+1:1,total:finalRush?CHAPTER_BOSSES.length:1,def,
-   x:767,y:348,r:69,hp:1,maxHp:1,bullet:[],pattern:null,patternIndex:0,rest:1.3,rage:0,rageClock:0,signatureTimer:2.4,specialWarning:0,
+   x:767,y:348,r:69,hp:1,maxHp:1,bullet:[],pattern:null,patternIndex:0,rest:1.3,rage:0,rageClock:0,signatureTimer:1.8,specialWarning:0,
    cooldown:0,dodgeCool:0,stun:0,clock:0,flash:0,regen:0};
  const a=g.challenge;
  a.maxHp=Math.round((nightmare()?480:hardMode?365:245)*(finalRush?.85:1)*(number===8?1.3:1)*(1+.47*(coopSize()-1)));
@@ -1140,10 +1140,11 @@ function fireBossSignature(a){
  burst(a.x,a.y,a.def.color,16);
 }
 function tickBossSignature(a,dt){
- if(!a||!a.rage||a.stun>0||g.freezeTime>0)return;
+ // Every boss has its own attack from the beginning; rage makes it happen more often.
+ if(!a||a.stun>0||g.freezeTime>0)return;
  if(a.specialWarning){
   a.specialWarning=Math.max(0,a.specialWarning-dt);
-  if(a.specialWarning<=0){a.specialWarning=0;fireBossSignature(a);a.signatureTimer=a.rage===2?3.1:4.4;}
+  if(a.specialWarning<=0){a.specialWarning=0;fireBossSignature(a);a.signatureTimer=a.rage===2?3.0:a.rage===1?4.4:6.1;}
  }else{
   a.signatureTimer=(a.signatureTimer??2.5)-dt;
   if(a.signatureTimer<=0){a.specialWarning=.9;a.signatureName=BOSS_SIGNATURES[a.index];say('⚠ BOSS SUPER: '+a.signatureName+' — DODGE!',1.4);}
