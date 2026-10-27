@@ -1121,6 +1121,12 @@ if(level===5&&g.wave===0&&!g.captured){if(g.items?.[0]&&near(g.items[0],135)){g.
  if(level===3){const b=g.items.find(i=>!i.got&&near(i,87));if(b){b.got=true;g.collect++;sfx('collect');burst(b.x,b.y,'#ffca61',22);say('Device disabled! '+g.collect+'/'+g.total+' in this district.',1.6);if(g.collect===g.total)say('DISTRICT CLEAR! Get to the EXIT GATE and press B.',4);return;}}
  const gate=worldGate();if(gate&&near(gate,125)){
   if(gateReady()){
+   if(coopActionSlot===1&&coopSize()>1){
+    if(!g.exitConfirmUntil||Date.now()>g.exitConfirmUntil){
+     g.exitConfirmUntil=Date.now()+4500;say('EXIT READY: P1 PRESS B AGAIN TO ADVANCE EVERYONE.',4.2);return;
+    }
+    g.exitConfirmUntil=0;
+   }
    burst(gate.x,gate.y,'#ffe8a3',31);sfx('win');
    if(level===5){if(g.wave===0){setupSub(1);return;}startChapterArena(false,5);return;}
    if(g.wave===0){setupArea(1);return;}startChapterArena(false,level);return;
@@ -1561,19 +1567,17 @@ function tickCoopPlayers(dt){
   if(input.hero&&coopHeroAvailable(input.hero)&&p.hero!==input.hero){p.hero=input.hero;remote.hero=p.hero;p.cool=0;p.skillCooldown=p.skillCooldowns[p.hero]||0;}
   if(input.skill){input.skill=false;withCoopPlayer(p,input,()=>useSpecialSkill());}
   if(input.weapon){input.weapon=false;cycleWeapon(p);}
-  if(input.interact){input.interact=false;let revived=false;
+  if(input.interact){
+   input.interact=false;let revived=false;
    if(g.hostDown&&g.lives>0&&Math.hypot(p.x-g.x,p.y-g.y)<138)revived=coopRevive(1);
-   if(!revived){const other=Object.values(g.coopPlayers).find(o=>o.slot!==slot&&o.down&&o.lives>0&&Math.hypot(p.x-o.x,p.y-o.y)<138);if(other)revived=coopRevive(other.slot);}
-   if(!revived){const gate=worldGate();
-    if(gateReady()&&gate&&Math.hypot(p.x-gate.x,p.y-gate.y)<130){
-     burst(gate.x,gate.y,'#ffe8a3',31);sfx('win');
-     // Any teammate at a completed exit can advance the shared adventure.
-     if(level===5){if(g.wave===0)setupSub(1);else startChapterArena(false,5);}
-     else if(g.wave===0)setupArea(1);
-     else startChapterArena(false,level);
-     return; // World changed; reinitialise all teammate positions on the next frame.
-    }
-    else withCoopPlayer(p,input,()=>interact());
+   if(!revived){
+    const other=Object.values(g.coopPlayers).find(o=>o.slot!==slot&&o.down&&o.lives>0&&Math.hypot(p.x-o.x,p.y-o.y)<138);
+    if(other)revived=coopRevive(other.slot);
+   }
+   if(!revived){
+    const gate=worldGate(),atExit=gate&&gateReady()&&Math.hypot(p.x-gate.x,p.y-gate.y)<130;
+    if(atExit)say('GATE READY: P1 MUST PRESS B TWICE TO CONTINUE.',2.6);
+    else if(!g.hostDown)withCoopPlayer(p,input,()=>interact());
    }
   }
   if(input.fire&&p.cool<=0)withCoopPlayer(p,input,()=>weaponFire());
@@ -1729,7 +1733,7 @@ function draw(){c.clearRect(0,0,W,H);if(!g){grad('#08273c','#134d6a');seaScene()
    circle(x,230,32,mark<=g.checkpointIndex?'#adffcd':'#ffe7a0');txt('★',x,243,31,'#185069','center',1000);
    txt('CHECKPOINT '+mark,x,188,18,'#f6ffe7','center',900);
   }
-  const gate=worldGate();if(gate){const ready=gateReady(),word=level===5?'PRISON DOCK · B':level===0?'MIXING MACHINE · B':level===3?'DISTRICT GATE · B':'EXIT GATE · B';target(gate.x,gate.y,gate.type,word,ready);if(ready)infoPrompt(gate.x,gate.y,'PRESS B TO CONTINUE');}
+  const gate=worldGate();if(gate){const ready=gateReady(),word=level===5?'PRISON DOCK · B':level===0?'MIXING MACHINE · B':level===3?'DISTRICT GATE · B':'EXIT GATE · B';target(gate.x,gate.y,gate.type,word,ready);if(ready)infoPrompt(gate.x,gate.y,coopSize()>1?'P1: B TWICE TO CONTINUE':'PRESS B TO CONTINUE');}
   for(const it of g.items)if(!it.got&&it.x>cameraX-75&&it.x<cameraX+W+75)itemArt(it);
   drawRewardsAndShots();
   for(const h of g.hazards)if(h.x>cameraX-100&&h.x<cameraX+W+100)drawHazard(h);
