@@ -744,10 +744,10 @@ window.FishmanVisuals={paint,paintArena,paintBoss,paintBarkship,initHiDPI,versio
  const assetFor=(hero,moving,shooting)=>hero==='kai'?(shooting&&ok('kai_shoot')?'kai_shoot':moving>.2?'kai_side':'kai_34'):
    hero==='fish'?(moving>.17||shooting?'fishman_swim':'fishman_side'):null;
  function hero(c,opts){const {type,x,y,motion=0,attack=false,face=1,aimY=0,phase=0}=opts;
-  const name=assetFor(type,motion,attack);if(!name||!ok(name))return false;
-  const im=images[name],landscape=name.includes('swim'),maxHeight=type==='kai'?84:landscape?78:91,maxWidth=type==='kai'?88:landscape?108:92;
+  const name=opts.fullBody&&type==='fish'&&ok('fishman_swim')?'fishman_swim':assetFor(type,motion,attack);if(!name||!ok(name))return false;
+  const im=images[name],landscape=name.includes('swim'),maxHeight=type==='kai'?84:landscape?(opts.fullBody?111:78):91,maxWidth=type==='kai'?88:landscape?(opts.fullBody?151:108):92;
   const fit=Math.min(maxHeight/im.height,maxWidth/im.width);
-  const w=im.width*fit,h=im.height*fit;
+  const boost=opts.fullBody?1.02:1;const w=im.width*fit*boost,h=im.height*fit*boost;
   c.save();c.translate(x,y+Math.sin(phase)*2.5*motion);c.rotate(attack?Math.max(-.18,Math.min(.18,aimY*.12)):Math.sin(phase)*.035*motion);
   c.scale(face<0?-1:1,1);c.shadowColor='#00112c77';c.shadowBlur=9;c.shadowOffsetY=4;
   c.drawImage(im,-w*.5,-h*.66,w,h);c.restore();return true;
@@ -982,7 +982,7 @@ function gate(c,type,x,y,ready,t){c.save();c.translate(x,y);const col=ready?'#ff
  else if(type==='arch'){ball(c,0,-3,20,'#fff',col,'#167da6');}
  else{wire(c,[[-17,10],[0,-10],[17,10]],ready?'#ffffff':'#aefbff',5);}
  c.restore();return true;}
-window.FishmanV26Art={weapon,star,crystal,enemy,item,checkpoint,gate};
+window.FishmanV26Art={weapon,star,crystal,enemy,item,checkpoint,gate,version:'v27-sculpted-assets'};
 })();
 
 </script>
@@ -1101,7 +1101,7 @@ function collectWeapons(player=g){if(!g?.weaponPickups||!player)return;ensureWea
   player.weaponLevels[a.type]=Math.max(1,player.weaponLevels[a.type]);if(player===g)say('EQUIPPED: '+WEAPON_LABEL[a.type]+' · Lv.'+player.weaponLevels[a.type]+' · upgrades now boost damage + power',2.7);}
  }
 }
-function drawWeaponModel(x,y,type){if(window.FishmanV26Art?.weapon(c,type,x,y,t))return;if(window.FishmanV25Art?.weapon(c,type,x,y,t)){c.save();c.textAlign='center';c.font='900 12px system-ui';c.lineWidth=3;c.strokeStyle='#092538';c.strokeText((WEAPON_LABEL[type]||'SHIELD').toUpperCase(),x,y-43);c.fillStyle='#fff9dc';c.fillText((WEAPON_LABEL[type]||'SHIELD').toUpperCase(),x,y-43);c.restore();return;}const col=WEAPON_COLORS[type]||'#fff4b1';c.save();c.translate(x,y+Math.sin(t*2.4+x*.01)*4);
+function drawWeaponModel(x,y,type){if(window.FishmanV26Art?.weapon(c,type,x,y,t,type==='gold'||type==='shield'?1.08:1.20)){c.save();c.textAlign='center';c.lineJoin='round';c.font='800 11px system-ui';c.strokeStyle='#062638';c.lineWidth=3.5;const label=(WEAPON_LABEL[type]||({gold:'GOLD UPGRADE',shield:'SHIELD CORE'})[type]||type).toUpperCase();c.strokeText(label,x,y-43);c.fillStyle='#fff6d5';c.fillText(label,x,y-43);c.restore();return;}if(window.FishmanV25Art?.weapon(c,type,x,y,t)){c.save();c.textAlign='center';c.font='900 12px system-ui';c.lineWidth=3;c.strokeStyle='#092538';c.strokeText((WEAPON_LABEL[type]||'SHIELD').toUpperCase(),x,y-43);c.fillStyle='#fff9dc';c.fillText((WEAPON_LABEL[type]||'SHIELD').toUpperCase(),x,y-43);c.restore();return;}const col=WEAPON_COLORS[type]||'#fff4b1';c.save();c.translate(x,y+Math.sin(t*2.4+x*.01)*4);
  c.shadowBlur=18;c.shadowColor=col;c.fillStyle='#062a4ae0';c.strokeStyle=col;c.lineWidth=3.5;c.beginPath();c.roundRect(-32,-29,64,58,15);c.fill();c.stroke();c.shadowBlur=0;
  if(type==='gold'){c.fillStyle='#ffd65d';c.beginPath();for(let i=0;i<10;i++){const a=i*Math.PI/5-Math.PI/2,r=i%2?9:23;c.lineTo(Math.cos(a)*r,Math.sin(a)*r);}c.closePath();c.fill();c.stroke();}
  else if(type==='shield'){c.strokeStyle=col;c.lineWidth=5;c.beginPath();c.arc(0,0,18,-2.2,2.2);c.stroke();c.fillStyle='#ffeaffaa';c.beginPath();c.arc(0,0,9,0,Math.PI*2);c.fill();}
@@ -1944,7 +1944,7 @@ function drawBackground(sector=0){if(level===0&&window.FishmanVisualMaster?.aqua
  sparkleLayer();if(g&&g.wave===1&&level!==4){roundRect(315,104,367,26,9,'#093e51d2');txt('✦ AREA 2 • CHECKPOINT ACTIVE ✦',500,122,13,'#d5ffed','center');}}
 function itemArt(it){if(it.got)return;const {x,y,type}=it;
  if(type==='naughty'){c.save();c.translate(x,y);naughty(0,6,.57,true);c.restore();}
- else if(window.FishmanV26Art?.item){c.save();c.translate(x,y);window.FishmanV26Art.item(c,type,level,t);c.restore();}
+ else if(window.FishmanV26Art?.item){c.save();c.translate(x,y);c.scale(1.12,1.12);window.FishmanV26Art.item(c,type,level,t);c.restore();}
  else{c.save();c.translate(x,y);circle(0,0,23,'#9bfaff');c.restore();}
  let caption=type==='shark'?'ALLY':type==='naughty'?'NAUGHTY':type==='pass'?'PASS':type==='battery'?'CELL':type==='seed'?'SEED':type==='flask'?'FORMULA':type==='crystal'?'CRYSTAL':type==='relic'?'SCROLL':type==='lantern'?'LANTERN':type==='pearl'?'PEARL':'DEVICE';txt(caption,x,y+56,12,'#f0ffff','center',900);}
 function target(x,y,type,label,available){if(window.FishmanV26Art?.gate){window.FishmanV26Art.gate(c,type,x,y,available,t);txt(label,x,y+78,15,available?'#fff1b9':'#d9f6eb','center',850);return;}glow(x,y,98,available?'#ffe27b79':'#75d4e82a');c.save();c.translate(x,y);
@@ -2020,6 +2020,7 @@ function drawHazard(h){
  c.save();c.translate(h.x,h.y);
  if(h.hunter){glow(0,0,75,'#fa646c38');c.strokeStyle='#ff9da0';c.lineWidth=2;c.setLineDash([6,7]);c.beginPath();c.arc(0,0,47+Math.sin(t*6)*2,0,TAU);c.stroke();c.setLineDash([]);}
  if(h.stun>0)c.globalAlpha=.68;
+ {const gnd=c.createRadialGradient(0,31,2,0,31,55);gnd.addColorStop(0,terrainAt(h.x)==='water'?'#4ae9fe4b':'#09233575');gnd.addColorStop(1,'#00162a00');c.save();c.fillStyle=gnd;c.beginPath();c.ellipse(0,31,53,13,0,0,TAU);c.fill();c.restore();}
  if(terrainAt(h.x)==='water'&&window.FishmanV25Art?.enemy(c,h.type,0,0,t)){}else if(window.FishmanV26Art?.enemy(c,h.type,level,t,terrainAt(h.x))){}else deluxeEnemy(h);
  if(h.stun>0)txt('✦',0,-53,22,'#eaffff','center');
  c.restore();
@@ -2073,8 +2074,8 @@ function drawAquaHoverPod(x,y,moving,phase,attacking){
  // An open cockpit arch behind the hero replaces the old tight elliptical clip.
  c.save();c.strokeStyle='#a9ffff99';c.lineWidth=5;c.beginPath();c.arc(0,-8,57,Math.PI*1.08,Math.PI*1.92);c.stroke();c.restore();
  // Approved Fishman artwork at its real aspect ratio, drawn WITHOUT clipping.
- if(!window.FishmanVisualMaster?.hero(c,{type:'fish',x:0,y:-23,motion:moving,attack:attacking,face:(g.lastDx||1)<0?-1:1,aimY:v.y,phase}))fishman(0,-23,.60);
- c.save();c.strokeStyle='#ffffff85';c.lineWidth=3;c.beginPath();c.arc(0,-8,58,Math.PI*1.12,Math.PI*1.43);c.stroke();c.restore();
+ if(!window.FishmanVisualMaster?.hero(c,{type:'fish',x:-7,y:-62,motion:Math.max(.24,moving),attack:attacking,fullBody:true,face:(g.lastDx||1)<0?-1:1,aimY:v.y,phase}))fishman(-7,-62,.76);
+ c.save();c.strokeStyle='#ffffff85';c.lineWidth=3;c.beginPath();c.arc(0,-10,61,Math.PI*1.10,Math.PI*1.42);c.stroke();c.restore();
  if(attacking){glow(63,-11,31,'#b9ffff92');circle(64,-11,8,'#c6ffff');}
  if(moving>.12){for(let i=0;i<4;i++){const u=(t*.9+i*.25)%1;circle(-70-u*30,36+Math.sin(t*3+i)*6,2+u*3,'#9cffffa3');}}
  c.restore();
