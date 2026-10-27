@@ -47,10 +47,12 @@ try {
     await page.waitForTimeout(160);
     const found = await page.evaluate(() => ({
       mode: fishmanTest.get().movement,
-      fullBody: __fishArtCalls.some(x => x.mode === 'hover' && x.fullBody && x.painted)
+      fullBody: __fishArtCalls.some(x => x.mode === 'hover' && x.fullBody && x.painted),
+      calls: __fishArtCalls.slice(-18), scene: fishmanTest.get().scene, drawMode:fishmanTest.get().movement,
+      master:typeof window.FishmanVisualMaster?.hero, v29Fish:typeof window.FishmanV29Art?.fish
     }));
     assert.equal(found.mode, 'hover');
-    assert.equal(found.fullBody, true, 'Hover Pod did not render approved full-body Fishman');
+    assert.equal(found.fullBody, true, 'Hover Pod did not render approved full-body Fishman: '+JSON.stringify({found, errors}));
   });
 
   await check('water transition switches hover to swimming', async () => {
