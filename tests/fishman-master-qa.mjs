@@ -83,6 +83,20 @@ for(const [label,engine] of [['chromium',chromium],['webkit',webkit]]){
   assert.equal(modes.humptyLand,'roll');
   assert.equal(modes.humptyWater,'float');
   assert.equal(modes.kaiLand,'run');
+  const transformed=await page.evaluate(()=>{
+   fishmanTest.teleport(380,335);
+   fishmanTest.selectHero('kai');
+   const kai=FishmanMultiplayerBridge.getG(),kaiEffect=kai.transformMotion;
+   fishmanTest.selectHero('fish');
+   const fish=FishmanMultiplayerBridge.getG(),start=fish.transformMotion,from=fish.transformFrom;
+   fishmanTest.step(.12);
+   return {kaiEffect,start,from,remaining:FishmanMultiplayerBridge.getG().transformMotion,hero:FishmanMultiplayerBridge.getG().hero};
+  });
+  assert.ok(transformed.kaiEffect>.5,'Kai transformation animation was missing');
+  assert.ok(transformed.start>.5,'Fishman transformation animation was missing');
+  assert.equal(transformed.from,'kai');
+  assert.equal(transformed.hero,'fish');
+  assert.ok(transformed.remaining<transformed.start,'transformation animation did not advance');
  });
  await suite(browser,label,'three-dimensional-pickups',async page=>{
   await page.evaluate(()=>{
