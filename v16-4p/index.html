@@ -615,7 +615,32 @@ function useSpecialSkill(){if(net()?.role==='guest'){net()?.sendAction('skill');
  }else if(h==='sub'){
   g.shield=Math.max(g.shield,1.9+L*.73);g.sonarTime=2.1+L*.62;g.skillEffect=g.sonarTime;skillStun(185+L*36,1.0+L*.43);burst(g.x,g.y,'#ffec93',30+L*3);
  }
- sfx('power');say('✦ '+skillNames[h].toUpperCase()+' Lv.'+L+'! S TO USE · '+Math.round(skillRecharge(h))+'s RECHARGE',2.7);updateSkillButton();return true;
+ specialAttackBurst(h,L);sfx('power');updateSkillButton();return true;
+}
+
+
+function specialAttackBurst(hero,L){
+ if(!g||scene!=='playing')return;
+ const v=aimVector(),dir=Math.atan2(v.y,v.x);
+ const types={
+  fish:{name:'AQUA DOME STORM',count:12,wide:TAU,damage:15,speed:485,radius:14,life:1.6,extra:{splash:45}},
+  kai:{name:'TIME-FREEZE ICE NOVA',count:16,wide:TAU,damage:18,speed:520,radius:13,life:1.6,extra:{stun:3.3}},
+  roxy:{name:'THUNDER-FIRE METEORS',count:11,wide:2.4,damage:23,speed:570,radius:18,life:.95,extra:{splash:74}},
+  humpty:{name:'SHELL EARTHQUAKE',count:13,wide:TAU,damage:24,speed:480,radius:17,life:1.4,extra:{splash:65}},
+  gozilla:{name:'MAGNET LIGHTNING STORM',count:10,wide:TAU,damage:30,speed:870,radius:15,life:1.5,extra:{pierce:true}},
+  sub:{name:'SONAR MISSILE SWARM',count:10,wide:TAU,damage:25,speed:460,radius:13,life:2.5,extra:{homing:1.2}}
+ };
+ const cfg=types[hero];if(!cfg)return;
+ for(let i=0;i<cfg.count;i++){
+  const angle=dir+(i-(cfg.count-1)/2)*(cfg.wide/cfg.count);
+  spawnWeaponBullet(angle,hero==='kai'?'cryo':hero==='roxy'?'flame':hero==='sub'?'homing':
+    hero==='humpty'?'egg':hero==='gozilla'?'laser':'aqua',
+    cfg.damage+L*6,cfg.speed,cfg.radius,cfg.life,cfg.extra);
+ }
+ weaponFX('shock',g.x,g.y,g.x,g.y,hero==='roxy'?'#ffb267':hero==='gozilla'?'#ffff9a':'#90faff',.65,175+L*14);
+ if(hero==='gozilla')electricAttack(v,L,5,true);
+ if(hero==='roxy'||hero==='humpty')skillStun(170+L*20,1.4+.2*L,hero==='roxy'?35:15);
+ say('P'+coopActionSlot+' ✦ '+cfg.name+' · Lv.'+L+'!',2.2);
 }
 
 function maySelect(hero){if(!g||scene!=='playing')return false;if((net()?.role==='host'||net()?.role==='local')&&net()?.connected)return hero==='sub'?(level===5):['fish','kai','roxy','humpty','gozilla'].includes(hero)&&(hero!=='gozilla'||progress.godzilla);if(level===5)return hero==='sub';if(level===3)return hero==='roxy'||hero==='humpty';if(level>=4)return ['fish','kai','roxy','humpty'].includes(hero)||(hero==='gozilla'&&progress.godzilla);return hero===g.hero;}
@@ -1148,7 +1173,7 @@ function drawChallengeArena(){
  hud();
  roundRect(239,91,521,61,16,'#061d36ed');
  txt(a.final?`FINAL ARENA ${a.round}/${a.total}`:`CHAPTER ${level+1} BOSS`,499,111,13,'#aef5ed','center',900);
- txt(def.name,499,131,18,'#fff1c0','center',950);
+ txt(def.name+(a.rage?' · ⚡ ENRAGED '+(a.rage+1):''),499,131,18,a.rage?'#ffb5af':'#fff1c0','center',950);
  roundRect(283,139,434,9,5,'#39495c');
  if(a.hp>0)roundRect(285,140,430*a.hp/a.maxHp,7,4,a.hp/a.maxHp<.28?'#ff6982':def.color);
  roundRect(20,563,960,43,12,'#061b34e9');
