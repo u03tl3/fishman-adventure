@@ -8,6 +8,7 @@ on:
       - 'tests/fishman-qa.mjs'
       - 'tests/fishman-webkit.mjs'
       - 'tests/fishman-v30-qa.mjs'
+      - 'tests/fishman-step2-art.mjs'
       - '.github/workflows/fishman-qa.yml'
   pull_request:
     branches: [main]
@@ -35,6 +36,16 @@ jobs:
           sleep 2
       - name: Test ten chapters, approved art, Aqua Hover Pod and two-player synchronisation
         run: node tests/fishman-v30-qa.mjs
+      - name: Audit every approved 3D-cartoon asset and render chapters and nine bosses
+        run: node tests/fishman-step2-art.mjs
+      - name: Archive visual inspection screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fishman-step2-rendering
+          path: art-qa/
+          if-no-files-found: ignore
+          retention-days: 14
   four-player-browser:
     runs-on: ubuntu-latest
     timeout-minutes: 15
