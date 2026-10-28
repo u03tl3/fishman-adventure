@@ -48,7 +48,7 @@ try {
     await page.waitForFunction(() => window.FishmanV28Art.hero(document.getElementById('game').getContext('2d'), {
       type: 'fish', x: 200, y: 280, phase: 0, motion: 0, fullBody: true
     }), { timeout: 15000 });
-    await page.waitForTimeout(160);
+    await page.evaluate(() => fishmanTest.renderNow());
     const found = await page.evaluate(() => ({
       mode: fishmanTest.get().movement,
       fullBody: __fishArtCalls.some(x => x.mode === 'hover' && x.fullBody && x.painted),
@@ -59,7 +59,59 @@ try {
     assert.equal(found.fullBody, true, 'Hover Pod did not render approved full-body Fishman: '+JSON.stringify({found, errors}));
   });
 
+  await check('approved full-body Fishman across land and water chapters', async () => {
+    const locations = [
+      { chapter: 0, x: 220, mode: 'hover' },
+      { chapter: 0, x: 1220, mode: 'swim' },
+      { chapter: 1, x: 220, mode: 'hover' },
+      { chapter: 2, x: 220, mode: 'swim' },
+      { chapter: 3, x: 220, mode: 'hover' },
+      { chapter: 6, x: 220, mode: 'swim' },
+      { chapter: 7, x: 220, mode: 'swim' },
+      { chapter: 8, x: 220, mode: 'hover' }
+    ];
+    for (const location of locations) {
+      const actual = await page.evaluate(({chapter,x}) => {
+        fishmanTest.intro(chapter); fishmanTest.start(0);
+        const g = FishmanMultiplayerBridge.getG();
+        g.hero='fish';g.x=x;g.y=345;
+        window.__fishArtCalls.length=0;
+        fishmanTest.renderNow();
+        return {mode:fishmanTest.get().movement,
+          drawn:__fishArtCalls.some(call=>call.painted&&call.fullBody===true),
+          calls:__fishArtCalls.slice(-4)};
+      },location);
+      assert.equal(actual.mode,location.mode,'Terrain mismatch in chapter '+(location.chapter+1));
+      assert.equal(actual.drawn,true,'Full body not rendered in chapter '+(location.chapter+1)+': '+JSON.stringify(actual));
+    }
+  });
+
+  await check('original approved artwork is drawn without source-image cropping',async()=>{
+    const sample=await page.evaluate(()=>{
+      const cv=document.createElement('canvas');cv.width=cv.height=240;
+      const ctx=cv.getContext('2d'),calls=[],original=ctx.drawImage.bind(ctx);
+      ctx.drawImage=(...args)=>{
+        if(args[0] instanceof HTMLImageElement)calls.push({
+          count:args.length,w:args[0].naturalWidth,h:args[0].naturalHeight,
+          renderW:args[3],renderH:args[4]});
+        return original(...args);
+      };
+      const drawn=FishmanV28Art.hero(ctx,{
+        type:'fish',x:120,y:120,fullBody:true,mode:'hover',phase:0,motion:1});
+      const pixels=ctx.getImageData(0,0,240,240).data;let filled=0,minY=240,maxY=0;
+      for(let y=0;y<240;y++)for(let x=0;x<240;x++){
+        if(pixels[(y*240+x)*4+3]>24){filled++;minY=Math.min(minY,y);maxY=Math.max(maxY,y);}
+      }
+      return {drawn,calls,filled,pixelHeight:maxY-minY};
+    });
+    assert.equal(sample.drawn,true);
+    assert.ok(sample.calls.some(x=>x.count===5&&x.w>300&&x.h>300&&x.renderW>90&&x.renderH>60),
+      'Source-cropped image: '+JSON.stringify(sample));
+    assert.ok(sample.filled>500&&sample.pixelHeight>38,'Blank or clipped artwork: '+JSON.stringify(sample));
+  });
+
   await check('water transition switches hover to swimming', async () => {
+    await page.evaluate(()=>{fishmanTest.intro(0);fishmanTest.start(0);});
     const result = await page.evaluate(() => {
       const g = FishmanMultiplayerBridge.getG();
       g.hero = 'fish'; g.x = 1280;
