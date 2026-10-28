@@ -1,7 +1,7 @@
 name: Fishman main game and 4P browser QA
 on:
   push:
-    branches: [main]
+    branches: [main, 'feature/v30-art-motion-coop-sync']
     paths:
       - 'index.html'
       - 'v16-4p/**'
