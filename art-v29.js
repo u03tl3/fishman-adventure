@@ -7,7 +7,7 @@ const V29_SOURCES={"weapon_basic":"data:image/webp;base64,UklGRkQuAABXRUJQVlA4WA
 const V29_IMAGES={};for(const k of Object.keys(V29_SOURCES)){const image=new Image();image.src=V29_SOURCES[k];V29_IMAGES[k]=image;}
 function paintedSprite(c,key,x,y,time,size=66){const im=V29_IMAGES[key];if(!im||!im.complete||!im.naturalWidth)return false;const sc=Math.min(size/im.naturalWidth,size/im.naturalHeight),w=im.naturalWidth*sc,h=im.naturalHeight*sc;c.save();c.translate(x,y+Math.sin(time*2.6)*3);c.shadowColor="rgba(7,37,65,.47)";c.shadowBlur=9;c.shadowOffsetY=4;c.drawImage(im,-w/2,-h/2,w,h);c.restore();return true;}
 
-const sets={basic:['#e3fdff','#60d8f1','#1262b5'],rapid:['#fff2d4','#fb9862','#9b364f'],spread:['#e6ffbb','#71da83','#12684f'],charge:['#f4e6ff','#b59af9','#5034ae'],homing:['#fff2b1','#ffbc65','#b55a33'],electric:['#eaffff','#82e8ff','#2a62be'],shield:['#fff','#81eaf8','#257fae'],gold:['#fffac9','#ffce58','#ab692a']};
+const sets={basic:['#e3fdff','#60d8f1','#1262b5'],rapid:['#fff2d4','#fb9862','#9b364f'],spread:['#e6ffbb','#71da83','#12684f'],charge:['#f4e6ff','#b59af9','#5034ae'],homing:['#fff2b1','#ffbc65','#b55a33'],electric:['#eaffff','#82e8ff','#2a62be'],shield:['#fff','#81eaf8','#257fae'],gold:['#fffac9','#ffce58','#ab692a'],kai_potion:['#f5faff','#9ecbff','#57469f']};
 function grad(c,x,y,w,h,cs){const z=c.createLinearGradient(x,y,x+w,y+h);z.addColorStop(0,cs[0]);z.addColorStop(.46,cs[1]);z.addColorStop(1,cs[2]);return z;}
 function path(c,pts,color,stroke=INK,sw=2.5){c.beginPath();pts.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.closePath();c.fillStyle=color;c.fill();if(sw){c.strokeStyle=stroke;c.lineWidth=sw;c.lineJoin='round';c.stroke();}}
 function ell(c,x,y,rx,ry,col,edge=INK,sw=2,rot=0){c.beginPath();c.ellipse(x,y,rx,ry,rot,0,T);c.fillStyle=col;c.fill();if(sw){c.strokeStyle=edge;c.lineWidth=sw;c.stroke();}}
@@ -26,6 +26,24 @@ function weapon(c,type,x,y,time=0,scale=1){if(!sets[type])return false;if(painte
  }else if(type==='gold'){
   path(c,[[-28,-8],[-20,-21],[-7,-20],[0,-33],[9,-20],[21,-21],[29,-8],[19,8],[22,23],[0,30],[-22,23],[-20,8]],grad(c,-30,-30,65,65,p),'#935425',3.5);
   ball(c,0,-1,14,['#fff','#ffe69b','#a86f25']);path(c,[[-4,-13],[3,-6],[12,-7],[5,0],[8,12],[0,5],[-10,11],[-7,0],[-14,-8]],'#fff9d3','#b07c36',1.5);
+ }else if(type==='kai_potion'){
+  // Kai's potion launcher is a glass-and-brass alchemy tool, not the Rapid Blaster pickup.
+  // A distinct flask reservoir, spiral tubing and wide tapered nozzle preserve visual identity.
+  path(c,[[-39,-11],[-29,-22],[17,-21],[31,-12],[31,9],[-30,14],[-41,4]],grad(c,-39,-22,71,40,p),'#1c3d72',3.5);
+  path(c,[[-24,12],[-5,12],[-12,33],[-27,33],[-32,19]],'#4055a6','#172a59',3);
+  round(c,-27,15,12,8,3,'#e7bd76','#805a48',1.6);
+  metal(c,19,-8,27,18,['#fff4d5','#dfba70','#815286']);
+  path(c,[[42,-11],[57,-16],[62,-7],[62,9],[57,17],[42,11]],grad(c,42,-16,20,33,['#fff9df','#c7a1ee','#68509d']),'#3b3a73',2.6);
+  ell(c,60,0,6,10,'#23335e','#ecdbff',2.5);
+  // Transparent potion bottle with jewel-like liquid held above the barrel.
+  round(c,-12,-43,24,10,4,'#d2a771','#59476a',2.5);
+  path(c,[[-8,-34],[8,-34],[14,-25],[18,-8],[10,1],[-10,1],[-18,-8],[-14,-25]],grad(c,-18,-34,37,38,['#f4ffff','#94dafa','#507cd2']),'#295386',3);
+  ell(c,0,-13,11,10,'#966fffbc','#c8ffff',1.8);
+  ball(c,-5,-17,5,['#fff','#bcffe7','#529bda']);
+  for(let j=0;j<3;j++)ball(c,6-j*5,-16+j*7,2.2,['#fff','#d8f8ff','#77a7df']);
+  wire(c,[[7,-3],[18,1],[22,-5],[33,-4]],'#f6d68b',4);
+  wire(c,[[-5,-39],[-2,-49],[6,-50]],'#ddc9fc',2);
+  glimmer(c,-4,-27,9,'#fbffff');
  }else{
   // Freestanding dimensional gun, with a recessed barrel, handle, vents, and volume.
   const length=type==='charge'?61:type==='spread'?57:55;
