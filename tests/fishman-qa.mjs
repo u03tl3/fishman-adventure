@@ -564,6 +564,29 @@ await suite('every-boss-20x-hp-exact-and-joining-midfight', {width:1230,height:8
  assert.ok(stable.hp<=joined.hp,'Repeated co-op sync unexpectedly regenerated boss HP');
 });
 
+
+await suite('twenty-times-health-bosses-still-take-damage', {width:1210,height:850}, async page=>{
+ await page.evaluate(()=>{fishmanTest.select('classic');fishmanTest.intro(2);fishmanTest.start(0)});
+ const result=await page.evaluate(()=>{
+  const rows=[];
+  for(let i=0;i<9;i++){
+   fishmanTest.startChapterArena(i,false);
+   const g=FishmanMultiplayerBridge.getG(),b=g.challenge;
+   g.inv=999;g.freezeTime=0;
+   const startHP=b.hp;
+   g.proj.push({x:b.x,y:b.y,vx:0,vy:0,age:0,life:1.5,kind:'fish',damage:75,r:12,weapon:'basic'});
+   fishmanTest.step(.025);
+   rows.push({index:i,start:startHP,after:b.hp,alive:!!g.challenge,scene:FishmanMultiplayerBridge.getScene()});
+  }
+  return rows;
+ });
+ for(const b of result){
+  assert.ok(b.start>=13000,'20x boss HP missing: '+JSON.stringify(b));
+  assert.equal(b.after,b.start-75,'Boss '+b.index+' should take exactly 75 damage without additional attack effects');
+  assert.ok(b.alive&&b.scene==='playing','Boss '+b.index+' got stuck or skipped level on first hit');
+ }
+});
+
 const peerSimulator=()=> {
  const tag='fishman-local-qa-bus';
  class Connection{
