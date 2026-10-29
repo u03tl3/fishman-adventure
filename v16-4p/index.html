@@ -1283,7 +1283,7 @@ function drawChallengeArena(){
  drawRewardsAndShots();drawPlayer();drawP1Marker();
  hud();
  roundRect(239,91,521,61,16,'#061d36ed');
- txt(a.final?`FINAL ARENA ${a.round}/${a.total}`:`CHAPTER ${level+1} BOSS`,499,111,13,'#aef5ed','center',900);
+ txt('20× HP · '+Math.ceil(a.hp).toLocaleString('en-GB')+' / '+Math.ceil(a.maxHp).toLocaleString('en-GB')+' · '+(a.final?'BOSS '+a.round+'/'+a.total:'CHAPTER '+(level+1)),499,111,12,'#aef5ed','center',900);
  txt(def.name+(a.rage?' · PHASE '+(a.rage+1):''),499,131,18,a.rage?'#ffb5af':'#fff1c0','center',950);
  roundRect(283,139,434,9,5,'#39495c');
  if(a.hp>0)roundRect(285,140,430*a.hp/a.maxHp,7,4,a.hp/a.maxHp<.28?'#ff6982':def.color);
