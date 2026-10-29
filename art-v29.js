@@ -18,6 +18,22 @@ function wire(c,pts,col='#e9fcff',sw=3){c.beginPath();pts.forEach(([x,y],i)=>i?c
 function glimmer(c,x,y,r,col){c.save();c.strokeStyle=col;c.lineWidth=2;c.lineCap='round';wire(c,[[x-r,y],[x+r,y]],col,2);wire(c,[[x,y-r],[x,y+r]],col,2);c.restore();}
 function objectShadow(c){const a=c.createRadialGradient(0,30,3,0,30,52);a.addColorStop(0,'#05243d72');a.addColorStop(1,'#05243d00');ell(c,0,30,48,9,a,'transparent',0);}
 function weapon(c,type,x,y,time=0,scale=1){if(!sets[type])return false;if(paintedSprite(c,'weapon_'+type,x,y,time,(type==='gold'||type==='shield'?66:83)*scale))return true;
+ // Reuse approved high-detail dimensional hardware for Kai, adding a distinctive
+ // alchemical glass reservoir. The complete custom-painted model below remains
+ // the fallback until this image has decoded (or in an image-limited browser).
+ if(type==='kai_potion'&&paintedSprite(c,'weapon_basic',x,y,time,82*scale)){
+  c.save();c.translate(x,y+Math.sin(time*2.6)*3);c.rotate(Math.sin(time*1.8)*.028);c.scale(scale,scale);
+  c.shadowColor='#0a34568f';c.shadowBlur=9;c.shadowOffsetY=3;
+  path(c,[[-11,-36],[-10,-30],[-18,-24],[-17,-9],[17,-9],[18,-24],[10,-30],[11,-36]],
+       grad(c,-18,-36,36,31,['#fdffff','#b3e3fc','#6e83d6']),'#265c91',2.7);
+  round(c,-12,-43,24,9,4,'#d8b77c','#5f6689',2);
+  ell(c,0,-17,13,9,'#8f70e8c9','#dcffff',2);
+  ball(c,-6,-23,4.7,['#fff','#c4ffee','#58a0ce']);
+  ball(c,6,-16,2.5,['#fff','#deecff','#5e9ddd']);
+  wire(c,[[12,-11],[24,-6],[31,-10]],'#ffdfa0',3.8);
+  glimmer(c,-7,-31,5,'#ffffff');
+  c.restore();return true;
+ }
  c.save();c.translate(x,y+Math.sin(time*2.4+x*.01)*3);c.rotate(Math.sin(time*1.8+x*.013)*.065);c.scale(scale,scale);
  const p=sets[type];objectShadow(c);c.shadowColor=p[1]+'80';c.shadowBlur=8;c.shadowOffsetY=2;
  if(type==='shield'){
