@@ -1065,7 +1065,7 @@ function startChapterArena(finalRush=false,number=finalRush?0:level){
  const def=CHAPTER_BOSSES[number];if(!def)return;
  if(finalRush&&number===0)g.finalBossRush=true;
  g.challenge={index:number,final:!!finalRush,round:finalRush?number+1:1,total:finalRush?CHAPTER_BOSSES.length:1,def,
-   x:767,y:348,r:69,hp:1,maxHp:1,bullet:[],pattern:null,patternIndex:0,rest:1.3,rage:0,rageClock:0,signatureTimer:1.8,specialWarning:0,
+   x:767,y:348,r:69,hp:1,maxHp:1,bullet:[],pattern:null,patternIndex:0,rest:1.3,rage:0,rageClock:0,
    cooldown:0,dodgeCool:0,stun:0,clock:0,flash:0,regen:0};
  const a=g.challenge;
  a.maxHp=Math.round(BOSS_HEALTH_MULTIPLIER*(nightmare()?1400:hardMode?975:650)*(finalRush?.85:1)*(number===8?1.3:1)*(1+.47*(coopSize()-1)));
@@ -1116,41 +1116,6 @@ function challengeOrb(a,x,y,vx,vy,r=14,col,tracking=0){
 
 /* Every chapter boss has a signature rage power with a visible warning.
    The pattern changes with the boss rather than simply adding HP. */
-const BOSS_SIGNATURES=[
- 'TOXIC BUBBLE CYCLONE','ROOT WALL AMBUSH','SHARK TORPEDO RUSH',
- 'CLOCKWORK MINEFIELD','TWIN PORTAL STORM','KRAKEN TENTACLE SPIRAL',
- 'ENCHANTED BOOK SWARM','LEVIATHAN TIDAL RING','BARKY BRANCH BARRAGE'
-];
-function fireBossSignature(a){
- if(!a||!g.challenge||a.bullet.length>65)return;
- const idx=a.index,focus=chooseBossTarget(a.patternIndex+a.rage+idx),sp=nightmare()?315:hardMode?285:240;
- const px=clamp(focus.x,90,900),py=clamp(focus.y,185,525);
- const aim=(x,y)=>Math.atan2(py-y,px-x);
- const shot=(x,y,angle,speed=sp,r=13,color=a.def.color,tracking=0)=>
-  challengeOrb(a,x,y,Math.cos(angle)*speed,Math.sin(angle)*speed,r,color,tracking);
- if(idx===0){for(let i=0;i<16;i++){const ang=i*TAU/16+a.clock*.55;shot(a.x,a.y,ang,sp*.80,16,'#b0f7a9');}}
- else if(idx===1){for(let i=0;i<9;i++){const x=clamp(px+(i-4)*82,65,940);shot(x,525,-Math.PI/2,220,17,'#bcfd76');}}
- else if(idx===2){for(let i=-3;i<=3;i++)shot(965,clamp(py+i*62,160,545),Math.PI,sp*1.15,20,'#82c9ff');}
- else if(idx===3){for(let i=0;i<12;i++){const x=140+(i%6)*134,y=193+Math.floor(i/6)*275;shot(x,y,aim(x,y),sp*.59,18,'#ffac70',.65);}}
- else if(idx===4){for(let i=0;i<12;i++){const x=i%2?940:58,y=170+(i%6)*69;shot(x,y,aim(x,y),sp,14,'#cf9dff');}}
- else if(idx===5){for(let i=0;i<19;i++){const ang=i*TAU/19+a.clock*.9;shot(a.x,a.y,ang,sp*.78,15,'#ff92d2',i%3===0?.48:0);}}
- else if(idx===6){for(let i=0;i<9;i++){const x=860-i*32,y=188+(i%5)*76;shot(x,y,aim(x,y),sp*.78,16,'#e6d187',.8);}}
- else if(idx===7){for(let i=0;i<18;i++){const ang=i*TAU/18+a.clock*.4;shot(a.x,a.y,ang,sp*.92,16,'#74fff8');}}
- else{for(let i=0;i<12;i++){const x=i%2?933:85,y=193+(i%6)*66;shot(x,y,aim(x,y),sp*.85,18,'#ffd48e',.45);}}
- burst(a.x,a.y,a.def.color,16);
-}
-function tickBossSignature(a,dt){
- // Every boss has its own attack from the beginning; rage makes it happen more often.
- if(!a||a.stun>0||g.freezeTime>0)return;
- if(a.specialWarning){
-  a.specialWarning=Math.max(0,a.specialWarning-dt);
-  if(a.specialWarning<=0){a.specialWarning=0;fireBossSignature(a);a.signatureTimer=a.rage===2?3.0:a.rage===1?4.4:6.1;}
- }else{
-  a.signatureTimer=(a.signatureTimer??2.5)-dt;
-  if(a.signatureTimer<=0){a.specialWarning=.9;a.signatureName=BOSS_SIGNATURES[a.index];say('⚠ BOSS SUPER: '+a.signatureName+' — DODGE!',1.4);}
- }
-}
-
 function releaseChallengePattern(a){
  const pat=a.pattern,target=chooseBossTarget(a.patternIndex),ang=Math.atan2(target.y-a.y,target.x-a.x),sp=nightmare()?300:hardMode?250:204;
  if(pat.kind==='fan'||pat.kind==='portals'){
@@ -1249,13 +1214,6 @@ function drawChallengeArena(){
  ellipse(480,535,425,28,'#0414258c');
  roundRect(30,505,940,44,20,'#0a354aa1');
  for(const o of a.bullet){glow(o.x,o.y,o.r*3,o.color+'6c');circle(o.x,o.y,o.r,o.color);circle(o.x-3,o.y-5,3,'#fffbe0');}
- if(a.specialWarning>0){
-   c.save();const alpha=.32+.27*Math.sin(t*20);
-   c.fillStyle='rgba(255,61,97,'+alpha.toFixed(2)+')';c.fillRect(49,174,900,343);
-   c.strokeStyle='#fff09b';c.lineWidth=5;c.strokeRect(50,174,898,342);
-   txt('⚠ '+(a.signatureName||'BOSS SUPER ATTACK')+' · '+a.specialWarning.toFixed(1)+'s',500,221,23,'#fff2bc','center',1000);
-   c.restore();
-  }
  const p=a.pattern;if(p){const warning=p.state==='warning',color=warning?'#ff5e88':'#ffe88e';c.save();
   c.strokeStyle=color;c.lineWidth=warning?4:9;c.fillStyle=warning?'#f54f6838':'#f9bb745c';c.setLineDash(warning?[12,7]:[]);
   if(p.kind==='roots'){c.fillRect(p.aimX-53,164,106,358);c.strokeRect(p.aimX-53,164,106,358);}
@@ -1688,7 +1646,6 @@ function drawHazard(h){c.save();c.translate(h.x,h.y);if(h.hunter){glow(0,0,83,'#
 const PLAYER_SIZES={fish:.35,kai:.39,roxy:.38,humpty:.43,gozilla:.41,sub:.56};
 const waterStage=()=>[0,2,5,6,7,9].includes(level)||g?.hero==='fish'||g?.hero==='sub';
 function heroVector(){const a=g?.lastAim||{x:g?.facing||1,y:0},mx=g?.lastDx??(g?.facing||1),my=g?.lastDy??0;const useAim=(g?.attackFlash||0)>0||Math.abs(a.x)+Math.abs(a.y)>.15;const x=useAim?a.x:mx,y=useAim?a.y:my,m=Math.hypot(x,y)||1;return {x:x/m,y:y/m,facing:(x||1)<0?-1:1};}
-function drawPseudo3D(h,scale,vec,bob,phase){const art=h==='fish'?fishman:h==='kai'?kai:h==='roxy'?roxy:h==='humpty'?humptyArt:h==='gozilla'?gozillaArt:submarine;if(!art)return;const dep=waterStage()?8:6; c.save(); c.globalAlpha=.17; c.translate(g.x-vec.facing*dep,g.y+bob+dep*1.2); c.rotate((vec.x*.08)+(Math.sin(phase)*.04)); c.scale(scale*(vec.facing<0?-1:1)*1.02,scale*(.98+Math.abs(vec.y)*.06)); c.transform(1,0,vec.facing*0.09,1,0,0); art(0,0,1); c.restore();}
 function drawCharacterMotion(h,scale,moving,phase){
  if((moving<.04)&&!(g?.reviveMotion>0)&&!(g?.attackFlash>0))return;
  c.save();c.translate(g.x,g.y);c.scale(scale,scale);
