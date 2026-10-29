@@ -587,6 +587,44 @@ await suite('twenty-times-health-bosses-still-take-damage', {width:1210,height:8
  }
 });
 
+
+await suite('boss-hp-counter-visible-and-updates-after-damage', {width:1180,height:850}, async page=>{
+ await page.evaluate(()=>{
+   window.__bossLabels=[];
+   const ctx=CanvasRenderingContext2D.prototype;
+   if(!ctx.__fishmanLabelWrapped){
+    const old=ctx.fillText;
+    ctx.fillText=function(label,...args){
+     if(typeof label==='string'&&label.includes('20× HP ·'))window.__bossLabels?.push(label);
+     return old.call(this,label,...args);
+    };
+    ctx.__fishmanLabelWrapped=true;
+   }
+   fishmanTest.intro(9);fishmanTest.start(0);
+ });
+ await page.waitForTimeout(190);
+ const before=await page.evaluate(()=>({
+   current:FishmanMultiplayerBridge.getG().challenge.hp,
+   labels:window.__bossLabels.slice()
+ }));
+ assert.ok(before.labels.some(x=>x.includes('20× HP ·')&&x.includes(' / ')),
+  '20× health is not shown numerically above the boss');
+ await page.evaluate(()=>{
+   const a=FishmanMultiplayerBridge.getG().challenge;
+   a.hp=Math.max(1,a.hp-149);
+   window.__bossLabels.length=0;
+ });
+ await page.waitForTimeout(140);
+ const after=await page.evaluate(()=>({
+  current:FishmanMultiplayerBridge.getG().challenge.hp,
+  labels:window.__bossLabels.slice()
+ }));
+ assert.equal(after.current,before.current-149,'unexpected boss HP alteration');
+ const oldLabel=before.labels.find(x=>x.includes('20× HP ·'));
+ assert.ok(after.labels.some(x=>x.includes('20× HP ·')&&x!==oldLabel),
+  'boss HP display did not visibly change after damage');
+});
+
 const peerSimulator=()=> {
  const tag='fishman-local-qa-bus';
  class Connection{
