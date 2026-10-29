@@ -39,7 +39,7 @@ try {
  await run('every illustrated weapon model renders as a physical object',async()=>{
   const samples=await page.evaluate(()=>{
    const types=['basic','rapid','spread','charge','homing','electric','shield',
-     'gold','roxy_fire','humpty_egg','gozilla_beam','sub_torpedo'];
+     'gold','kai_potion','roxy_fire','humpty_egg','gozilla_beam','sub_torpedo'];
    return types.map(type=>{
     const canvas=document.createElement('canvas');canvas.width=canvas.height=180;
     const c=canvas.getContext('2d');
@@ -57,6 +57,55 @@ try {
    assert.ok(sample.pixels>100,'blank weapon: '+JSON.stringify(sample));
   }
   console.log('Weapon art paths:',samples.map(s=>s.type+':'+s.source).join(' · '));
+ });
+
+ await run('Kai Potion Launcher is unique and mapped to the correct reward',async()=>{
+  const sampled=await page.evaluate(()=>{
+    const paint=type=>{
+      const canvas=document.createElement('canvas');canvas.width=canvas.height=180;
+      const ctx=canvas.getContext('2d');const drawn=FishmanV29Art.weapon(ctx,type,90,90,0,1);
+      return {drawn,data:ctx.getImageData(0,0,180,180).data};
+    };
+    const rapid=paint('rapid'),potion=paint('kai_potion');let different=0,visible=0;
+    for(let i=0;i<rapid.data.length;i+=4){
+      if(potion.data[i+3]>30)visible++;
+      if(Math.abs(rapid.data[i]-potion.data[i])+
+        Math.abs(rapid.data[i+1]-potion.data[i+1])+
+        Math.abs(rapid.data[i+2]-potion.data[i+2])>120)different++;
+    }
+    fishmanTest.intro(0);fishmanTest.start(0);
+    FishmanMultiplayerBridge.getG().awards.push({hero:'kai',x:460,y:330,got:false});
+    const used=[],original=FishmanV29Art.weapon;
+    FishmanV29Art.weapon=function(...args){used.push(args[1]);return original(...args);};
+    try{fishmanTest.renderNow();}finally{FishmanV29Art.weapon=original;}
+    return {rapid:rapid.drawn,potion:potion.drawn,different,visible,kaiReward:used.includes('kai_potion')};
+  });
+  assert.equal(sampled.rapid,true);assert.equal(sampled.potion,true);
+  assert.ok(sampled.visible>250&&sampled.different>800,'Duplicate or blank weapon: '+JSON.stringify(sampled));
+  assert.equal(sampled.kaiReward,true,'Potion Launcher reward still displays Rapid Blaster');
+ });
+
+ await run('save visual gallery of all dimensional weapon designs',async()=>{
+  await page.evaluate(()=>{
+    const types=['basic','rapid','spread','charge','homing','electric','shield','gold',
+      'kai_potion','roxy_fire','humpty_egg','gozilla_beam','sub_torpedo'];
+    const cv=document.createElement('canvas');cv.id='fishman-art-gallery';cv.width=1040;cv.height=890;
+    cv.style.cssText='position:fixed;top:0;left:0;z-index:999999;background:#081c30';
+    const c=cv.getContext('2d');c.fillStyle='#081c30';c.fillRect(0,0,1040,890);
+    c.fillStyle='#ecfbff';c.font='bold 22px system-ui';
+    c.fillText('Fishman Step 2 - approved dimensional weapon models',24,37);
+    types.forEach((type,i)=>{
+      const x=130+(i%4)*255,y=145+Math.floor(i/4)*196;
+      c.fillStyle='#12314d';c.strokeStyle='#4a7697';c.lineWidth=2;
+      c.beginPath();c.roundRect(x-117,y-67,235,174,14);c.fill();c.stroke();
+      if(!FishmanV29Art.weapon(c,type,x,y,0,1.13))FishmanV28Art.weapon(c,type,x,y,0,1.13);
+      c.fillStyle='#e3faff';c.textAlign='center';c.font='bold 15px system-ui';
+      c.fillText(type.replaceAll('_',' ').toUpperCase(),x,y+80);
+    });
+    document.body.append(cv);
+  });
+  try{await page.locator('#fishman-art-gallery').screenshot({path:folder+'/weapon-gallery.png'});}
+  finally{await page.evaluate(()=>document.getElementById('fishman-art-gallery')?.remove());}
  });
 
  await run('all collectible types, skill crystals and stars render',async()=>{
