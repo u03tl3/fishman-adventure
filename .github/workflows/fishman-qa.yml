@@ -4,6 +4,7 @@ on:
     branches: [main, 'feature/v30-art-motion-coop-sync']
     paths:
       - 'index.html'
+      - 'art-v29.js'
       - 'v16-4p/**'
       - 'tests/fishman-qa.mjs'
       - 'tests/fishman-webkit.mjs'
