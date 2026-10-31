@@ -101,6 +101,8 @@ function gate(c,type,x,y,ready,time=0){if(!['mixer','gate','arch'].includes(type
  else{for(const side of [-1,1]){path(c,[[side*9,51],[side*45,41],[side*57,-20],[side*30,-60],[side*13,-30]],grad(c,-54,-60,110,115,cs),'#32647b',3);ball(c,side*35,17,9,['#fff','#d1ffa5','#2f7d7b']);}ball(c,0,-13,26,ready?['#fff','#fffdc3','#d99e5c']:['#fff','#aff8ff','#21619a']);}
  c.restore();return true;}
 function fish(c,opt){if(!opt||opt.type!=='fish')return false;
+ // The approved complete illustrated Fishman takes precedence; this vector is a loading/error fallback.
+ if(window.FishmanV28Art?.hero?.(c,opt))return true;
  const {x,y,motion=0,attack=false,face=1,aimY=0,phase=0}=opt;
  // Whole-body render in a generous transform; no cropping/clip and entire fin tail visible.
  const bob=Math.sin(phase*1.12)*3*motion,scale=opt.fullBody?0.72:.62;
