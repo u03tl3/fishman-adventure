@@ -1170,11 +1170,14 @@ const basicSkillInfo={fish:'Swims faster in water and every fourth shot bursts i
 const heroMoveStats={fish:{speed:252,phase:10.0},kai:{speed:230,phase:12.0},roxy:{speed:244,phase:13.2},humpty:{speed:206,phase:8.4},gozilla:{speed:218,phase:7.4},sub:{speed:252,phase:6.5}};
 function basicSkillLine(hero){return (basicSkillNames[hero]||'Basic Skill')+' — '+(basicSkillInfo[hero]||'');}
 
-const progress={stars:0,upgrades:{fish:1,kai:1,roxy:1,humpty:1,gozilla:1,sub:1},skillUpgrades:{fish:1,kai:1,roxy:1,humpty:1,gozilla:1,sub:1},godzilla:false,picked:{}};
+const progress={weaponLevels:{basic:1,rapid:1,spread:1,charge:1,homing:1,electric:1},weaponsOwned:['basic'],activeWeapon:'basic',stars:0,upgrades:{fish:1,kai:1,roxy:1,humpty:1,gozilla:1,sub:1},skillUpgrades:{fish:1,kai:1,roxy:1,humpty:1,gozilla:1,sub:1},godzilla:false,picked:{}};
 try{const old=JSON.parse(localStorage.getItem('fishmanV9')||'null');if(old&&typeof old==='object'){
  progress.stars=Math.max(0,Number(old.stars)||0);progress.godzilla=!!old.godzilla;
  for(const hero of Object.keys(progress.upgrades)){progress.upgrades[hero]=Math.max(1,Math.min(5,Number(old.upgrades?.[hero])||1));progress.skillUpgrades[hero]=Math.max(1,Math.min(5,Number(old.skillUpgrades?.[hero])||1));}
  if(old.picked&&typeof old.picked==='object')progress.picked=old.picked;
+  if(old.weaponLevels&&typeof old.weaponLevels==='object')for(const w of Object.keys(progress.weaponLevels))progress.weaponLevels[w]=Math.max(1,Math.min(5,Number(old.weaponLevels[w])||1));
+  if(Array.isArray(old.weaponsOwned))progress.weaponsOwned=['basic',...new Set(old.weaponsOwned.filter(w=>Object.hasOwn(progress.weaponLevels,w)&&w!=='basic'))];
+  if(progress.weaponsOwned.includes(old.activeWeapon))progress.activeWeapon=old.activeWeapon;
 }}catch{}
 const aim={manual:false,point:null,vx:1,vy:0,pointer:null};const rightStick={x:0,y:0,pointerId:null};let cameraX=0;
 function saveProgress(){try{localStorage.setItem('fishmanV9',JSON.stringify(progress));}catch{}}
@@ -1227,15 +1230,25 @@ const gates={0:{x:849,y:252,type:'mixer'},1:{x:895,y:245,type:'gate'},2:{x:876,y
 const WEAPON_KEYS=['basic','rapid','spread','charge','homing','electric'];
 const WEAPON_LABEL={basic:'Bubble / Gadget',rapid:'Rapid Blaster',spread:'Triple Barrel',charge:'Charge Cannon',homing:'Homing Pod',electric:'Electric Arc'};
 const WEAPON_COLORS={basic:'#8cefff',rapid:'#37e9ff',spread:'#ffac57',charge:'#e1a3ff',homing:'#7bf7a4',electric:'#ffeb73'};
-function freshWeaponState(){return {weapon:'basic',weaponLevels:{basic:1,rapid:1,spread:1,charge:1,homing:1,electric:1},weaponsOwned:['basic'],weaponShield:0,chargeTime:0};}
+function freshWeaponState(){return {weapon:'basic',weaponLevels:{basic:1,rapid:1,spread:1,charge:1,homing:1,electric:1},weaponsOwned:['basic'],weaponShield:0,chargeTime:0,weaponFX:[]};}
 function ensureWeaponState(player=g){if(!player)return;const b=freshWeaponState();for(const key of Object.keys(b))if(player[key]===undefined)player[key]=b[key];}
-function cycleWeapon(){if(scene!=='playing'||!g||net()?.role==='guest')return;ensureWeaponState();const a=g.weaponsOwned,i=a.indexOf(g.weapon);g.weapon=a[(i+1)%a.length]||'basic';g.cool=0;say(WEAPON_LABEL[g.weapon]+' Lv.'+g.weaponLevels[g.weapon],1.7);sfx('collect');}
-function upgradeWeapon(player,reason='STAR BONUS'){ensureWeaponState(player);const k=player.weapon||'basic',levels=player.weaponLevels;
- levels[k]=Math.min(5,levels[k]+1);if(player===g){say('★ '+WEAPON_LABEL[k]+' LEVEL '+levels[k]+' · '+reason,2.3);sfx('win');}}
+function persistWeaponProgress(player){if(!player||player!==g||net()?.role==='guest'||coopAimOverride!==null)return;
+  progress.weaponLevels={...player.weaponLevels};progress.weaponsOwned=[...player.weaponsOwned];progress.activeWeapon=player.weapon;saveProgress();}
+function cycleWeapon(){if(scene!=='playing'||!g||net()?.role==='guest')return;ensureWeaponState();const a=g.weaponsOwned,i=a.indexOf(g.weapon);g.weapon=a[(i+1)%a.length]||'basic';g.cool=0;persistWeaponProgress(g);say(WEAPON_LABEL[g.weapon]+' Lv.'+g.weaponLevels[g.weapon]+' · '+WEAPON_POWER_INFO[g.weapon],2.8);sfx('collect');}
+function upgradeWeapon(player,reason='STAR BONUS'){
+ ensureWeaponState(player);
+ const key=player.weapon||'basic',was=player.weaponLevels[key]||1;
+ player.weaponLevels[key]=Math.min(5,was+1);persistWeaponProgress(player);
+ if(player===g&&coopAimOverride===null){
+  say(player.weaponLevels[key]===was?WEAPON_LABEL[key]+' AT MAX POWER':('★ '+WEAPON_LABEL[key]+' LV.'+player.weaponLevels[key]+' · '+WEAPON_POWER_INFO[key]+' · '+reason),3.3);
+  sfx('win');
+ }
+}
 function penalizeWeapon(player=g){if(!player)return;ensureWeaponState(player);if(player.weaponShield>0)return;
- const k=player.weapon;if(k==='basic')return;const lv=player.weaponLevels[k]||1;
- if(lv>1){player.weaponLevels[k]=lv-1;if(player===g)say('⚠ POWER DOWN! '+WEAPON_LABEL[k]+' Lv.'+(lv-1),2.2);}
- else{player.weaponsOwned=player.weaponsOwned.filter(w=>w!==k);player.weapon='basic';if(player===g)say('⚠ WEAPON LOST! FIND A NEW PICKUP TO RECLAIM IT',2.4);}
+ const key=player.weapon;if(key==='basic')return;const was=player.weaponLevels[key]||1;
+ if(was>1){player.weaponLevels[key]=was-1;if(player===g&&coopAimOverride===null)say('⚠ POWER DOWN! '+WEAPON_LABEL[key]+' Lv.'+(was-1),2.2);}
+ else{player.weaponsOwned=player.weaponsOwned.filter(w=>w!==key);player.weapon='basic';if(player===g&&coopAimOverride===null)say('⚠ WEAPON LOST! PICK UP TO RECLAIM',2.4);}
+ persistWeaponProgress(player);
 }
 function createWeaponDrops(){if(!g)return;ensureWeaponState();g.weaponPickups=[];
  if(!g.runLength&&!g.challenge&&level===4){g.weaponPickups=[{x:205,y:260,key:'naughty-rapid',type:'rapid',got:false},{x:310,y:455,key:'naughty-charge',type:'charge',got:false},{x:445,y:280,key:'naughty-electric',type:'electric',got:false}];}
@@ -1245,12 +1258,22 @@ function createWeaponDrops(){if(!g)return;ensureWeaponState();g.weaponPickups=[]
  }}else if(g.challenge){g.weaponPickups=[{x:355,y:390,key:'arenaweapon-'+level+'-'+g.challenge.index+'-'+g.challenge.round,type:'gold',got:false}];}
 }
 function collectWeapons(player=g){if(!g?.weaponPickups||!player)return;ensureWeaponState(player);
- for(const a of g.weaponPickups){if(a.got||Math.hypot(player.x-a.x,player.y-a.y)>48)continue;
-  a.got=true;sfx('collect');burst(a.x,a.y,'#ffe7a8',24);
-  if(a.type==='shield'){player.weaponShield=Math.max(player.weaponShield,7);player.shield=Math.max(player.shield,7);if(player===g)say('SHIELD GENERATOR! 7s PROTECTION',2.5);}
-  else if(a.type==='gold'){upgradeWeapon(player,'GOLDEN CORE');}
-  else{if(!player.weaponsOwned.includes(a.type))player.weaponsOwned.push(a.type);player.weapon=a.type;
-  player.weaponLevels[a.type]=Math.max(1,player.weaponLevels[a.type]);if(player===g)say('EQUIPPED: '+WEAPON_LABEL[a.type]+' · Lv.'+player.weaponLevels[a.type]+' · upgrades now boost damage + power',2.7);}
+ for(const pick of g.weaponPickups){
+  if(pick.got||Math.hypot(player.x-pick.x,player.y-pick.y)>48)continue;
+  pick.got=true;sfx('collect');burst(pick.x,pick.y,'#ffe7a8',24);
+  if(pick.type==='shield'){
+   player.weaponShield=Math.max(player.weaponShield,7);player.shield=Math.max(player.shield,7);
+   if(player===g&&coopAimOverride===null)say('SHIELD GENERATOR! 7s PROTECTION',2.5);
+  }else if(pick.type==='gold')upgradeWeapon(player,'GOLD CORE');
+  else{
+   const known=player.weaponsOwned.includes(pick.type);
+   if(!known)player.weaponsOwned.push(pick.type);
+   player.weapon=pick.type;
+   if(known)upgradeWeapon(player,'WEAPON CORE');
+   else{player.weaponLevels[pick.type]=Math.max(1,player.weaponLevels[pick.type]||1);
+    persistWeaponProgress(player);
+    if(player===g&&coopAimOverride===null)say('FOUND '+WEAPON_LABEL[pick.type]+' · '+WEAPON_POWER_INFO[pick.type],3);}
+  }
  }
 }
 function drawWeaponModel(x,y,type){if(window.FishmanV29Art?.weapon(c,type,x,y,t,1.16)){c.save();c.textAlign='center';c.font='900 12px system-ui';c.lineWidth=3.5;c.strokeStyle='#08314b';const lab=(WEAPON_LABEL[type]||({gold:'GOLD UPGRADE',shield:'SHIELD CORE'})[type]||type).toUpperCase();c.strokeText(lab,x,y-49);c.fillStyle='#fffbde';c.fillText(lab,x,y-49);c.restore();return;}if(window.FishmanV28Art?.weapon(c,type,x,y,t,type==='gold'||type==='shield'?1.05:1.14)){c.save();c.textAlign='center';c.lineJoin='round';c.font='900 12px system-ui';c.lineWidth=3.4;c.strokeStyle='#092438';const lab=(WEAPON_LABEL[type]||({gold:'GOLD UPGRADE',shield:'SHIELD CORE'})[type]||type).toUpperCase();c.strokeText(lab,x,y-52);c.fillStyle='#fff8d6';c.fillText(lab,x,y-52);c.restore();return;}if(window.FishmanV26Art?.weapon(c,type,x,y,t,type==='gold'||type==='shield'?1.08:1.20)){c.save();c.textAlign='center';c.lineJoin='round';c.font='800 11px system-ui';c.strokeStyle='#062638';c.lineWidth=3.5;const label=(WEAPON_LABEL[type]||({gold:'GOLD UPGRADE',shield:'SHIELD CORE'})[type]||type).toUpperCase();c.strokeText(label,x,y-43);c.fillStyle='#fff6d5';c.fillText(label,x,y-43);c.restore();return;}if(window.FishmanV25Art?.weapon(c,type,x,y,t)){c.save();c.textAlign='center';c.font='900 12px system-ui';c.lineWidth=3;c.strokeStyle='#092538';c.strokeText((WEAPON_LABEL[type]||'SHIELD').toUpperCase(),x,y-43);c.fillStyle='#fff9dc';c.fillText((WEAPON_LABEL[type]||'SHIELD').toUpperCase(),x,y-43);c.restore();return;}const col=WEAPON_COLORS[type]||'#fff4b1';c.save();c.translate(x,y+Math.sin(t*2.4+x*.01)*4);
@@ -1264,7 +1287,7 @@ function drawWeaponModel(x,y,type){if(window.FishmanV29Art?.weapon(c,type,x,y,t,
  if(type==='electric'){c.strokeStyle='#fff4af';c.lineWidth=4;c.beginPath();c.moveTo(-9,-16);c.lineTo(0,-6);c.lineTo(-5,2);c.lineTo(13,17);c.stroke();}}
  c.restore();c.save();c.textAlign='center';c.font='900 12px system-ui';c.lineWidth=3;c.strokeStyle='#092538';c.strokeText((WEAPON_LABEL[type]||'SHIELD').toUpperCase(),x,y-42);c.fillStyle='#fff9dc';c.fillText((WEAPON_LABEL[type]||'SHIELD').toUpperCase(),x,y-42);c.restore();}
 function drawWeaponHud(){if(!g||!g.weapon)return;c.save();c.fillStyle='#092c45dc';c.strokeStyle='#7de4f8';c.lineWidth=2;c.beginPath();c.roundRect(22,103,266,52,12);c.fill();c.stroke();
- if(window.FishmanV28Art?.weapon)window.FishmanV28Art.weapon(c,g.weapon,51,126,t,.37);else if(window.FishmanV26Art?.weapon)window.FishmanV26Art.weapon(c,g.weapon,51,126,t,.42);c.fillStyle='#fff';c.font='900 15px system-ui';c.fillText(WEAPON_LABEL[g.weapon]||'Basic',69,121);c.font='800 12px system-ui';c.fillText('Lv.'+(g.weaponLevels?.[g.weapon]||1)+'  ·  TAP WEAPON TO SWITCH',69,138);c.font='700 11px system-ui';c.fillStyle='#b9f8ff';c.fillText((basicSkillNames[g.hero]||'Basic Skill').toUpperCase(),69,152);c.restore();}
+ if(window.FishmanV28Art?.weapon)window.FishmanV28Art.weapon(c,g.weapon,51,126,t,.37);else if(window.FishmanV26Art?.weapon)window.FishmanV26Art.weapon(c,g.weapon,51,126,t,.42);c.fillStyle='#fff';c.font='900 15px system-ui';c.fillText(WEAPON_LABEL[g.weapon]||'Basic',69,121);c.font='800 12px system-ui';c.fillText('Lv.'+(g.weaponLevels?.[g.weapon]||1)+'  ·  TAP WEAPON TO SWITCH',69,138);c.font='700 11px system-ui';c.fillStyle='#b9f8ff';c.fillText((WEAPON_POWER_INFO[g.weapon]||'UNIQUE WEAPON').slice(0,42),69,152);c.restore();}
 
 function tone(freq=440,duration=.12,type='sine',gain=.065){if(!soundOn)return;try{ctxAudio=ctxAudio||new(window.AudioContext||window.webkitAudioContext)();if(ctxAudio.state==='suspended')ctxAudio.resume();const o=ctxAudio.createOscillator(),v=ctxAudio.createGain(),n=ctxAudio.currentTime;o.type=type;o.frequency.setValueAtTime(freq,n);v.gain.setValueAtTime(.001,n);v.gain.exponentialRampToValueAtTime(gain,n+.014);v.gain.exponentialRampToValueAtTime(.001,n+duration);o.connect(v).connect(ctxAudio.destination);o.start(n);o.stop(n+duration+.02);}catch{}}
 function sfx(which){if(which==='collect'){tone(660,.12);setTimeout(()=>tone(880,.16),60);}else if(which==='hit'){tone(155,.25,'sawtooth',.04);}else if(which==='win'){tone(523,.13);setTimeout(()=>tone(659,.13),95);setTimeout(()=>tone(784,.21),200);}else if(which==='power'){tone(415,.11,'triangle');}else if(which==='attack'){tone(260,.10,'square',.014);}else tone(440,.10);}
@@ -1598,7 +1621,7 @@ function challengeWin(){
  const id=a.index,wasFinal=a.final;
  burst(a.x,a.y,a.def.color,45);sfx('win');g.proj=[];g.inv=2;
  progress.stars+=1;
- if(progress.stars%5===0){g.hp=Math.min(g.maxHp,g.hp+2);skillLevelUp(g.hero,'BOSS STAR REWARD');}
+ if(progress.stars%5===0){g.hp=Math.min(g.maxHp,g.hp+2);skillLevelUp(g.hero,'BOSS STAR REWARD');upgradeWeapon(g,'BOSS STAR');}
  saveProgress();
  if(wasFinal){
   if(id+1>=CHAPTER_BOSSES.length){g.challenge=null;chapterDone();return;}
@@ -1917,7 +1940,7 @@ function start(checkpoint=0,remainingLives=null){scene='playing';aim.manual=fals
  else if(sub)setupSub(checkpoint);
  else if(level===9)startChapterArena(true,0);
  else setupArea(checkpoint);
- ensureWeaponState();createWeaponDrops();
+ ensureWeaponState();g.weaponLevels={...progress.weaponLevels};g.weaponsOwned=[...progress.weaponsOwned];g.weapon=g.weaponsOwned.includes(progress.activeWeapon)?progress.activeWeapon:'basic';createWeaponDrops();
  switchEl.style.display=(level===0||level>=3)&&!sub?'flex':'none';updateHeroSwitch();say(level===9?'FINAL ARENA — NINE BOSSES IN A ROW! KEEP YOUR LIVES AND UPGRADE SKILLS!':boss?'TRIAL 1/3: FLYING BARKSHIP! SURVIVE ITS ATTACK PATTERNS, RIGHT STICK TO AIM, TAP B TO DODGE.':sub?'YOU ARE THE YELLOW SUBMARINE! '+(g.wave?'Find the power cells.':'Capture Naughty with B, then gather passes!'):'AREA '+(g.wave+1)+'/2 — '+g.total+' objectives. '+(nightmare()?'RED RINGS = RUN AWAY!':hardMode?'HUNTERS + TIME LIMIT!':''),5);
 }
 function say(message,seconds=2.4){toast=message;toastLife=seconds;}
