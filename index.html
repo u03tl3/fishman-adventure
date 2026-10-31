@@ -2228,7 +2228,7 @@ function drawAquaHoverPod(x,y,moving,phase,attacking){
  // An open cockpit arch behind the hero replaces the old tight elliptical clip.
  c.save();c.strokeStyle='#a9ffff99';c.lineWidth=5;c.beginPath();c.arc(0,-8,57,Math.PI*1.08,Math.PI*1.92);c.stroke();c.restore();
  // Approved Fishman artwork at its real aspect ratio, drawn WITHOUT clipping.
- if(!(window.FishmanV29Art?.fish(c,{type:'fish',x:-7,y:-62,motion:Math.max(.24,moving),attack:attacking,fullBody:true,face:(g.lastDx||1)<0?-1:1,aimY:v.y,phase})||window.FishmanVisualMaster?.hero(c,{type:'fish',x:-7,y:-62,motion:Math.max(.24,moving),attack:attacking,fullBody:true,face:(g.lastDx||1)<0?-1:1,aimY:v.y,phase})))fishman(-7,-62,.76);
+ if(!(window.FishmanV28Art?.hero(c,{type:'fish',x:-7,y:-31,motion:Math.max(.24,moving),attack:attacking,mode:'hover',fullBody:true,face:(g.lastDx||1)<0?-1:1,aimY:v.y,phase})||window.FishmanVisualMaster?.hero(c,{type:'fish',x:-7,y:-31,motion:Math.max(.24,moving),attack:attacking,mode:'hover',fullBody:true,face:(g.lastDx||1)<0?-1:1,aimY:v.y,phase})))fishman(-7,-31,.76);
  c.save();c.strokeStyle='#ffffff85';c.lineWidth=3;c.beginPath();c.arc(0,-10,61,Math.PI*1.10,Math.PI*1.42);c.stroke();c.restore();
  if(attacking){glow(63,-11,31,'#b9ffff92');circle(64,-11,8,'#c6ffff');}
  if(moving>.12){for(let i=0;i<4;i++){const u=(t*.9+i*.25)%1;circle(-70-u*30,36+Math.sin(t*3+i)*6,2+u*3,'#9cffffa3');}}
@@ -2679,7 +2679,7 @@ function drawPlayer(){
  c.scale(poseScale,poseScale*(1+(swimmer?.05:.03)*Math.abs(vec.y)));
  c.transform(1,0,vec.facing*.025,1,0,0);c.translate(-g.x,-g.y);
  c.shadowColor='rgba(0,0,0,.18)';c.shadowBlur=10;c.shadowOffsetY=4;
- if(!(window.FishmanV29Art?.fish(c,{type:h,x:g.x,y:g.y,motion:moving,attack:attacking,fullBody:h==='fish',face:vec.facing,aimY:aim.y,phase})||window.FishmanVisualMaster?.hero(c,{type:h,x:g.x,y:g.y,motion:moving,attack:attacking,fullBody:h==='fish',face:vec.facing,aimY:aim.y,phase})))premiumHero(h,s,moving,phase,aim,attacking);
+ if(!(window.FishmanV28Art?.hero(c,{type:h,x:g.x,y:g.y,motion:moving,attack:attacking,fullBody:h==='fish',face:vec.facing,aimY:aim.y,phase})||window.FishmanVisualMaster?.hero(c,{type:h,x:g.x,y:g.y,motion:moving,attack:attacking,fullBody:h==='fish',face:vec.facing,aimY:aim.y,phase})))premiumHero(h,s,moving,phase,aim,attacking);
  c.restore();
  if(g.transformMotion>0)drawHeroMorph(g.x,g.y,g.transformMotion,h);
  drawCharacterMotion(h,s*.8,moving,phase);window.FishmanV29Art?.effects(c,{hero:h,x:g.x,y:g.y,motion:moving,phase,attack:attacking,mode,aim});if(mode==='float'){c.save();c.strokeStyle='#beffff99';c.lineWidth=3;c.beginPath();c.ellipse(g.x,g.y+22,45+Math.sin(t*4)*4,10,0,0,TAU);c.stroke();c.beginPath();c.ellipse(g.x,g.y+24,31,7,0,0,TAU);c.stroke();c.restore();}
