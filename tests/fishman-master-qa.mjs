@@ -53,7 +53,9 @@ for(const [label,engine] of [['chromium',chromium],['webkit',webkit]]){
  await suite(browser,label,'full-body-and-terrain',async page=>{
   await page.evaluate(()=>{
    window.__heroDraws=[];
-   const master=FishmanVisualMaster.hero, modern=FishmanV29Art.fish;
+   const master=FishmanVisualMaster.hero, modern=FishmanV29Art.fish, approved=FishmanV28Art.hero;
+   // Observe the approved illustration as well as the older fallback paths.
+   FishmanV28Art.hero=(canvas,opts)=>{window.__heroDraws.push({...opts});return approved(canvas,opts);};
    FishmanVisualMaster.hero=(canvas,opts)=>{window.__heroDraws.push({...opts});return master(canvas,opts);};
    FishmanV29Art.fish=(canvas,opts)=>{window.__heroDraws.push({...opts});return modern(canvas,opts);};
    fishmanTest.intro(0);fishmanTest.start(0);fishmanTest.selectHero('fish');
@@ -97,6 +99,33 @@ for(const [label,engine] of [['chromium',chromium],['webkit',webkit]]){
   assert.equal(transformed.from,'kai');
   assert.equal(transformed.hero,'fish');
   assert.ok(transformed.remaining<transformed.start,'transformation animation did not advance');
+ });
+ await suite(browser,label,'approved-high-detail-fishman-is-actually-drawn',async page=>{
+  // Previous regressions checked the fullBody flag, but not the image actually painted.
+  await page.waitForFunction(()=>{
+   const ctx=document.createElement('canvas').getContext('2d');
+   return !!window.FishmanV28Art?.hero(ctx,{type:'fish',x:100,y:100,fullBody:true,phase:0});
+  },{timeout:12000});
+  await page.evaluate(()=>{
+   window.__approvedFishDraws=[];window.__cartoonFishDraws=0;
+   const high=FishmanV28Art.hero,low=FishmanV29Art.fish;
+   FishmanV28Art.hero=(ctx,pose)=>{
+    const painted=high(ctx,pose);
+    if(painted&&pose?.type==='fish')window.__approvedFishDraws.push({fullBody:pose.fullBody===true,mode:pose.mode||null});
+    return painted;
+   };
+   FishmanV29Art.fish=(...args)=>{window.__cartoonFishDraws++;return low(...args);};
+   fishmanTest.intro(0);fishmanTest.start(0);fishmanTest.selectHero('fish');
+  });
+  await page.waitForFunction(()=>window.__approvedFishDraws.some(x=>x.fullBody&&x.mode==='hover'),{timeout:6500});
+  const land=await page.evaluate(()=>({draws:[...__approvedFishDraws],fallback:__cartoonFishDraws}));
+  assert.ok(land.draws.some(x=>x.mode==='hover'&&x.fullBody),'Hover Pod skipped approved 3D Fishman image');
+  assert.equal(land.fallback,0,'Simplified Fishman was selected on land');
+  await page.evaluate(()=>{window.__approvedFishDraws=[];fishmanTest.teleport(1300,340);});
+  await page.waitForFunction(()=>window.__approvedFishDraws.some(x=>x.fullBody&&x.mode==='swim'),{timeout:6500});
+  const water=await page.evaluate(()=>({draws:[...__approvedFishDraws],fallback:__cartoonFishDraws}));
+  assert.ok(water.draws.some(x=>x.mode==='swim'&&x.fullBody),'Water stage skipped approved full-body artwork');
+  assert.equal(water.fallback,0,'Simplified cartoon overrode swimming Fishman');
  });
  await suite(browser,label,'three-dimensional-pickups',async page=>{
   await page.evaluate(()=>{
