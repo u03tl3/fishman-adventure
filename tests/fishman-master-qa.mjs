@@ -53,7 +53,9 @@ for(const [label,engine] of [['chromium',chromium],['webkit',webkit]]){
  await suite(browser,label,'full-body-and-terrain',async page=>{
   await page.evaluate(()=>{
    window.__heroDraws=[];
-   const master=FishmanVisualMaster.hero, modern=FishmanV29Art.fish;
+   const master=FishmanVisualMaster.hero, modern=FishmanV29Art.fish, approved=FishmanV28Art.hero;
+   // Observe the approved illustration as well as the older fallback paths.
+   FishmanV28Art.hero=(canvas,opts)=>{window.__heroDraws.push({...opts});return approved(canvas,opts);};
    FishmanVisualMaster.hero=(canvas,opts)=>{window.__heroDraws.push({...opts});return master(canvas,opts);};
    FishmanV29Art.fish=(canvas,opts)=>{window.__heroDraws.push({...opts});return modern(canvas,opts);};
    fishmanTest.intro(0);fishmanTest.start(0);fishmanTest.selectHero('fish');
