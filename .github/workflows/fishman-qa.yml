@@ -44,3 +44,5 @@ jobs:
         run: node tests/fishman-webkit.mjs
       - name: Test master artwork, ten chapters, land/water and two-player sync
         run: node tests/fishman-master-qa.mjs
+      - name: Test six unique weapon mechanics, upgrades and Chromium/WebKit effects
+        run: node tests/fishman-weapon-v31.mjs
