@@ -1336,48 +1336,108 @@ function aimVector(){if(coopAimOverride)return coopAimOverride;let dx=1,dy=0,tar
  else if(!aim.manual){dx=g.lastDx||1;dy=g.lastDy||0;}
  const n=Math.max(.001,Math.hypot(dx,dy));return {x:dx/n,y:dy/n};
 }
+/* v31 signature mechanics; existing approved illustrations and bosses are unchanged. */
+const WEAPON_POWER_INFO={
+ basic:'BUBBLES · L3 DOUBLE · L5 SPLASH',
+ rapid:'PULSE BURST · L3 TRIPLE · L5 PIERCE',
+ spread:'WIDE SCATTER · L3 SEVEN · L5 NINE',
+ charge:'PLASMA BLAST · L3 WIDER · L5 NOVA',
+ homing:'GUIDED ROCKETS · L3 THREE · L5 FOUR',
+ electric:'CHAIN LIGHTNING · L3 FOUR · L5 SIX'};
+function weaponTier(w,level,base){
+ const lv=clamp(level||1,1,5),damage=base+(lv-1)*4,sp={weapon:w,lv,count:1,spread:.11,rate:1,speed:1,radius:14,damage,life:1.65,splash:0,slow:0,homing:0,pierce:0,chains:0};
+ switch(w){
+  case 'basic':sp.count=lv>=5?3:lv>=3?2:1;sp.spread=.10;sp.slow=lv>=4?.75:0;sp.splash=lv===5?42:0;break;
+  case 'rapid':sp.count=lv>=3?3:2;sp.spread=.058;sp.rate=.45;sp.speed=1.7;sp.radius=7;sp.damage=Math.max(5,Math.round(damage*.53));sp.life=1.15;sp.pierce=lv>=5?2:0;break;
+  case 'spread':sp.count=lv>=5?9:lv>=3?7:5;sp.spread=.20;sp.rate=.94;sp.speed=.85;sp.radius=9;sp.damage=Math.max(5,Math.round(damage*.37));sp.life=.58;sp.slow=lv>=4?.4:0;break;
+  case 'charge':sp.rate=1.8;sp.speed=.62;sp.radius=23+lv*2;sp.damage=Math.round(damage*3.15);sp.life=1.9;sp.splash=83+lv*19;break;
+  case 'homing':sp.count=lv>=5?4:lv>=3?3:2;sp.spread=.16;sp.rate=1.25;sp.speed=.78;sp.radius=11;sp.damage=Math.round(damage*.82);sp.life=2.7;sp.splash=lv>=4?50:30;sp.homing=.65+lv*.17;break;
+  case 'electric':sp.rate=1.7;sp.speed=0;sp.damage=Math.round(damage*1.52);sp.chains=lv>=5?6:lv>=3?4:lv>=2?3:2;sp.slow=.8+lv*.22;break;
+ }
+ return sp;
+}
+function weaponVisual(kind,weapon,x,y,radius=0,points=null){
+ if(!g)return;const fx=g.weaponFX||(g.weaponFX=[]);if(fx.length>=80)fx.splice(0,fx.length-70);
+ const ttl=kind==='beam'?.29:kind==='shock'?.43:.30;
+ fx.push({kind,weapon,x,y,radius,life:ttl,ttl,...(points?{points}:{})});
+}
+function damageHazard(h,power,stun=.35,weapon='basic'){
+ const max=Math.max(2,hardMode?4:3),original=h.hp??max;
+ const hits=Math.max(1,Math.round(power/19));
+ h.hp=original-hits;
+ h.stun=Math.max(h.stun||0,stun);
+ if(h.hp<=0){h.hp=max;h.stun=10;}
+ burst(h.x,h.y,WEAPON_COLORS[weapon]||'#aefaff',weapon==='charge'?18:9);
+}
+function splashWeapon(x,y,radius,damage,weapon,excluded=null){
+ if(radius<=0)return;
+ weaponVisual('shock',weapon,x,y,radius);
+ for(const h of g.hazards||[]){
+  if(h===excluded)continue;const dist=Math.hypot(h.x-x,h.y-y);
+  if(dist<radius)damageHazard(h,damage*(.35+.4*(1-dist/radius)),weapon==='charge'?1.45:.6,weapon);
+ }
+}
+function fireElectric(sp,origin,v){
+ const points=[{x:origin.x,y:origin.y}],chosen=new Set();
+ let head=origin;
+ const candidates=g.hazards||[];
+ for(let i=0;i<sp.chains;i++){
+  const radius=i===0?390+sp.lv*24:138+sp.lv*19;
+  const available=candidates.filter(h=>!chosen.has(h)&&Math.hypot(h.x-head.x,h.y-head.y)<radius &&
+    (i>0||(h.x-origin.x)*v.x+(h.y-origin.y)*v.y>0));
+  if(!available.length)break;
+  const target=available.reduce((a,b)=>Math.hypot(a.x-head.x,a.y-head.y)<Math.hypot(b.x-head.x,b.y-head.y)?a:b);
+  chosen.add(target);points.push({x:target.x,y:target.y});head=target;
+  damageHazard(target,sp.damage*(1-i*.10),sp.slow,'electric');
+ }
+ if(g.challenge){
+  const a=g.challenge,dx=a.x-origin.x,dy=a.y-origin.y,dist=Math.hypot(dx,dy);
+  if(dist<980&&(dx*v.x+dy*v.y)>dist*.1){
+   points.push({x:a.x,y:a.y});challengeDamage(a,sp.damage*1.3,a.x,a.y);
+  }
+ }else if(level===4&&g.arena){
+  const a=g.arena;
+  points.push({x:a.bossX,y:a.bossY});
+  g.shots.push({x:a.bossX,y:a.bossY,sx:origin.x,sy:origin.y,tx:a.bossX,ty:a.bossY,life:.28,kind:g.hero,weapon:'electric',damage:sp.damage*1.3,aimed:false});
+ }
+ if(points.length===1)points.push({x:origin.x+v.x*270,y:origin.y+v.y*270});
+ weaponVisual('beam','electric',origin.x,origin.y,0,points);
+}
 function weaponFire(){if(!g||scene!=='playing'||g.cool>0)return;
- const h=g.hero,L=heroUpgrade(h),v=aimVector();ensureWeaponState();const wt=g.weapon||'basic',WL=g.weaponLevels[wt]||1;
- g.lastAim=v;g.poseRecoil=1;g.actionWave=.22;g.basicShotCount=(g.basicShotCount||0)+1;
- if(h==='gozilla'||h==='roxy')sparkBurst(g.x+v.x*38,g.y+v.y*20,h==='roxy'?'#ffb46e':'#b8ffff',.5);g.attackFlash=g.hero==='roxy'?.36:g.hero==='gozilla'?.43:.29;
+ const h=g.hero,L=heroUpgrade(h),v=aimVector();ensureWeaponState();
+ const wt=g.weapon||'basic',WL=g.weaponLevels[wt]||1;
  const defs={fish:[.38,590,16],kai:[.54,470,19],roxy:[.17,455,14],humpty:[.58,570,34],gozilla:[.50,985,38],sub:[.34,560,25]};
- const def=defs[h]||defs.fish;
- const rateMult=(wt==='rapid'?.45:wt==='spread'?.88:wt==='charge'?1.18:wt==='homing'?.92:wt==='electric'?.84:1);
- g.cool=Math.max(.07,(def[0]-(L-1)*.03)*(1-.045*(WL-1))*rateMult);
- let spread=1, angleStep=(h==='roxy'?.17:.11);
- if(wt==='spread')spread=WL>=5?7:WL>=3?5:3;
- else if(h==='roxy')spread=3;
- else if(h==='fish'&&g.basicShotCount%4===0)spread=3;
- const baseDamage=def[2]+(L-1)*6+(WL-1)*6;
- const chargeBonus=wt==='charge'?(24+WL*9):0;
- const electricBonus=wt==='electric'?(12+WL*2):0;
- const homingPower=wt==='homing'?(0.12+WL*0.05):0;
- const chainPower=wt==='electric'?(2+Math.floor(WL/2)):0;
- const extraPierce=(wt==='charge'&&WL>=3)||(wt==='rapid'&&WL>=5)||(h==='kai'&&g.basicShotCount%3===0);
- const bossTravel=level===4?Math.max(180,Math.hypot(g.arena.bossX-g.x,g.arena.bossY-g.y)):0;
- for(let n=0;n<spread;n++){
-   const angle=Math.atan2(v.y,v.x)+(n-(spread-1)/2)*angleStep;
-   const dir={x:Math.cos(angle),y:Math.sin(angle)};
-   const vx=dir.x*def[1],vy=dir.y*def[1];
-   const pos=window.FishmanVisualMaster?.muzzle(h,g.x,g.y,dir)||{x:g.x+dir.x*22,y:g.y-10+dir.y*14};
-   const isEmpoweredKai=h==='kai'&&g.basicShotCount%3===0;
-   const proj={x:pos.x,y:pos.y,vx:vx*(1+.05*(WL-1)),vy:vy*(1+.05*(WL-1)),age:0,life:wt==='charge'?1.95:1.7,kind:h,weapon:wt,damage:baseDamage+chargeBonus+electricBonus+(isEmpoweredKai?14:0),r:(h==='roxy'?12:h==='gozilla'?16:h==='sub'?15:14)+(wt==='charge'?WL*2:0)+(isEmpoweredKai?3:0),pierce:extraPierce||(h==='gozilla'&&L>=3),homing:homingPower+(h==='sub'?0.03:0),chain:chainPower,slow:(h==='sub'||wt==='electric')?(0.45+WL*0.08):0,burn:(h==='roxy')?(0.55+L*0.15):0};
-   if(level===4){g.shots.push({x:proj.x,y:proj.y,sx:proj.x,sy:proj.y,tx:proj.x+v.x*bossTravel,ty:proj.y+v.y*bossTravel,life:0,kind:h,damage:proj.damage,aimed:aim.manual,wide:spread>1,empowered:isEmpoweredKai});}
-   else g.proj.push(proj);
+ const def=defs[h]||defs.fish,sp=weaponTier(wt,WL,def[2]+(L-1)*6);
+ g.lastAim=v;g.poseRecoil=1;g.actionWave=.20;g.basicShotCount=(g.basicShotCount||0)+1;
+ g.attackFlash=h==='roxy'?.36:h==='gozilla'?.43:.29;
+ g.cool=Math.max(.08,(def[0]-(L-1)*.03)*(1-.035*(WL-1))*sp.rate);
+ const origin=window.FishmanVisualMaster?.muzzle(h,g.x,g.y,v)||{x:g.x+v.x*22,y:g.y-10+v.y*14};
+ weaponVisual('pulse',wt,origin.x,origin.y,wt==='charge'?37:20);
+ if(wt==='electric')fireElectric(sp,origin,v);
+ else for(let n=0;n<sp.count;n++){
+  const angle=Math.atan2(v.y,v.x)+(n-(sp.count-1)/2)*sp.spread,dir={x:Math.cos(angle),y:Math.sin(angle)};
+  const muzzle=window.FishmanVisualMaster?.muzzle(h,g.x,g.y,dir)||origin;
+  const empowered=h==='kai'&&g.basicShotCount%3===0;
+  const p={x:muzzle.x,y:muzzle.y,vx:dir.x*def[1]*sp.speed,vy:dir.y*def[1]*sp.speed,
+   age:0,life:sp.life,kind:h,weapon:wt,lv:sp.lv,damage:sp.damage+(empowered?9:0),r:sp.radius+(empowered?3:0),
+   pierce:sp.pierce>0||empowered||(h==='gozilla'&&L>=3),pierceRemaining:sp.pierce,
+   hitIndices:[],homing:sp.homing+(h==='sub'?.05:0),splash:sp.splash,
+   slow:sp.slow,chain:0,burn:h==='roxy'?.5+L*.15:0};
+  if(level===4){
+   const distance=Math.max(180,Math.hypot(g.arena.bossX-g.x,g.arena.bossY-g.y));
+   g.shots.push({x:p.x,y:p.y,sx:p.x,sy:p.y,tx:p.x+v.x*distance,ty:p.y+v.y*distance,life:0,
+    kind:h,weapon:wt,r:p.r,damage:p.damage,aimed:aim.manual,wide:sp.count>1,empowered});
+  }else g.proj.push(p);
  }
- if(h==='humpty'){
-   g.inv=Math.max(g.inv,.38);g.rollBoost=Math.min(1.55,(g.rollBoost||1)+.13);
-   g.x=clamp(g.x+v.x*(70+WL*4),62,(g.challenge||level===4)?673:((g.runLength||W)-65));
-   g.y=clamp(g.y+v.y*(70+WL*4),170,540);
-   for(const hz of g.hazards||[])if(Math.hypot(hz.x-g.x,hz.y-g.y)<72){hz.stun=Math.max(hz.stun,1.1);hz.hp=(hz.hp??Math.max(2,hardMode?4:3))-1;burst(hz.x,hz.y,'#ffe2ae',10);} 
+ if(h==='humpty'){g.inv=Math.max(g.inv,.38);g.rollBoost=Math.min(1.55,(g.rollBoost||1)+.13);
+  g.x=clamp(g.x+v.x*(70+WL*4),62,(g.challenge||level===4)?673:((g.runLength||W)-65));
+  g.y=clamp(g.y+v.y*(70+WL*4),170,540);
+  for(const hz of g.hazards||[])if(Math.hypot(hz.x-g.x,hz.y-g.y)<72)damageHazard(hz,19,1.1,'basic');
  }
- if(h==='roxy'){
-   g.inv=Math.max(g.inv,.12);
-   for(const hz of g.hazards||[])if(Math.hypot(hz.x-g.x,hz.y-g.y)<86){hz.stun=Math.max(hz.stun,.4);burst(hz.x,hz.y,'#ffb86b',7);} 
- }
- if(h==='gozilla'){g.shield=Math.max(g.shield,.34+WL*.04);if(L>=2)burst(g.x+v.x*36,g.y+v.y*36,'#a6faff',6);}
- if(h==='sub'){g.sonarTime=Math.max(g.sonarTime,.45+.08*WL);}
- sfx(h==='gozilla'?'power':'attack');
+ if(h==='roxy'){g.inv=Math.max(g.inv,.12);for(const hz of g.hazards||[])if(Math.hypot(hz.x-g.x,hz.y-g.y)<86)hz.stun=Math.max(hz.stun,.4);}
+ if(h==='gozilla')g.shield=Math.max(g.shield,.34+WL*.04);
+ if(h==='sub')g.sonarTime=Math.max(g.sonarTime,.45+.08*WL);
+ sfx(wt==='charge'||wt==='electric'?'power':'attack');
 }
 function tickProjectiles(dt){if(!g||level===4)return;
  for(let i=g.proj.length-1;i>=0;i--){const p=g.proj[i];p.age+=dt;p.life-=dt; if(p.homing&&g.hazards?.length){const targets=g.hazards.filter(h=>h.stun<1&&Math.hypot(h.x-p.x,h.y-p.y)<340);if(targets.length){const a=targets.reduce((x,y)=>Math.hypot(x.x-p.x,x.y-p.y)<Math.hypot(y.x-p.x,y.y-p.y)?x:y);const speed=Math.hypot(p.vx,p.vy),theta=Math.atan2(a.y-p.y,a.x-p.x),original=Math.atan2(p.vy,p.vx);const steer=original+Math.atan2(Math.sin(theta-original),Math.cos(theta-original))*Math.min(.21,p.homing*dt*12);p.vx=Math.cos(steer)*speed;p.vy=Math.sin(steer)*speed;}} p.x+=p.vx*dt;p.y+=p.vy*dt;
@@ -2799,6 +2859,7 @@ if(new URLSearchParams(location.search).has('test'))window.fishmanTest={get:()=>
 menu();updateSkillButton();requestAnimationFrame(drawFrame);
 })();
 </script>
+<script src="weapon-effects-v31.js?v=31"></script>
 <script src="fit-screen.js?v=6"></script>
 <script>/* Fishman Adventure: private-by-code two-player co-op using WebRTC via PeerJS Cloud.
    The host is authoritative. Only gameplay state and inputs are exchanged. */
