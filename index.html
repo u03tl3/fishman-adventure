@@ -1692,9 +1692,15 @@ function tickChallenge(dt){
  a.x=Math.max(280,Math.min(885,a.moveX));a.y=Math.max(206,Math.min(475,a.moveY));
  // Real projectile collisions; phases cannot be skipped through an overpowered shot.
  for(let i=g.proj.length-1;i>=0;i--){
-   const shot=g.proj[i];shot.age+=dt;shot.life-=dt;shot.x+=shot.vx*dt;shot.y+=shot.vy*dt;
+   const shot=g.proj[i];shot.age+=dt;shot.life-=dt;
+   if(shot.homing){const angle=Math.atan2(a.y-shot.y,a.x-shot.x),before=Math.atan2(shot.vy,shot.vx);
+    const direction=before+Math.atan2(Math.sin(angle-before),Math.cos(angle-before))*Math.min(.28,shot.homing*dt*9);
+    const speed=Math.hypot(shot.vx,shot.vy);shot.vx=Math.cos(direction)*speed;shot.vy=Math.sin(direction)*speed;}
+   shot.x+=shot.vx*dt;shot.y+=shot.vy*dt;
    if(shot.life<=0||shot.x<-20||shot.x>1010||shot.y<145||shot.y>565){g.proj.splice(i,1);continue;}
-   if(Math.hypot(shot.x-a.x,shot.y-a.y)<a.r+shot.r){g.proj.splice(i,1);challengeDamage(a,shot.damage,shot.x,shot.y);
+   if(Math.hypot(shot.x-a.x,shot.y-a.y)<a.r+shot.r){g.proj.splice(i,1);
+    weaponVisual(shot.splash?'shock':'impact',shot.weapon||'basic',shot.x,shot.y,shot.splash||shot.r*2.3);
+    challengeDamage(a,shot.damage,shot.x,shot.y);
     sfx('attack');if(!g.challenge||scene!=='playing')return;
    }
  }
@@ -2117,7 +2123,7 @@ function tick(dt){t+=dt;if(toastLife>0)toastLife-=dt;for(let i=particles.length-
  collectRewards();collectWeapons();tickProjectiles(dt);tickStrikes(dt);if(scene!=='playing')return;
  if(level===4){tickBossCombat(dt);if(scene!=='playing')return;
  for(let i=g.shots.length-1;i>=0;i--){const s=g.shots[i];s.life+=dt;const f=clamp(s.life/(s.kind==='roxy'?.36:.29),0,1);s.x=s.sx+(s.tx-s.sx)*f;s.y=s.sy+(s.ty-s.sy)*f-44*Math.sin(Math.PI*f);
-  if(f>=1){g.shots.splice(i,1);const a=g.arena;const targetDistance=Math.hypot(s.tx-a.bossX,s.ty-a.bossY);if(s.aimed&&targetDistance>126){burst(s.x,s.y,'#b2ebed',4);continue;}
+  if(f>=1){g.shots.splice(i,1);weaponVisual(s.weapon==='charge'?'shock':'impact',s.weapon||'basic',s.x,s.y,s.weapon==='charge'?100:29);const a=g.arena;const targetDistance=Math.hypot(s.tx-a.bossX,s.ty-a.bossY);if(s.aimed&&targetDistance>126){burst(s.x,s.y,'#b2ebed',4);continue;}
    if(a.shield>0){a.shield--;burst(a.bossX,a.bossY,'#ffdd92',23);sfx('attack');if(a.shield===0){say('THE CROWN SHIELD SHATTERS! STRIKE NAUGHTY!',3);sfx('win');a.rest=Math.max(a.rest,1.2);}}
    else{const prev=bossPhase(),threshold=prev===0?BOSS_MAX*2/3:prev===1?BOSS_MAX/3:0;g.boss=Math.max((a.clearedCount<a.required?threshold+.01:0),g.boss-s.damage);a.combo=Math.min(99,a.combo+1);burst(a.bossX,a.bossY,'#b0f6fe',14);sfx('hit');if(g.boss<=0){chapterDone();return;}if(prev!==bossPhase()){enterBossPhase(bossPhase());return;}}
   }
