@@ -1234,7 +1234,7 @@ function freshWeaponState(){return {weapon:'basic',weaponLevels:{basic:1,rapid:1
 function ensureWeaponState(player=g){if(!player)return;const b=freshWeaponState();for(const key of Object.keys(b))if(player[key]===undefined)player[key]=b[key];}
 function persistWeaponProgress(player){if(!player||player!==g||net()?.role==='guest'||coopAimOverride!==null)return;
   progress.weaponLevels={...player.weaponLevels};progress.weaponsOwned=[...player.weaponsOwned];progress.activeWeapon=player.weapon;saveProgress();}
-function cycleWeapon(){if(scene!=='playing'||!g||net()?.role==='guest')return;ensureWeaponState();const a=g.weaponsOwned,i=a.indexOf(g.weapon);g.weapon=a[(i+1)%a.length]||'basic';g.cool=0;persistWeaponProgress(g);say(WEAPON_LABEL[g.weapon]+' Lv.'+g.weaponLevels[g.weapon]+' · '+WEAPON_POWER_INFO[g.weapon],2.8);sfx('collect');}
+function cycleWeapon(){if(scene!=='playing'||!g)return;if(net()?.role==='guest'){net()?.sendAction?.('weapon');return;}ensureWeaponState();const a=g.weaponsOwned,i=a.indexOf(g.weapon);g.weapon=a[(i+1)%a.length]||'basic';g.cool=0;persistWeaponProgress(g);say(WEAPON_LABEL[g.weapon]+' Lv.'+g.weaponLevels[g.weapon]+' · '+WEAPON_POWER_INFO[g.weapon],2.8);sfx('collect');}
 function upgradeWeapon(player,reason='STAR BONUS'){
  ensureWeaponState(player);
  const key=player.weapon||'basic',was=player.weaponLevels[key]||1;
@@ -1286,9 +1286,15 @@ function drawWeaponModel(x,y,type){if(window.FishmanV29Art?.weapon(c,type,x,y,t,
  if(type==='homing'){for(let v=-1;v<=1;v++){c.fillStyle='#a6ffe5';c.beginPath();c.arc(-6,v*8,4,0,TAU);c.fill();}}
  if(type==='electric'){c.strokeStyle='#fff4af';c.lineWidth=4;c.beginPath();c.moveTo(-9,-16);c.lineTo(0,-6);c.lineTo(-5,2);c.lineTo(13,17);c.stroke();}}
  c.restore();c.save();c.textAlign='center';c.font='900 12px system-ui';c.lineWidth=3;c.strokeStyle='#092538';c.strokeText((WEAPON_LABEL[type]||'SHIELD').toUpperCase(),x,y-42);c.fillStyle='#fff9dc';c.fillText((WEAPON_LABEL[type]||'SHIELD').toUpperCase(),x,y-42);c.restore();}
-function drawWeaponHud(){if(!g||!g.weapon)return;c.save();c.fillStyle='#092c45dc';c.strokeStyle='#7de4f8';c.lineWidth=2;c.beginPath();c.roundRect(22,103,266,52,12);c.fill();c.stroke();
- if(window.FishmanV28Art?.weapon)window.FishmanV28Art.weapon(c,g.weapon,51,126,t,.37);else if(window.FishmanV26Art?.weapon)window.FishmanV26Art.weapon(c,g.weapon,51,126,t,.42);c.fillStyle='#fff';c.font='900 15px system-ui';c.fillText(WEAPON_LABEL[g.weapon]||'Basic',69,121);c.font='800 12px system-ui';c.fillText('Lv.'+(g.weaponLevels?.[g.weapon]||1)+'  ·  TAP WEAPON TO SWITCH',69,138);c.font='700 11px system-ui';c.fillStyle='#b9f8ff';c.fillText((WEAPON_POWER_INFO[g.weapon]||'UNIQUE WEAPON').slice(0,42),69,152);c.restore();}
-
+function drawWeaponHud(){if(!g)return;const player=net()?.role==='guest'&&g.coopP2?g.coopP2:g;
+ if(!player?.weapon)return;
+ c.save();c.fillStyle='#092c45dc';c.strokeStyle='#7de4f8';c.lineWidth=2;c.beginPath();c.roundRect(22,103,266,52,12);c.fill();c.stroke();
+ if(window.FishmanV28Art?.weapon)window.FishmanV28Art.weapon(c,player.weapon,51,126,t,.37);
+ else if(window.FishmanV26Art?.weapon)window.FishmanV26Art.weapon(c,player.weapon,51,126,t,.42);
+ c.fillStyle='#fff';c.font='900 15px system-ui';c.fillText(WEAPON_LABEL[player.weapon]||'Basic',69,121);
+ c.font='800 12px system-ui';c.fillText('Lv.'+(player.weaponLevels?.[player.weapon]||1)+'  ·  TAP WEAPON TO SWITCH',69,138);
+ c.font='700 11px system-ui';c.fillStyle='#b9f8ff';c.fillText((WEAPON_POWER_INFO[player.weapon]||'UNIQUE WEAPON').slice(0,42),69,152);c.restore();
+}
 function tone(freq=440,duration=.12,type='sine',gain=.065){if(!soundOn)return;try{ctxAudio=ctxAudio||new(window.AudioContext||window.webkitAudioContext)();if(ctxAudio.state==='suspended')ctxAudio.resume();const o=ctxAudio.createOscillator(),v=ctxAudio.createGain(),n=ctxAudio.currentTime;o.type=type;o.frequency.setValueAtTime(freq,n);v.gain.setValueAtTime(.001,n);v.gain.exponentialRampToValueAtTime(gain,n+.014);v.gain.exponentialRampToValueAtTime(.001,n+duration);o.connect(v).connect(ctxAudio.destination);o.start(n);o.stop(n+duration+.02);}catch{}}
 function sfx(which){if(which==='collect'){tone(660,.12);setTimeout(()=>tone(880,.16),60);}else if(which==='hit'){tone(155,.25,'sawtooth',.04);}else if(which==='win'){tone(523,.13);setTimeout(()=>tone(659,.13),95);setTimeout(()=>tone(784,.21),200);}else if(which==='power'){tone(415,.11,'triangle');}else if(which==='attack'){tone(260,.10,'square',.014);}else tone(440,.10);}
 function showScreen(html){screen.innerHTML=html;overlay.classList.remove('hidden');}
@@ -2487,6 +2493,7 @@ function tickCoopSecond(dt){
   p.poseFacing=face+((turn<0?-1:1)-face)*Math.min(1,dt*(p.hero==='sub'?7:11));
   p.poseAngle=pitch+(clamp(tilt||0,-1,1)-pitch)*Math.min(1,dt*9);
  if(moving>.12){p.lastDx=mx/mag;p.lastDy=my/mag;if(Math.abs(mx)>.1)p.facing=mx<0?-1:1;}p.lastTerrain=terrainAt(p.x);
+ if(keys.weapon){keys.weapon=false;withCoopPlayer(()=>cycleWeapon());}
  if(keys.hero&&coopHeroAvailable(keys.hero)&&p.hero!==keys.hero){p.transformFrom=p.hero;p.transformMotion=.75;p.hero=keys.hero;net().remoteHero=keys.hero;p.cool=0;p.skillCooldown=p.skillCooldowns[p.hero]||0;}
  if(keys.skill){keys.skill=false;withCoopPlayer(()=>useSpecialSkill());}
  if(keys.interact){keys.interact=false;
@@ -2987,6 +2994,7 @@ function wire(connection,role){
     n.lastInputAt=Date.now();
     if(packet.action==='hero'&&heroes[packet.value]){n.input.hero=packet.value;n.remoteHero=packet.value;}
     if(packet.action==='skill')n.input.skill=true;
+     if(packet.action==='weapon')n.input.weapon=true;
     if(packet.action==='interact')n.input.interact=true;
     if(packet.action==='fire')n.input.fire=true;
    }
