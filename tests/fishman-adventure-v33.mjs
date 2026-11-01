@@ -36,7 +36,8 @@ for(const [name,launcher] of [['chromium',chromium],['webkit',webkit]]){
      if(!n.done)return {error:'uncompleted-'+n.kind,id:n.id,observed,stageBefore};
     }
     const completed=FishmanAdventureV33.complete(m);
-    g.x=g.runLength-135;g.y=390;
+    const gate=fishmanTest.get().gate;
+    g.x=gate.x;g.y=gate.y;
     fishmanTest.interact();
     return {observed,completed,stageBefore,wave:FishmanMultiplayerBridge.getG().wave,scene:fishmanTest.get().scene};
    },chap);
