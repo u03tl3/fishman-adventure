@@ -9,14 +9,14 @@
   const required=clamp(Math.floor(options.requiredRescues??3),1,10);
   return {version:32,phase:'rescue',rescued:0,requiredRescues:required,
    civilians:Array.from({length:required},(_,i)=>({id:'civilian-'+(i+1),rescued:false})),
-   generators:2,generatorsDisabled:0,bombSeconds:Math.max(15,options.bombSeconds??75),
+   generators:2,generatorsDisabled:0,bombSeconds:Math.max(15,Number(options.bombSeconds)||75),initialBombSeconds:Math.max(15,Number(options.bombSeconds)||75),
    bombStabilized:false,bossDefeated:false,failed:false,events:[]};
  }
  function dispatch(state,action){
   if(!state||!action)return state;
-  if(action.type==='RETRY'&&state.failed)return createCityMission({requiredRescues:state.requiredRescues});
+  if(action.type==='RETRY'&&state.failed)return createCityMission({requiredRescues:state.requiredRescues,bombSeconds:state.initialBombSeconds});
   if(state.failed||state.phase==='complete')return state;
-  const s={...state,civilians:state.civilians.map(c=>({...c})),events:[...state.events]};
+  const s={...state,civilians:state.civilians.map(c=>({...c})),events:[]};
   const emit=(type)=>s.events.push(type);
   if(action.type==='RESCUE'&&s.phase==='rescue'){
    const c=s.civilians.find(c=>c.id===action.id);
@@ -29,14 +29,12 @@
     if(s.generatorsDisabled>=s.generators){s.phase='bomb';emit('bomb-start');}
    }
   }else if(action.type==='TICK'&&s.phase==='bomb'&&!s.bombStabilized){
-   s.bombSeconds=Math.max(0,s.bombSeconds-clamp(Number(action.dt)||0,0,1));
+   s.bombSeconds=Math.max(0,s.bombSeconds-clamp(Number(action.dt)||0,0,60));
    if(s.bombSeconds<=0){s.failed=true;emit('bomb-expired');}
   }else if(action.type==='STABILIZE_BOMB'&&s.phase==='bomb'&&action.pufferFishPresent===true){
    s.bombStabilized=true;s.phase='boss';emit('bomb-stabilized');
   }else if(action.type==='BOSS_DEFEATED'&&s.phase==='boss'){
    s.bossDefeated=true;s.phase='complete';emit('city-complete');
-  }else if(action.type==='RETRY'&&s.failed){
-   return createCityMission({requiredRescues:s.requiredRescues});
   }
   return s;
  }
