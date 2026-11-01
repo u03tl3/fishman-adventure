@@ -20,13 +20,13 @@ for(const [name,engine] of [['chromium',chromium],['webkit',webkit]]){
    window.__axis=(i,value)=>{window.__xbox.axes[i]=value;};
   });
   await page.goto('http://127.0.0.1:8765/?test=1',{waitUntil:'domcontentloaded',timeout:35000});
-  await page.waitForFunction(()=>!!window.fishmanTest&&!!window.FishmanGamepad,{timeout:18000});
+  await page.waitForFunction(()=>!!window.fishmanTest&&!!window.FishmanGamepad,null,{timeout:18000});
   await page.evaluate(()=>{__connectXbox();__button(0,true);});
-  await page.waitForFunction(()=>fishmanTest.get().scene==='intro',{timeout:9000});
+  await page.waitForFunction(()=>fishmanTest.get().scene==='intro',null,{timeout:9000});
   await page.evaluate(()=>__button(0,false));
   await page.waitForTimeout(95);
   await page.evaluate(()=>__button(9,true)); // Xbox Menu starts the selected chapter.
-  await page.waitForFunction(()=>fishmanTest.get().scene==='playing',{timeout:6000});
+  await page.waitForFunction(()=>fishmanTest.get().scene==='playing',null,{timeout:6000});
   await page.evaluate(()=>__button(9,false));
   await page.waitForTimeout(95);
   console.log('PASS '+name+' Xbox A selects menu and Menu starts a chapter');
@@ -43,30 +43,30 @@ for(const [name,engine] of [['chromium',chromium],['webkit',webkit]]){
   console.log('PASS '+name+' left analogue stick moves character');
 
   await page.evaluate(()=>{__axis(2,-.95);__axis(3,0);__button(7,true);FishmanMultiplayerBridge.getG().cool=0;});
-  await page.waitForFunction(()=>FishmanMultiplayerBridge.getG().lastAim?.x<-.8&&FishmanMultiplayerBridge.getG().basicShotCount>0,{timeout:5000});
+  await page.waitForFunction(()=>FishmanMultiplayerBridge.getG().lastAim?.x<-.8&&FishmanMultiplayerBridge.getG().basicShotCount>0,null,{timeout:5000});
   await page.evaluate(()=>{__button(7,false);__axis(2,0);});
   console.log('PASS '+name+' right stick aims and RT continuously fires');
 
   await page.evaluate(()=>__button(1,true)); // B weapon
-  await page.waitForFunction(()=>FishmanMultiplayerBridge.getG().weapon==='rapid',{timeout:4000});
+  await page.waitForFunction(()=>FishmanMultiplayerBridge.getG().weapon==='rapid',null,{timeout:4000});
   await page.waitForTimeout(170);
   assert.equal(await page.evaluate(()=>FishmanMultiplayerBridge.getG().weapon),'rapid','B held must not keep cycling');
   await page.evaluate(()=>__button(1,false));
   await page.waitForTimeout(90);
   await page.evaluate(()=>__button(1,true));
-  await page.waitForFunction(()=>FishmanMultiplayerBridge.getG().weapon==='basic',{timeout:4000});
+  await page.waitForFunction(()=>FishmanMultiplayerBridge.getG().weapon==='basic',null,{timeout:4000});
   await page.evaluate(()=>__button(1,false));
   console.log('PASS '+name+' B cycles unlocked weapons once per press');
 
   await page.waitForTimeout(90);
   await page.evaluate(()=>{const g=FishmanMultiplayerBridge.getG();g.skillCooldown=0;g.skillCooldowns[g.hero]=0;__button(2,true);});
-  await page.waitForFunction(()=>FishmanMultiplayerBridge.getG().skillCooldown>0,{timeout:4000});
+  await page.waitForFunction(()=>FishmanMultiplayerBridge.getG().skillCooldown>0,null,{timeout:4000});
   await page.evaluate(()=>__button(2,false));
   console.log('PASS '+name+' X activates hero special skill');
 
   await page.waitForTimeout(90);
   await page.evaluate(()=>__button(3,true)); // Y next hero
-  await page.waitForFunction(()=>FishmanMultiplayerBridge.getG().hero==='humpty',{timeout:5000});
+  await page.waitForFunction(()=>FishmanMultiplayerBridge.getG().hero==='humpty',null,{timeout:5000});
   await page.evaluate(()=>__button(3,false));
   console.log('PASS '+name+' Y changes to next available hero');
 
@@ -75,24 +75,24 @@ for(const [name,engine] of [['chromium',chromium],['webkit',webkit]]){
    const g=FishmanMultiplayerBridge.getG(),node=g.adventureMission.nodes[0];
    g.x=node.x;g.y=node.y;__button(0,true); // A rescue/interact
   });
-  await page.waitForFunction(()=>FishmanMultiplayerBridge.getG().adventureMission.progress===1,{timeout:4000});
+  await page.waitForFunction(()=>FishmanMultiplayerBridge.getG().adventureMission.progress===1,null,{timeout:4000});
   await page.evaluate(()=>__button(0,false));
   console.log('PASS '+name+' A interacts with the new city rescue mission');
 
   await page.waitForTimeout(90);
   await page.evaluate(()=>__button(9,true));
-  await page.waitForFunction(()=>fishmanTest.get().scene==='paused',{timeout:4000});
+  await page.waitForFunction(()=>fishmanTest.get().scene==='paused',null,{timeout:4000});
   await page.evaluate(()=>__button(9,false));
-  await page.waitForTimeout(90);
+  await page.waitForFunction(()=>FishmanGamepad.current().down.menu===false,null,null,{timeout:6000});
   await page.evaluate(()=>__button(9,true));
-  await page.waitForFunction(()=>fishmanTest.get().scene==='playing',{timeout:4000});
+  await page.waitForFunction(()=>fishmanTest.get().scene==='playing',null,null,{timeout:6000});
   await page.evaluate(()=>__button(9,false));
   console.log('PASS '+name+' Xbox Menu pauses and resumes');
 
   await page.evaluate(()=>{__button(7,true);__axis(0,.7);__axis(2,.8);});
   await page.waitForTimeout(90);
   await page.evaluate(()=>{__xbox.connected=false;});
-  await page.waitForFunction(()=>!FishmanGamepad.current().connected,{timeout:4000});
+  await page.waitForFunction(()=>!FishmanGamepad.current().connected,null,{timeout:4000});
   const stopped=await page.evaluate(()=>FishmanMultiplayerBridge.getG().x);
   await page.waitForTimeout(160);
   const after=await page.evaluate(()=>FishmanMultiplayerBridge.getG().x);
