@@ -1148,7 +1148,7 @@ const chapters=[
  {title:'The Fishman Experiment',short:'The Experiment',icon:'🧪',lead:'Something extraordinary is brewing.',story:'Kai experiments with an aquatic formula. Cross two laboratory wings, prime Kai’s mixer, repair coolant relays and stabilise the formula that will turn Finn into Fishman.',task:'Operate four different laboratory mechanisms in each wing. Press B at consoles, aim and fire at relays, and complete Kai’s experiment.',ending:'The glowing fish gulps down the mixture and bites Finn. WHOOSH! Finn transforms into Fishman!'},
  {title:'Naughty’s Secret Power',short:'Forest Escape',icon:'🌳',lead:'The forest has come alive.',story:'Naughty McTreeFace steals Kai’s potion to rescue Barky, and his roots take over the forest. Fight the living root hearts to stop the forest takeover.',task:'Fight four dangerous root hearts in each forest run. Aim and fire to destroy them; optional stars and upgrades reward exploration.',ending:'Kai escapes the roots. Naughty is stronger than ever, and his next target is the city.'},
  {title:'Underwater Allies',short:'Shark Family',icon:'🦈',lead:'Recruit the ocean heroes.',story:'Fishman enters the coral reef to find the Shark Family and protect their family from attacking jellyfish. Watch out for jellyfish!',task:'Find four trapped sharks per area, press B to begin each rescue, and stay nearby to protect them. Jellyfish can interrupt the mission.',ending:'The Shark Family is reunited! They race toward the city after hearing Naughty’s dangerous threat.'},
- {title:'Roxy’s City Battle',short:'City Rescue',icon:'🦖',lead:'The countdown is ticking.',story:'Roxy and Kai must rescue civilians, destroy root generators and defuse bombs across two city districts before Naughty can damage the city.',task:'Rescue civilians with B, shoot down root generators, and stay close to defuse Naughty’s bomb under time pressure. Switch Roxy and Humpty.',ending:'Eight devices disabled! CRACK! Humpty’s egg shell bursts open and GOZILLA hatches — a powerful little monster with a mighty laser beam!'},
+ {title:'Roxy’s City Battle',short:'City Rescue',icon:'🦖',lead:'The countdown is ticking.',story:'Roxy and Kai must rescue civilians, destroy root generators and defuse bombs across two city districts before Naughty can damage the city.',task:'Rescue civilians with B, shoot down root generators, and stay close to defuse Naughty’s bomb under time pressure. Switch Roxy and Humpty.',ending:'The city is safe! CRACK! Humpty’s egg shell bursts open and GOZILLA hatches — a powerful little monster with a mighty laser beam!'},
  {title:'McTreeFace: The Three Trials',short:'McTreeFace Boss',icon:'⚡',lead:'A spectacular three-act showdown!',story:'Trial I: Fight Naughty’s flying BARKSHIP and dodge its leaf blades and seed volleys. Trial II: Naughty opens portals and summons giant roots. Trial III: He wears a crackling THORN CROWN and unleashes cannons and gravity vortices.',task:'Move with the joystick. HOLD A to attack and drag A or tap the battlefield to AIM. TAP B for a short invincible dodge, then wait for it to recharge. Watch the RED telegraphs, swap heroes automatically at phase transitions, and break the crown shield in the final act.',ending:'Fishman, Kai and Roxy shatter the Thorn Crown! The puffer-fish army arrives, and Naughty tumbles into a heap of bandages.'},
  {title:'The Yellow Submarine',short:'Submarine Rescue',icon:'🚤',lead:'YOU pilot the BRIGHT YELLOW SUBMARINE!',story:'The large, glowing yellow submarine marked YOU is your character. Steer it with the left thumbstick, approach bandaged Naughty, and press B to capture him. Get Naughty to the prison dock. In Part 2, disable the locks, use sonar and seal his cell.',task:'FOLLOW THE YELLOW SUBMARINE MARKED YOU. PART 1: Approach Naughty and press B, collect two passes, then press B at the prison dock. PART 2: Torpedo security locks, activate sonar docks and seal the cell before proceeding.',ending:'The cell locks shut with Naughty McTreeFace safely inside. But his father Barky has vanished into the depths…'},
  {title:'The Sunken Library',short:'Sunken Library',icon:'📚',lead:'An ancient secret beneath the waves.',story:'The old ocean library may reveal where Barky has gone. Restore ancient mirrors and decipher the mechanisms that reveal Barky’s location.',task:'Aim at archive mirrors, press B at rune consoles, and solve four library mechanisms in each chamber.',ending:'A magical map reveals Barky’s hidden route through the dangerous Whirlpool Caverns.'},
@@ -1431,6 +1431,18 @@ function fireElectric(sp,origin,v){
   const a=g.arena;
   points.push({x:a.bossX,y:a.bossY});
   g.shots.push({x:a.bossX,y:a.bossY,sx:origin.x,sy:origin.y,tx:a.bossX,ty:a.bossY,life:.28,kind:g.hero,weapon:'electric',damage:sp.damage*1.3,aimed:false});
+ }
+ if(g.adventureMission){
+  const A=window.FishmanAdventureV33,root=A?.next(g.adventureMission);
+  if(root?.kind==='shoot'){
+   const dx=root.x-origin.x,dy=root.y-origin.y,dist=Math.hypot(dx,dy);
+   if(dist<520&&dist>0&&(dx*v.x+dy*v.y)>dist*.77){
+    const hit=A.projectile(g.adventureMission,{x:root.x,y:root.y,r:20,damage:sp.damage*1.4});
+    if(hit?.hit){points.push({x:root.x,y:root.y});
+     if(hit.completed){burst(root.x,root.y,'#fff2af',25);sfx('win');say(hit.message+' · '+g.adventureMission.progress+'/4',2.5);}
+    }
+   }
+  }
  }
  if(points.length===1)points.push({x:origin.x+v.x*270,y:origin.y+v.y*270});
  weaponVisual('beam','electric',origin.x,origin.y,0,points);
@@ -2026,9 +2038,9 @@ if(level===5&&g.wave===0&&!g.captured){if(g.items?.[0]&&near(g.items[0],135)){g.
    if(level===5){if(g.wave===0){setupSub(1);return;}startChapterArena(false,5);return;}
    if(g.wave===0){setupArea(1);return;}startChapterArena(false,level);return;
   }
-  say(level===5?(g.captured?`Still need ${g.total-g.collect} more ${g.wave?'power cells':'security passes'}!`:'Capture Naughty first!'):`Still need ${g.total-g.collect} objectives in this area.`,2.6);return;
+  say(g.adventureMission?window.FishmanAdventureV33.message(g.adventureMission):(level===5?(g.captured?`Still need ${g.total-g.collect} more ${g.wave?'power cells':'security passes'}!`:'Capture Naughty first!'):`Still need ${g.total-g.collect} objectives in this area.`),2.6);return;
  }
- say(level===3?'Use B near a blinking bomb. Get to the gate after disarming all!':level===5?'Pilot the BRIGHT YELLOW SUB to the glowing prison dock on the right.':g.collect===g.total?'Go to the EXIT on the right and press B.':'Find '+(g.total-g.collect)+' more glowing objects then reach the exit.',2);
+ say(g.adventureMission?window.FishmanAdventureV33.message(g.adventureMission):level===3?'Use B near a blinking bomb. Get to the gate after disarming all!':level===5?'Pilot the BRIGHT YELLOW SUB to the glowing prison dock on the right.':g.collect===g.total?'Go to the EXIT on the right and press B.':'Find '+(g.total-g.collect)+' more glowing objects then reach the exit.',2);
 }
 function attack(){if(net()?.role==='guest'){net()?.sendAction('fire');return;}if(scene!=='playing'||!g||g.cool>0)return;weaponFire();}
 
@@ -2979,6 +2991,10 @@ function draw(){c.clearRect(0,0,W,H);if(!g){if(window.FishmanVisuals)window.Fish
   }
   const gate=worldGate();if(gate){const ready=gateReady(),word=level===5?'PRISON DOCK · B':level===0?'MIXING MACHINE · B':level===3?'DISTRICT GATE · B':'EXIT GATE · B';target(gate.x,gate.y,gate.type,word,ready);if(ready)infoPrompt(gate.x,gate.y,'PRESS B TO CONTINUE');}
   window.FishmanAdventureV33?.draw(c,g.adventureMission,t);
+  if(g.adventureMission){
+   const node=window.FishmanAdventureV33.closest(g.adventureMission,g.x,g.y,120);
+   if(node)infoPrompt(node.x,node.y,node.kind==='shoot'?'AIM + FIRE':node.kind==='ring'?'SWIM THROUGH':node.kind==='defend'&&node.active?'PROTECT THE SHARK':node.kind==='bomb'&&node.active?'HOLD POSITION':'PRESS B');
+  }
   for(const it of g.items)if(!it.got&&it.x>cameraX-75&&it.x<cameraX+W+75)itemArt(it);
   drawRewardsAndShots();
   for(const h of g.hazards)if(h.x>cameraX-100&&h.x<cameraX+W+100)drawHazard(h);
