@@ -1634,7 +1634,7 @@ function startChapterArena(finalRush=false,number=finalRush?0:level){
  const a=g.challenge;
  a.maxHp=Math.round((nightmare()?825:hardMode?630:440)*(finalRush?.84:1)*(number===8?1.28:1)*(net()?.role==='host'&&net()?.connected?1.35:1));
  a.hp=a.maxHp;
- g.runLength=0;g.adventureMission=null;g.checkpointState=null;g.checkpointIndex=0;g.x=140;g.y=340;g.inv=2;
+ g.runLength=0;g.adventureMission=null;g.checkpointState=null;g.checkpointIndex=0;g.x=140;g.y=340;window.FishmanHeroMotionV35.reset(g);g.inv=2;
  g.proj=[];g.shots=[];g.hazards=[];g.items=[];g.stars=[];g.awards=[];g.skillCrystals=[];
  g.cool=0;g.collect=0;g.total=0;g.timer=0;g.maxTimer=0;g.deadline=0;g.strike=null;
  g.skillCooldown=0;g.freezeTime=0;g.sonarTime=0;g.speedBoost=0;g.shield=0;
@@ -2006,7 +2006,7 @@ function interactAdventureMission(){
  if(out.message)say(out.message+(out.completed?' · '+g.adventureMission.progress+'/'+g.adventureMission.nodes.length:''),2.5);
  return true;
 }
-function setupArea(w){cameraX=0;g.proj=[];g.shots=[];g.skillCooldown=0;g.skillEffect=0;g.freezeTime=0;g.sonarTime=0;g.speedBoost=0;g.moveIntensity=0;g.attackFlash=0;g.stepPhase=0;g.wave=w;g.collect=0;g.total=nightmare()?8:hardMode?6:4;g.x=116;g.y=425;g.hp=Math.min(g.maxHp,g.hp+1);g.inv=nightmare()?1.8:1.4;
+function setupArea(w){cameraX=0;g.proj=[];g.shots=[];g.skillCooldown=0;g.skillEffect=0;g.freezeTime=0;g.sonarTime=0;g.speedBoost=0;g.moveIntensity=0;g.attackFlash=0;g.stepPhase=0;g.wave=w;g.collect=0;g.total=nightmare()?8:hardMode?6:4;g.x=116;g.y=425;window.FishmanHeroMotionV35.reset(g);g.hp=Math.min(g.maxHp,g.hp+1);g.inv=nightmare()?1.8:1.4;
  const positions=(w?areaB:areaA).concat(hardMode?(w?extraB:extraA):[],nightmare()?(w?lastB:lastA):[]);
  g.items=positions.map(([x,y])=>item(x,y,itemType(level,w)));
  const htype=[hardMode?'mine':null,'root','jelly','root',null,null,hardMode?'jelly':null,'jelly','root','jelly'][level];
@@ -2021,7 +2021,7 @@ function setupArea(w){cameraX=0;g.proj=[];g.shots=[];g.skillCooldown=0;g.skillEf
  resetStrikes();initRewards(w);g.notice=null;makeLongRun();createWeaponDrops();setupAdventureMission();
  if(w&&!g.adventureMission)say('CHECKPOINT! AREA 2/2 — '+g.total+' OBJECTIVES. '+(nightmare()?'DODGE THE RED WARNING CIRCLES!':hardMode?'Beat the clock!':''),4);
 }
-function setupSub(w){cameraX=0;g.hero='sub';g.skillCooldown=0;g.skillEffect=0;g.freezeTime=0;g.sonarTime=0;g.speedBoost=0;g.proj=[];g.shots=[];g.lastAim={x:1,y:0};g.moveIntensity=0;g.attackFlash=0;g.stepPhase=0;g.wave=w;g.collect=0;g.x=167;g.y=455;g.hp=Math.min(g.maxHp,g.hp+1);g.inv=nightmare()?2.2:1.4;
+function setupSub(w){cameraX=0;g.hero='sub';g.skillCooldown=0;g.skillEffect=0;g.freezeTime=0;g.sonarTime=0;g.speedBoost=0;g.proj=[];g.shots=[];g.lastAim={x:1,y:0};g.moveIntensity=0;g.attackFlash=0;g.stepPhase=0;g.wave=w;g.collect=0;g.x=167;g.y=455;window.FishmanHeroMotionV35.reset(g);g.hp=Math.min(g.maxHp,g.hp+1);g.inv=nightmare()?2.2:1.4;
  g.total=nightmare()?(w?8:7):hardMode?(w?6:5):(w?4:3);
  if(w===0){g.captured=false;g.items=[item(327,349,'naughty'),item(510,261,'pass'),item(731,443,'pass')];
   if(hardMode)g.items.push(item(350,477,'pass'),item(755,259,'pass'));
@@ -2197,15 +2197,22 @@ function tick(dt){t+=dt;if(toastLife>0)toastLife-=dt;for(let i=particles.length-
  g.aimHold=!!(rightStick.pointerId!==null||aim.manual);const motion=clamp(Math.hypot(dx,dy),0,1);
  if(g.hero==='fish'&&mode==='swim')speed*=1+.018*heroUpgrade('fish');
  if(g.hero==='kai'&&(rightStick.pointerId!==null||aim.manual))speed*=1.08;
- if(g.hero==='roxy')speed*=1.03+motion*.05;
- if(g.hero==='humpty'){g.rollBoost=motion>.2?Math.min(1.45,(g.rollBoost||1)+dt*.65):Math.max(1,g.rollBoost-dt*.55);speed*=g.rollBoost;}
+ if(g.hero==='roxy')speed*=1.03;
+ if(g.hero==='humpty')g.rollBoost=1+(g.motionCharge||0)*.35;
  if(g.hero==='gozilla')speed*=.95;
  if(g.hero==='sub'&&mode==='cruise')speed*=1.05;
  g.moveIntensity+=(motion-(g.moveIntensity||0))*Math.min(1,dt*(g.hero==='sub'?4.2:g.hero==='humpty'?6.1:8));
  g.stepPhase=(g.stepPhase||0)+dt*stats.phase*Math.max(.1,motion);
  const targetFacing=(g.attackFlash>0?(g.lastAim?.x??1):dx)||g.facing||1;g.poseFacing=(Number.isFinite(g.poseFacing)?g.poseFacing:(g.facing||1))+((targetFacing<0?-1:1)-(Number.isFinite(g.poseFacing)?g.poseFacing:(g.facing||1)))*Math.min(1,dt*(g.hero==='sub'?7:11));g.poseAngle=(Number.isFinite(g.poseAngle)?g.poseAngle:0)+(clamp((g.attackFlash>0?(g.lastAim?.y||0):dy),-1,1)-(Number.isFinite(g.poseAngle)?g.poseAngle:0))*Math.min(1,dt*9);g.poseRecoil=Math.max(0,(g.poseRecoil||0)-dt*3.1);if(motion>.15){g.lastDx=dx/mag;g.lastDy=dy/mag;if(Math.abs(dx)>.22)g.facing=dx<0?-1:1;}
  // The larger submarine stays completely within the playfield, including its propeller and periscope.
- g.x=clamp(g.x+dx/mag*speed*dt,g.hero==='sub'?160:g.hero==='fish'?112:62,(g.challenge||level===4)?673:(g.runLength-(g.hero==='sub'?150:g.hero==='fish'?110:65)));g.y=clamp(g.y+dy/mag*speed*dt*(mode==='float'?.7:1),g.hero==='sub'?205:162,g.hero==='sub'?511:548);if(mode==='float'&&Math.abs(dy)<.2)g.y+=(376-g.y)*Math.min(.1,dt*.35);if(g.lastTerrain!==terrainAt(g.x)){g.lastTerrain=terrainAt(g.x);ensureTerrainHero(g,true);updateHeroSwitch();}
+ window.FishmanHeroMotionV35.step(g,dx/mag,dy/mag,dt,mode,{
+  minX:g.hero==='sub'?160:g.hero==='fish'?112:62,
+  maxX:(g.challenge||level===4)?673:(g.runLength-(g.hero==='sub'?150:g.hero==='fish'?110:65)),
+  minY:g.hero==='sub'?205:162,maxY:g.hero==='sub'?511:548
+ },speed);if(g.lastTerrain!==terrainAt(g.x)){g.lastTerrain=terrainAt(g.x);ensureTerrainHero(g,true);updateHeroSwitch();}
+ for(const effect of window.FishmanHeroMotionV35.passive(g,dt,mode,g.hazards)){
+  burst(effect.x,effect.y,(window.FishmanHeroMotionV35.STYLES[effect.hero]?.tint||'#bafaff'),9);
+ }
  if(g.hero==='roxy'&&motion>.45){g.basicPulse=(g.basicPulse||0)-dt;if(g.basicPulse<=0){g.basicPulse=.26;for(const hz of g.hazards||[])if(Math.hypot(hz.x-g.x,hz.y-g.y)<78){hz.stun=Math.max(hz.stun,.34);hz.burn=Math.max(hz.burn||0,.55);burst(hz.x,hz.y,'#ff9e57',6);}}}
  if(g.hero==='gozilla'&&motion>.18&&g.attackFlash<=0)g.shield=Math.max(g.shield,.12);
  if(g.hero==='sub'){g.sonarPulse=(g.sonarPulse||.4)-dt;if(g.sonarPulse<=0){g.sonarPulse=.65;let nearest=null,best=9999;for(const hz of g.hazards||[]){const d=Math.hypot(hz.x-g.x,hz.y-g.y);if(d<best){best=d;nearest=hz;}}if(nearest&&best<260){nearest.stun=Math.max(nearest.stun,.45);burst(nearest.x,nearest.y,'#87f3ff',6);}}}
@@ -2605,7 +2612,7 @@ function drawSkillAnimation(h){if(!g||g.skillEffect<=0)return;const progressPuls
  if(h==='sub'){for(let i=0;i<3;i++){c.beginPath();c.arc(0,0,70+i*32+Math.sin(t*3+i)*5,0,TAU);c.stroke();}}
  c.globalAlpha=1;c.restore();}
 
-const COOP_FIELDS=['weapon','weaponLevels','weaponsOwned','weaponShield','x','y','hero','hp','maxHp','lives','maxLives','inv','shield','cool','actionWave','skillCooldown','skillCooldowns','skillEffect','skillKind','skillFlash','freezeTime','sonarTime','speedBoost','attackFlash','lastAim','moveIntensity','stepPhase','lastDx','lastDy','facing','poseFacing','poseAngle','poseRecoil','aimHold','lastTerrain','rollBoost','transformFrom','transformMotion','deathMotion','reviveMotion','dodge','dodgeCool'];
+const COOP_FIELDS=['motionVX','motionVY','motionCharge','motionHero','motionTrail','motionTrailClock','motionPassiveClock','motionPulse','weapon','weaponLevels','weaponsOwned','weaponShield','x','y','hero','hp','maxHp','lives','maxLives','inv','shield','cool','actionWave','skillCooldown','skillCooldowns','skillEffect','skillKind','skillFlash','freezeTime','sonarTime','speedBoost','attackFlash','lastAim','moveIntensity','stepPhase','lastDx','lastDy','facing','poseFacing','poseAngle','poseRecoil','aimHold','lastTerrain','rollBoost','transformFrom','transformMotion','deathMotion','reviveMotion','dodge','dodgeCool'];
 function coopHeroAvailable(h,x=g?.coopP2?.x??g?.x){if(!terrainHeroAllowed(h,x))return false;if(level===5)return h==='sub';return ['fish','kai','roxy','humpty','gozilla'].includes(h)&&(h!=='gozilla'||progress.godzilla);}
 function createCoopPlayer(){
  if(!g||scene!=='playing'||net()?.role!=='host'||!net()?.connected)return null;
@@ -2614,7 +2621,7 @@ function createCoopPlayer(){
  const p={hero:h,x:Math.max(110,g.x-45),y:clamp(g.y+85,185,518),hp:prev?Math.max(1,Math.min(g.maxHp,prev.hp+1)):g.maxHp,maxHp:g.maxHp,lives:prev?prev.lives:g.maxLives,maxLives:g.maxLives,
   inv:2,shield:0,cool:0,actionWave:0,skillCooldown:0,skillCooldowns:{fish:0,kai:0,roxy:0,humpty:0,gozilla:0,sub:0},skillEffect:0,skillKind:null,skillFlash:0,freezeTime:0,sonarTime:0,speedBoost:0,
   attackFlash:0,lastAim:{x:1,y:0},moveIntensity:0,stepPhase:0,lastDx:1,lastDy:0,facing:1,poseFacing:1,poseAngle:0,poseRecoil:0,aimHold:false,lastTerrain:terrainAt(Math.max(110,g.x-45)),rollBoost:1,transformFrom:null,transformMotion:0,deathMotion:0,reviveMotion:1.0,
-  ...freshWeaponState(),zone:g.wave||0,chapter:level,arena:!!g.challenge||level===4,respawn:0,down:false};
+  motionVX:0,motionVY:0,motionCharge:0,motionHero:h,motionTrail:[],motionTrailClock:0,motionPassiveClock:0,motionPulse:0,...freshWeaponState(),zone:g.wave||0,chapter:level,arena:!!g.challenge||level===4,respawn:0,down:false};
  g.coopP2=p;return p;
 }
 function withCoopPlayer(fn){
@@ -2647,12 +2654,11 @@ function tickCoopSecond(dt){
  ensureTerrainHero(p,false);const mag=Math.max(1,Math.hypot(mx,my)),pmode=movementMode(p.hero,p.x),pstats=heroMoveStats[p.hero]||heroMoveStats.fish;let speed=pstats.speed*(p.speedBoost>0?1.31:1);speed*=({hover:1.07,swim:1.14,paddle:.71,float:.60,'power-swim':.93,cruise:1.1,sprint:1.05,roll:1.03,stomp:.95,run:1}[pmode]||1);
  if(p.hero==='fish'&&pmode==='swim')speed*=1+.018*heroUpgrade('fish');
   if(p.hero==='kai'&&keys.aim)speed*=1.08;
-  if(p.hero==='roxy')speed*=1.03+Math.min(1,Math.hypot(mx,my))*.05;
-  if(p.hero==='humpty'){p.rollBoost=Math.hypot(mx,my)>.2?Math.min(1.45,(p.rollBoost||1)+dt*.65):Math.max(1,(p.rollBoost||1)-dt*.55);speed*=p.rollBoost;}
+  if(p.hero==='roxy')speed*=1.03;
+ if(p.hero==='humpty')p.rollBoost=1+(p.motionCharge||0)*.35;
   if(p.hero==='gozilla')speed*=.95;if(p.hero==='sub'&&pmode==='cruise')speed*=1.05;
   const limit=(g.challenge||level===4)?673:Math.max(673,(g.runLength||W)-(p.hero==='sub'?150:p.hero==='fish'?110:65));
- p.x=clamp(p.x+mx/mag*speed*dt,p.hero==='sub'?160:p.hero==='fish'?112:62,limit);
- p.y=clamp(p.y+my/mag*speed*dt*(pmode==='float'?.7:1),p.hero==='sub'?205:162,p.hero==='sub'?511:548);if(pmode==='float'&&Math.abs(my)<.2)p.y+=(376-p.y)*Math.min(.1,dt*.35);ensureTerrainHero(p,false);
+ window.FishmanHeroMotionV35.step(p,mx/mag,my/mag,dt,pmode,{minX:p.hero==='sub'?160:p.hero==='fish'?112:62,maxX:limit,minY:p.hero==='sub'?205:162,maxY:p.hero==='sub'?511:548},speed);ensureTerrainHero(p,false);
  const moving=Math.min(1,Math.hypot(mx,my));p.moveIntensity+=(moving-p.moveIntensity)*Math.min(1,dt*(p.hero==='sub'?4.2:p.hero==='humpty'?6.1:8));p.stepPhase+=dt*pstats.phase*Math.max(.1,moving);
   const remoteAim=keys.aim&&Math.hypot(keys.aim.x,keys.aim.y)>.13?keys.aim:null;
   p.aimHold=!!remoteAim;if(remoteAim){const am=Math.hypot(remoteAim.x,remoteAim.y);p.lastAim={x:remoteAim.x/am,y:remoteAim.y/am};}
@@ -2661,6 +2667,9 @@ function tickCoopSecond(dt){
   p.poseFacing=face+((turn<0?-1:1)-face)*Math.min(1,dt*(p.hero==='sub'?7:11));
   p.poseAngle=pitch+(clamp(tilt||0,-1,1)-pitch)*Math.min(1,dt*9);
  if(moving>.12){p.lastDx=mx/mag;p.lastDy=my/mag;if(Math.abs(mx)>.1)p.facing=mx<0?-1:1;}p.lastTerrain=terrainAt(p.x);
+ for(const effect of window.FishmanHeroMotionV35.passive(p,dt,pmode,g.hazards)){
+  burst(effect.x,effect.y,(window.FishmanHeroMotionV35.STYLES[effect.hero]?.tint||'#bafaff'),8);
+ }
  if(keys.weapon){keys.weapon=false;withCoopPlayer(()=>cycleWeapon());}
  if(keys.hero&&coopHeroAvailable(keys.hero)&&p.hero!==keys.hero){p.transformFrom=p.hero;p.transformMotion=.75;p.hero=keys.hero;net().remoteHero=keys.hero;p.cool=0;p.skillCooldown=p.skillCooldowns[p.hero]||0;}
  if(keys.skill){keys.skill=false;withCoopPlayer(()=>useSpecialSkill());}
@@ -2936,6 +2945,7 @@ function drawHeroMorph(x,y,remaining,hero){
  c.restore();
 }
 function drawPlayer(){
+ window.FishmanHeroMotionV35?.draw(c,g,t);
  if(g && g.hero){
    c.save();const active=(g.attackFlash||0)>0,motion=g.moveIntensity||0;
    const aura=c.createRadialGradient(g.x-16,g.y-15,2,g.x,g.y,active?83:53);
