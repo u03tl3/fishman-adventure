@@ -4,6 +4,10 @@ on:
     branches: [main]
     paths:
       - 'index.html'
+      - 'weapon-effects-v31.js'
+      - 'city-mission-v32.js'
+      - 'encounters-v32.js'
+      - 'tests/**'
       - 'v16-4p/**'
       - 'tests/fishman-qa.mjs'
       - 'tests/fishman-webkit.mjs'
@@ -46,3 +50,7 @@ jobs:
         run: node tests/fishman-master-qa.mjs
       - name: Test six unique weapon mechanics, upgrades and Chromium/WebKit effects
         run: node tests/fishman-weapon-v31.mjs
+      - name: Test v32 city missions and story encounter logic
+        run: |
+          node tests/fishman-city-v32.mjs
+          node tests/fishman-encounters-v32.mjs
