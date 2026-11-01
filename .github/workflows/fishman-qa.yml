@@ -9,6 +9,8 @@ on:
       - 'encounters-v32.js'
       - 'adventure-v33.js'
       - 'gamepad-v34.js'
+      - 'adventure-v35.js'
+      - 'hero-motion-v35.js'
       - 'tests/**'
       - 'v16-4p/**'
       - 'tests/fishman-qa.mjs'
@@ -47,8 +49,8 @@ jobs:
           sleep 2
       - name: Test Xbox ABXY, twin sticks, RT and menu in Chromium/WebKit
         run: node tests/fishman-gamepad-v34.mjs
-      - name: Test playable v33 objectives, weapon targets, rescue missions, stealth and transitions
-        run: node tests/fishman-adventure-v33.mjs
+      - name: Test unique v35 hero movement, chapter challenges and story transitions in Chromium/WebKit
+        run: node tests/fishman-gameplay-v35.mjs
       - name: Test multiplayer and visual layouts
         run: node tests/fishman-qa.mjs
       - name: Test Safari-style WebKit touch interactions
