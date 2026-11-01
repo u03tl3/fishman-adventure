@@ -3127,7 +3127,11 @@ function gamepadNextHero(delta=1){
 }
 function gamepadRelease(){
  gamepadFire=false;
- if(gamepadOwnsMove&&stick.pointerId===null){stick.x=0;stick.y=0;}
+ if(gamepadOwnsMove&&stick.pointerId===null){
+  stick.x=0;stick.y=0;
+  // An unplugged controller must not leave Roxy running or Humpty rolling.
+  if(g&&scene==='playing'){g.motionVX=0;g.motionVY=0;g.motionCharge=0;}
+ }
  if(gamepadOwnsAim&&rightStick.pointerId===null&&!pressedAim.size){
   aim.manual=false;aim.point=null;
  }
