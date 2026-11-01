@@ -54,10 +54,18 @@
    ctx.strokeStyle=colors[1];ctx.lineWidth=Math.max(1,6*(1-ratio));ctx.beginPath();ctx.ellipse(e.x,e.y,radius,radius*.7,0,0,TAU);ctx.stroke();
    ctx.strokeStyle=colors[0];ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(e.x,e.y,radius*.65,radius*.47,0,0,TAU);ctx.stroke();
    if(e.kind==='shock')for(let j=0;j<8;j++){const a=j*TAU/8+t*.3;path(ctx,[[e.x+Math.cos(a)*radius*.7,e.y+Math.sin(a)*radius*.55],[e.x+Math.cos(a)*radius*1.25,e.y+Math.sin(a)*radius*.96]],colors[0],2);}
+  }else if(e.kind==='upgrade'){
+   const r=(e.radius||42)*(.45+ratio);
+   for(let j=0;j<5;j++){const a=j*TAU/5-Math.PI/2+t*.2;disk(ctx,e.x+Math.cos(a)*r,e.y+Math.sin(a)*r,Math.max(2,7*(1-ratio*.7)),colors);}
+   ctx.strokeStyle=colors[0];ctx.lineWidth=4*(1-ratio)+1;ctx.beginPath();ctx.arc(e.x,e.y,r,0,TAU);ctx.stroke();
   }else if(e.kind==='muzzle'){
    const r=(e.radius||20)*(1-ratio*.65);
    disk(ctx,e.x,e.y,Math.max(2,r),colors);
    for(let j=0;j<5;j++){const a=j*TAU/5+t;path(ctx,[[e.x+Math.cos(a)*r*.5,e.y+Math.sin(a)*r*.5],[e.x+Math.cos(a)*r*1.6,e.y+Math.sin(a)*r*1.6]],colors[0],2.5);}
+  }else if(e.kind==='hit-confirm'){
+   const r=(e.radius||18)*(1+ratio*.7);
+   ctx.strokeStyle=colors[0];ctx.lineWidth=Math.max(1,3*(1-ratio));
+   for(let j=0;j<4;j++){const a=j*Math.PI/2;path(ctx,[[e.x+Math.cos(a)*r*.55,e.y+Math.sin(a)*r*.55],[e.x+Math.cos(a)*r,e.y+Math.sin(a)*r]],colors[0],ctx.lineWidth);}
   }else if(e.kind==='impact'){
    const r=(e.radius||24)*(.3+ratio);
    disk(ctx,e.x,e.y,r*(1-ratio*.6),colors);
