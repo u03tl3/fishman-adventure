@@ -83,9 +83,9 @@ for(const [name,engine] of [['chromium',chromium],['webkit',webkit]]){
   await page.evaluate(()=>__button(9,true));
   await page.waitForFunction(()=>fishmanTest.get().scene==='paused',null,{timeout:4000});
   await page.evaluate(()=>__button(9,false));
-  await page.waitForFunction(()=>FishmanGamepad.current().down.menu===false,null,null,{timeout:6000});
+  await page.waitForFunction(()=>FishmanGamepad.current().down.menu===false,null,{timeout:6000});
   await page.evaluate(()=>__button(9,true));
-  await page.waitForFunction(()=>fishmanTest.get().scene==='playing',null,null,{timeout:6000});
+  await page.waitForFunction(()=>fishmanTest.get().scene==='playing',null,{timeout:6000});
   await page.evaluate(()=>__button(9,false));
   console.log('PASS '+name+' Xbox Menu pauses and resumes');
 
