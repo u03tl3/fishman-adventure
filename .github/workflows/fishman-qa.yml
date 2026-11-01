@@ -7,6 +7,7 @@ on:
       - 'weapon-effects-v31.js'
       - 'city-mission-v32.js'
       - 'encounters-v32.js'
+      - 'adventure-v33.js'
       - 'tests/**'
       - 'v16-4p/**'
       - 'tests/fishman-qa.mjs'
@@ -17,6 +18,7 @@ on:
     paths:
       - 'index.html'
       - 'v16-4p/**'
+      - 'adventure-v33.js'
       - 'tests/**'
       - '.github/workflows/fishman-qa.yml'
   workflow_dispatch:
@@ -54,3 +56,5 @@ jobs:
         run: |
           node tests/fishman-city-v32.mjs
           node tests/fishman-encounters-v32.mjs
+      - name: Test playable v33 objectives, weapon targets, rescue missions, stealth and transitions
+        run: node tests/fishman-adventure-v33.mjs
