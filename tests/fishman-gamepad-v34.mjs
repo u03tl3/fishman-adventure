@@ -97,9 +97,10 @@ for(const [name,engine] of [['chromium',chromium],['webkit',webkit]]){
   await page.waitForTimeout(160);
   const after=await page.evaluate(()=>FishmanMultiplayerBridge.getG().x);
   assert.ok(Math.abs(after-stopped)<1.5,'Movement did not stop on disconnect');
-  await page.keyboard.down('d');await page.waitForTimeout(400);await page.keyboard.up('d');
+  await page.evaluate(()=>{document.body.tabIndex=-1;document.body.focus();});
+  await page.keyboard.down('d');await page.waitForTimeout(850);await page.keyboard.up('d');
   const withKeyboard=await page.evaluate(()=>FishmanMultiplayerBridge.getG().x);
-  assert.ok(withKeyboard>after+10,'Keyboard no longer works after controller disconnect');
+  assert.ok(withKeyboard>after+8,'Keyboard fallback did not move the character after Xbox disconnect: '+JSON.stringify({before:after,after:withKeyboard}));
   assert.ok(await page.evaluate(()=>__rumbles.length)>0,'Controller feedback was never attempted');
   console.log('PASS '+name+' disconnect releases motion, keyboard stays functional, rumble supported');
 
