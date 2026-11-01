@@ -1239,6 +1239,7 @@ function upgradeWeapon(player,reason='STAR BONUS'){
  ensureWeaponState(player);
  const key=player.weapon||'basic',was=player.weaponLevels[key]||1;
  player.weaponLevels[key]=Math.min(5,was+1);persistWeaponProgress(player);
+ if(player.weaponLevels[key]>was&&player===g)weaponVisual('upgrade',key,player.x,player.y-20,42);
  if(player===g&&coopAimOverride===null){
   say(player.weaponLevels[key]===was?WEAPON_LABEL[key]+' AT MAX POWER':('★ '+WEAPON_LABEL[key]+' LV.'+player.weaponLevels[key]+' · '+WEAPON_POWER_INFO[key]+' · '+reason),3.3);
   sfx('win');
@@ -1387,7 +1388,7 @@ function weaponTier(w,level,base){
 }
 function weaponVisual(kind,weapon,x,y,radius=0,points=null){
  if(!g)return;const fx=g.weaponFX||(g.weaponFX=[]);if(fx.length>=80)fx.splice(0,fx.length-70);
- const ttl=kind==='beam'?.29:kind==='shock'?.43:.30;
+ const ttl=kind==='beam'?.29:kind==='shock'?.43:kind==='upgrade'?.65:kind==='muzzle'?.16:kind==='hit-confirm'?.19:.30;
  fx.push({kind,weapon,x,y,radius,life:ttl,ttl,...(points?{points}:{})});
 }
 function damageHazard(h,power,stun=.35,weapon='basic'){
@@ -1396,7 +1397,7 @@ function damageHazard(h,power,stun=.35,weapon='basic'){
  h.hp=original-hits;
  h.stun=Math.max(h.stun||0,stun);
  if(h.hp<=0){h.hp=max;h.stun=10;}
- burst(h.x,h.y,WEAPON_COLORS[weapon]||'#aefaff',weapon==='charge'?18:9);
+ burst(h.x,h.y,WEAPON_COLORS[weapon]||'#aefaff',weapon==='charge'?18:9);weaponVisual('hit-confirm',weapon,h.x,h.y,19);
 }
 function splashWeapon(x,y,radius,damage,weapon,excluded=null){
  if(radius<=0)return;
@@ -1442,7 +1443,7 @@ function weaponFire(){if(!g||scene!=='playing'||g.cool>0)return;
  g.attackFlash=h==='roxy'?.36:h==='gozilla'?.43:.29;
  g.cool=Math.max(.08,(def[0]-(L-1)*.03)*(1-.035*(WL-1))*sp.rate);
  const origin=window.FishmanVisualMaster?.muzzle(h,g.x,g.y,v)||{x:g.x+v.x*22,y:g.y-10+v.y*14};
- weaponVisual('pulse',wt,origin.x,origin.y,wt==='charge'?37:20);
+ weaponVisual('muzzle',wt,origin.x,origin.y,wt==='charge'?37:20);
  if(wt==='electric')fireElectric(sp,origin,v);
  else for(let n=0;n<sp.count;n++){
   const angle=Math.atan2(v.y,v.x)+(n-(sp.count-1)/2)*sp.spread,dir={x:Math.cos(angle),y:Math.sin(angle)};
@@ -2916,7 +2917,7 @@ if(new URLSearchParams(location.search).has('test'))window.fishmanTest={get:()=>
 menu();updateSkillButton();requestAnimationFrame(drawFrame);
 })();
 </script>
-<script src="weapon-effects-v31.js?v=31"></script>
+<script src="weapon-effects-v31.js?v=32"></script>
 <script src="fit-screen.js?v=6"></script>
 <script>/* Fishman Adventure: private-by-code two-player co-op using WebRTC via PeerJS Cloud.
    The host is authoritative. Only gameplay state and inputs are exchanged. */
