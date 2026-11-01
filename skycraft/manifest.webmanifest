@@ -1,0 +1,17 @@
+{
+  "id": "./",
+  "name": "Skycraft NEXUS — Aircraft Empire",
+  "short_name": "Skycraft NEXUS",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#080f1e",
+  "theme_color": "#102845",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
