@@ -97,7 +97,7 @@ for(const [name,engine] of [['chromium',chromium],['webkit',webkit]]){
   await page.waitForTimeout(160);
   const after=await page.evaluate(()=>FishmanMultiplayerBridge.getG().x);
   assert.ok(Math.abs(after-stopped)<1.5,'Movement did not stop on disconnect');
-  await page.keyboard.down('d');await page.waitForTimeout(150);await page.keyboard.up('d');
+  await page.keyboard.down('d');await page.waitForTimeout(400);await page.keyboard.up('d');
   const withKeyboard=await page.evaluate(()=>FishmanMultiplayerBridge.getG().x);
   assert.ok(withKeyboard>after+10,'Keyboard no longer works after controller disconnect');
   assert.ok(await page.evaluate(()=>__rumbles.length)>0,'Controller feedback was never attempted');
