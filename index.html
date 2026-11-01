@@ -1154,15 +1154,15 @@ const cv=document.getElementById('game'),c=cv.getContext('2d'),W=1000,H=620,over
 const net=()=>window.FishmanNet;let coopAimOverride=null;
 if(window.FishmanVisuals)window.FishmanVisuals.initHiDPI(cv,c);
 const chapters=[
- {title:'The Fishman Experiment',short:'The Experiment',icon:'🧪',lead:'Something extraordinary is brewing.',story:'Kai experiments with an aquatic formula. Cross two laboratory wings, prime Kai’s mixer, repair coolant relays and stabilise the formula that will turn Finn into Fishman.',task:'Operate four different laboratory mechanisms in each wing. Press B at consoles, aim and fire at relays, and complete Kai’s experiment.',ending:'The glowing fish gulps down the mixture and bites Finn. WHOOSH! Finn transforms into Fishman!'},
- {title:'Naughty’s Secret Power',short:'Forest Escape',icon:'🌳',lead:'The forest has come alive.',story:'Naughty McTreeFace steals Kai’s potion to rescue Barky, and his roots take over the forest. Fight the living root hearts to stop the forest takeover.',task:'Fight four dangerous root hearts in each forest run. Aim and fire to destroy them; optional stars and upgrades reward exploration.',ending:'Kai escapes the roots. Naughty is stronger than ever, and his next target is the city.'},
- {title:'Underwater Allies',short:'Shark Family',icon:'🦈',lead:'Recruit the ocean heroes.',story:'Fishman enters the coral reef to find the Shark Family and protect their family from attacking jellyfish. Watch out for jellyfish!',task:'Find four trapped sharks per area, press B to begin each rescue, and stay nearby to protect them. Jellyfish can interrupt the mission.',ending:'The Shark Family is reunited! They race toward the city after hearing Naughty’s dangerous threat.'},
- {title:'Roxy’s City Battle',short:'City Rescue',icon:'🦖',lead:'The countdown is ticking.',story:'Roxy and Kai must rescue civilians, destroy root generators and defuse bombs across two city districts before Naughty can damage the city.',task:'Rescue civilians with B, shoot down root generators, and stay close to defuse Naughty’s bomb under time pressure. Switch Roxy and Humpty.',ending:'The city is safe! CRACK! Humpty’s egg shell bursts open and GOZILLA hatches — a powerful little monster with a mighty laser beam!'},
+ {title:'The Fishman Experiment',short:'The Experiment',icon:'🧪',lead:'Something extraordinary is brewing.',story:'Kai experiments with an aquatic formula. Cross two laboratory wings, prime Kai’s mixer, repair coolant relays and stabilise the formula that will turn Finn into Fishman.',task:'Prime the reactor, shoot a leaking valve, and time the formula dial; then perform a three-pad mixing sequence. No exit-key collection.',ending:'The glowing fish gulps down the mixture and bites Finn. WHOOSH! Finn transforms into Fishman!'},
+ {title:'Naughty’s Secret Power',short:'Forest Escape',icon:'🌳',lead:'The forest has come alive.',story:'Naughty McTreeFace steals Kai’s potion to rescue Barky, and his roots take over the forest. Fight the living root hearts to stop the forest takeover.',task:'Hunt moving roots, defend a woodland clearing, destroy power sources, and escape the forest collapse. Stars are optional.',ending:'Kai escapes the roots. Naughty is stronger than ever, and his next target is the city.'},
+ {title:'Underwater Allies',short:'Shark Family',icon:'🦈',lead:'Recruit the ocean heroes.',story:'Fishman enters the coral reef to find the Shark Family and protect their family from attacking jellyfish. Watch out for jellyfish!',task:'Free a trapped shark, escort it through jellyfish territory, and defend the family against real attackers.',ending:'The Shark Family is reunited! They race toward the city after hearing Naughty’s dangerous threat.'},
+ {title:'Roxy’s City Battle',short:'City Rescue',icon:'🦖',lead:'The countdown is ticking.',story:'Roxy and Kai must rescue civilians, destroy root generators and defuse bombs across two city districts before Naughty can damage the city.',task:'Rescue civilians, destroy root generators, escort the spiky puffer fish and disarm Naughty’s bomb; defend the shelter.',ending:'The city is safe! CRACK! Humpty’s egg shell bursts open and GOZILLA hatches — a powerful little monster with a mighty laser beam!'},
  {title:'McTreeFace: The Three Trials',short:'McTreeFace Boss',icon:'⚡',lead:'A spectacular three-act showdown!',story:'Trial I: Fight Naughty’s flying BARKSHIP and dodge its leaf blades and seed volleys. Trial II: Naughty opens portals and summons giant roots. Trial III: He wears a crackling THORN CROWN and unleashes cannons and gravity vortices.',task:'Move with the joystick. HOLD A to attack and drag A or tap the battlefield to AIM. TAP B for a short invincible dodge, then wait for it to recharge. Watch the RED telegraphs, swap heroes automatically at phase transitions, and break the crown shield in the final act.',ending:'Fishman, Kai and Roxy shatter the Thorn Crown! The puffer-fish army arrives, and Naughty tumbles into a heap of bandages.'},
- {title:'The Yellow Submarine',short:'Submarine Rescue',icon:'🚤',lead:'YOU pilot the BRIGHT YELLOW SUBMARINE!',story:'The large, glowing yellow submarine marked YOU is your character. Steer it with the left thumbstick, approach bandaged Naughty, and press B to capture him. Get Naughty to the prison dock. In Part 2, disable the locks, use sonar and seal his cell.',task:'FOLLOW THE YELLOW SUBMARINE MARKED YOU. PART 1: Approach Naughty and press B, collect two passes, then press B at the prison dock. PART 2: Torpedo security locks, activate sonar docks and seal the cell before proceeding.',ending:'The cell locks shut with Naughty McTreeFace safely inside. But his father Barky has vanished into the depths…'},
- {title:'The Sunken Library',short:'Sunken Library',icon:'📚',lead:'An ancient secret beneath the waves.',story:'The old ocean library may reveal where Barky has gone. Restore ancient mirrors and decipher the mechanisms that reveal Barky’s location.',task:'Aim at archive mirrors, press B at rune consoles, and solve four library mechanisms in each chamber.',ending:'A magical map reveals Barky’s hidden route through the dangerous Whirlpool Caverns.'},
- {title:'Whirlpool Caverns',short:'Whirlpool Caverns',icon:'🌀',lead:'Follow the swirling current.',story:'Dive into twisting tunnels where strong currents carry Fishman toward dangerous whirlpools. Bubble pulses can stun the jellyfish guarding them.',task:'Swim through four current rings in each cavern while fighting the flow. Steer against drifting water and dodge jellyfish.',ending:'Fishman escapes the whirlpools and spots an enormous green fortress among the mangrove roots.'},
- {title:'Barky’s Root Fortress',short:'Barky’s Fortress',icon:'🌲',lead:'The true troublemaker is revealed.',story:'Roxy smashes through Barky’s fortress. Sneak past sentries and disable magical root controls before Barky can rebuild Naughty’s tree army.',task:'Approach root controls quietly, press B to sabotage them, and avoid raising a sentry alarm. Defeat the guardians if spotted.',ending:'The root machines are quiet! Barky flees into a secret tunnel. The ocean is safe for now.'},
+ {title:'The Yellow Submarine',short:'Submarine Rescue',icon:'🚤',lead:'YOU pilot the BRIGHT YELLOW SUBMARINE!',story:'The large, glowing yellow submarine marked YOU is your character. Steer it with the left thumbstick, approach bandaged Naughty, and press B to capture him. Get Naughty to the prison dock. In Part 2, disable the locks, use sonar and seal his cell.',task:'Part 1: capture Naughty using B and physically pilot the submarine to the prison dock. Part 2: shoot locks, switch on sonar, defend against mines and seal three pressure pads.',ending:'The cell locks shut with Naughty McTreeFace safely inside. But his father Barky has vanished into the depths…'},
+ {title:'The Sunken Library',short:'Sunken Library',icon:'📚',lead:'An ancient secret beneath the waves.',story:'The old ocean library may reveal where Barky has gone. Restore ancient mirrors and decipher the mechanisms that reveal Barky’s location.',task:'Time an ancient rotating star chart, aim at magical mirrors and activate three numbered runes to reveal Barky’s map.',ending:'A magical map reveals Barky’s hidden route through the dangerous Whirlpool Caverns.'},
+ {title:'Whirlpool Caverns',short:'Whirlpool Caverns',icon:'🌀',lead:'Follow the swirling current.',story:'Dive into twisting tunnels where strong currents carry Fishman toward dangerous whirlpools. Bubble pulses can stun the jellyfish guarding them.',task:'Navigate moving current rings, fight strong currents and escape collapsing whirlpools; no collectible-key gates.',ending:'Fishman escapes the whirlpools and spots an enormous green fortress among the mangrove roots.'},
+ {title:'Barky’s Root Fortress',short:'Barky’s Fortress',icon:'🌲',lead:'The true troublemaker is revealed.',story:'Roxy smashes through Barky’s fortress. Sneak past sentries and disable magical root controls before Barky can rebuild Naughty’s tree army.',task:'Sneak past moving sentries, disable root engine controls and escape before Barky seals the fortress. Running raises alarms.',ending:'The root machines are quiet! Barky flees into a secret tunnel. The ocean is safe for now.'},
  {title:'The Final Boss Arena',short:'Boss Gauntlet',icon:'🏆',lead:'Nine villains. One ocean champion.',story:'All nine bosses return for a final showdown. Defeat every challenger in the boss arena to earn the title Ocean Champion.',task:'Survive nine sequential boss battles. Use your twin-stick aim, upgraded skills, and remaining lives to defeat them all!',ending:'ALL NINE BOSSES ARE DEFEATED! The Shark Family cheers as Fishman, Kai, Roxy, Humpty and Gozilla celebrate beneath the ocean lights!'}
 ];
 const N=chapters.length;let BOSS_MAX=240;
@@ -1319,7 +1319,10 @@ function menu(){scene='menu';g=null;cameraX=0;particles=[];toastLife=0;switchEl.
 }
 function intro(n){level=n;scene='intro';g=null;cameraX=0;particles=[];toastLife=0;keys={};held={};resetStick();const d=chapters[n];switchEl.style.display='none';
  const xboxTip=window.FishmanGamepad?.current?.().connected?'<br><strong style="color:#aff6ff">🎮 XBOX: LEFT MOVE · RIGHT AIM · RT FIRE · A USE/DODGE · B WEAPON · X SKILL · Y HERO · MENU PAUSE</strong>':'';
- const goal=n===9?'FINAL BOSS RUSH: Fight all NINE chapter bosses, one after the other in the battle arena. Aim with the right stick, dodge with B, use S for upgraded special skills. Earn a star and regain up to two HP after each boss. Lives only refill when the entire chapter is cleared.':n===4?'THREE TRIALS: I · BARKSHIP: dodge wing boomerangs, storm seeds and a charge. II · PORTAL TREE: evade crossfire, spirals and emerging roots. III · THORN CROWN: break its shield and escape huge laser beams, root cages and gravity vortices. On touchscreen hold A to fire and tap B to dodge; on Xbox use RT to fire and A to dodge. The correct hero switches automatically. Each form must complete 1 attack pattern on Easy, 2 on Hero or 3 on Nightmare before its guard breaks.':nightmare()? n===5?'PART 1: Capture Naughty and find SIX passes. PART 2: Collect EIGHT cells. Avoid tracking shockwaves!':n===3?'Disarm EIGHT devices in EACH district, then escape before the timer expires.':'Collect EIGHT objects in EACH area. Evade targeting strikes before the timer expires.':hardMode?d.task.replace(/four/gi,'SIX').replace(/eight/gi,'TWELVE').replace(/two yellow passes/gi,'FOUR yellow passes').replace(/four power cells/gi,'SIX power cells'):d.task;
+ const goal=n===9?'FINAL BOSS RUSH: Defeat all nine bosses. Dodge, aim carefully and use each hero’s unique strengths.':
+ n===4?'MCTREEFACE THREE TRIALS: Read the warning marks, dodge the BARKSHIP, ROOT PORTALS and THORN CROWN. On Xbox use RT to fire and A to dodge; on touch hold A to fire and tap B to dodge.':
+ n===5?'YELLOW SUBMARINE: Capture Naughty and escort him to prison. Then torpedo magnetic locks, defend the dock and seal the cell with a three-pad sequence.':
+ d.task;
  showScreen(`<div class="chapter-top">Chapter ${n+1} of ${N} • ${difficultyTitle()}</div><div class="portrait" aria-hidden="true">${d.icon}</div><h1>${d.title}</h1><p><strong style="color:var(--gold)">${d.lead}</strong><br>${d.story}</p><div class="goals"><strong>Your mission</strong><div>${goal}${xboxTip}${n===4?'<br><strong style="color:#9af6e9">Boss tip: the red marks show where the NEXT attack will hit. Dodge BEFORE they turn solid.</strong>':nightmare()?'<br><strong style="color:#ffaeab">TRACKING STRIKES: Move away from the warning circle!</strong>':''}</div></div><div class="buttonrow">${button('▶ Play Chapter '+(n+1),'play')}${button('Chapter Select','menu','secondary')}</div>`);
 }
 function chapterDone(){resetStick();if(g){g.lives=g.maxLives;g.hp=g.maxHp;if(g.coopP2){g.coopP2.lives=g.coopP2.maxLives;g.coopP2.hp=g.coopP2.maxHp;g.coopP2.down=false;}}if(level===3)unlockGozilla();scene=level===N-1?'gameWin':'chapterWin';if(level+2>unlock){unlock=Math.min(N,level+2);try{localStorage.setItem('fishmanUnlock',String(unlock));}catch{}}sfx('win');switchEl.style.display='none';const d=chapters[level];if(level===3){say('CRACK! HUMPTY HATCHES GOZILLA — MONSTER LASER UNLOCKED!',5);window.FishmanDeluxeCast?.loaded?.gozilla?.decode?.().catch(()=>{});}if(level===N-1){showScreen(`<span class="tag">EVERY CHAPTER COMPLETE!</span><div class="portrait">🏆</div><h1>OCEAN <span>CHAMPION!</span></h1><p>${d.ending}</p><div class="goals"><strong>Ten chapters mastered</strong><div>Replay any chapter, master the boss fight, and return for the next Fishman adventure.</div></div><div class="buttonrow">${button('Play Again','new')}${button('Chapter Select','menu','secondary')}</div>`);}else{showScreen(`<span class="tag">CHAPTER ${level+1} CLEARED ★</span><div class="portrait">${d.icon}</div><h1>MISSION <span>COMPLETE!</span></h1><p>${d.ending}</p><div class="goals"><strong>All lives and health restored!</strong><div>${g.maxLives} lives · Full HP for the next chapter</div></div><div class="buttonrow">${button('Next: '+chapters[level+1].short,'next')}${button('Chapter Select','menu','secondary')}</div>`);}}
@@ -1373,7 +1376,7 @@ function aimVector(){if(coopAimOverride)return coopAimOverride;let dx=1,dy=0,tar
  else if(g.challenge){tar={x:g.challenge.x,y:g.challenge.y};}
  else if(level===4&&g.arena){tar={x:g.arena.bossX,y:g.arena.bossY};}
  else {let nearest=Infinity;for(const h of g.hazards){if(h.stun>0)continue;const d=Math.hypot(g.x-h.x,g.y-h.y);if(d<nearest){nearest=d;tar=h;}}
-  const active=window.FishmanAdventureV35?.next(g.adventureMission);if(active?.kind==='shoot'&&Math.hypot(g.x-active.x,g.y-active.y)<550&&(!tar||nearest>Math.hypot(g.x-active.x,g.y-active.y)*.8))tar=active;}
+  const active=window.FishmanAdventureV35?.next(g.adventureMission);if(['shoot','hunt'].includes(active?.kind)&&Math.hypot(g.x-active.x,g.y-active.y)<550&&(!tar||nearest>Math.hypot(g.x-active.x,g.y-active.y)*.8))tar=active;}
  if(tar){dx=tar.x-g.x;dy=tar.y-g.y;}
  else if(!aim.manual){dx=g.lastDx||1;dy=g.lastDy||0;}
  const n=Math.max(.001,Math.hypot(dx,dy));return {x:dx/n,y:dy/n};
@@ -1444,7 +1447,7 @@ function fireElectric(sp,origin,v){
  }
  if(g.adventureMission){
   const A=window.FishmanAdventureV35,root=A?.next(g.adventureMission);
-  if(root?.kind==='shoot'){
+  if(['shoot','hunt','switch'].includes(root?.kind)){
    const dx=root.x-origin.x,dy=root.y-origin.y,dist=Math.hypot(dx,dy);
    if(dist<520&&dist>0&&(dx*v.x+dy*v.y)>dist*.77){
     const hit=A.projectile(g.adventureMission,{x:root.x,y:root.y,r:20,damage:sp.damage*1.4});
@@ -2023,13 +2026,11 @@ function setupArea(w){cameraX=0;g.proj=[];g.shots=[];g.skillCooldown=0;g.skillEf
 }
 function setupSub(w){cameraX=0;g.hero='sub';g.skillCooldown=0;g.skillEffect=0;g.freezeTime=0;g.sonarTime=0;g.speedBoost=0;g.proj=[];g.shots=[];g.lastAim={x:1,y:0};g.moveIntensity=0;g.attackFlash=0;g.stepPhase=0;g.wave=w;g.collect=0;g.x=167;g.y=455;window.FishmanHeroMotionV35.reset(g);g.hp=Math.min(g.maxHp,g.hp+1);g.inv=nightmare()?2.2:1.4;
  g.total=nightmare()?(w?8:7):hardMode?(w?6:5):(w?4:3);
- if(w===0){g.captured=false;g.items=[item(327,349,'naughty'),item(510,261,'pass'),item(731,443,'pass')];
-  if(hardMode)g.items.push(item(350,477,'pass'),item(755,259,'pass'));
-  if(nightmare())g.items.push(item(284,275,'pass'),item(678,327,'pass'));
+ if(w===0){g.captured=false;g.items=[item(327,349,'naughty')];
   g.hazards=[hazard(458,416,28,56,nightmare()?2.9:hardMode?2.2:1,0,'mine'),hazard(610,353,35,58,nightmare()?2.8:hardMode?2.1:1.1,2,'mine'),hazard(818,443,28,52,nightmare()?2.9:hardMode?2.3:1.4,4,'mine')];}
  else{g.captured=true;g.items=[[350,466],[486,260],[646,450],[763,265]].concat(hardMode?[[267,279],[708,325]]:[],nightmare()?[[385,349],[833,379]]:[]).map(([x,y])=>item(x,y,'battery'));
   g.hazards=[hazard(445,349,27,55,nightmare()?3.1:hardMode?2.4:1.1,0,'mine'),hazard(602,359,36,58,nightmare()?3.1:hardMode?2.6:1.1,2,'mine'),hazard(761,410,30,43,nightmare()?3.1:hardMode?2.6:1.4,4,'mine')];
-  say('PRISON CHECKPOINT! YOU are the GIANT YELLOW submarine. Collect '+g.total+' cells.',5);}
+  say('PRISON BREAK-IN! TORPEDO THE LOCKS, ACTIVATE SONAR AND SEAL THE CELL!',5);}
  if(hardMode){g.hazards.push(hazard(515,355,45,90,2.2,w+4,'mine',true));g.hazards.push(hazard(695,463,37,42,2.3,w+1,'mine'));}
  if(nightmare()){g.hazards.push(hazard(379,415,35,20,2.8,w+1,'mine',true));g.hazards.push(hazard(809,273,33,22,3.4,w+2,'mine'));}
  if(hardMode){g.timer=nightmare()?(w?88:93):(w?90:93);g.maxTimer=g.timer;}
@@ -2062,8 +2063,9 @@ function interact(){if(net()?.role==='guest'){net()?.sendAction('interact');retu
  }
  if(level===4){if(g.dodgeCool>0){say('B DODGE RECHARGING: '+g.dodgeCool.toFixed(1)+'s',1);return;}g.dodgeCool=nightmare()?3.35:hardMode?2.5:1.35;g.dodge=.55;g.inv=Math.max(g.inv,nightmare()?.72:hardMode?.79:1.0);const dirX=Math.abs(stick.x)>.1?stick.x:((keys.right?1:0)-(keys.left?1:0)),dirY=Math.abs(stick.y)>.1?stick.y:((keys.down?1:0)-(keys.up?1:0));const d=Math.max(1,Math.hypot(dirX,dirY));g.x=clamp(g.x+dirX/d*77,63,676);g.y=clamp(g.y+dirY/d*77,172,538);g.arena.dodgeFlash=.55;burst(g.x,g.y,'#aefaff',25);sfx('power');say('BUBBLE DASH! INVINCIBLE FOR A MOMENT.',1);return;}
  
-if(level===5&&g.wave===0&&!g.captured){if(g.items?.[0]&&near(g.items[0],135)){g.captured=true;g.items[0].got=true;g.collect=1;g.shield=1.4;burst(g.items[0].x,g.items[0].y,'#ffd465',25);sfx('collect');say('NAUGHTY CAPTURED! Collect '+(g.total-1)+' yellow passes!',3);}else say('YOU are the big yellow submarine! Steer to bandaged Naughty and press B.',2);return;}
+if(level===5&&g.wave===0&&!g.captured){if(g.items?.[0]&&near(g.items[0],135)){g.captured=true;g.items[0].got=true;g.collect=1;g.shield=1.4;burst(g.items[0].x,g.items[0].y,'#ffd465',25);sfx('collect');say('NAUGHTY CAPTURED! ESCORT HIM IN THE SUBMARINE TO THE PRISON DOCK ON THE RIGHT!',4);}else say('YOU are the big yellow submarine! Steer to bandaged Naughty and press B.',2);return;}
  if(interactAdventureMission())return;
+ if(level===5&&g.wave===0&&g.captured){say('ESCORT NAUGHTY TO THE PRISON DOCK! THE SUBMARINE MUST REACH THE RIGHT SIDE.',2.6);return;}
  if(g.adventureMission){say(window.FishmanAdventureV35.message(g.adventureMission),2.1);return;}
  if(level===3&&!g.adventureMission){const b=g.items.find(i=>!i.got&&near(i,87));if(b){b.got=true;g.collect++;sfx('collect');burst(b.x,b.y,'#ffca61',22);say('Device disabled! '+g.collect+'/'+g.total+' in this district.',1.6);if(g.collect===g.total)say('DISTRICT CLEAR! Get to the EXIT GATE and press B.',4);return;}}
  const gate=worldGate();if(gate&&near(gate,125)){
@@ -2218,6 +2220,9 @@ function tick(dt){t+=dt;if(toastLife>0)toastLife-=dt;for(let i=particles.length-
  if(g.hero==='sub'){g.sonarPulse=(g.sonarPulse||.4)-dt;if(g.sonarPulse<=0){g.sonarPulse=.65;let nearest=null,best=9999;for(const hz of g.hazards||[]){const d=Math.hypot(hz.x-g.x,hz.y-g.y);if(d<best){best=d;nearest=hz;}}if(nearest&&best<260){nearest.stun=Math.max(nearest.stun,.45);burst(nearest.x,nearest.y,'#87f3ff',6);}}}
  if(g.challenge){tickChallenge(dt);return;}
  if(g.runLength)saveRunCheckpoint();
+ if(level===5&&g.wave===0&&g.captured&&g.runLength&&Math.max(g.x,g.coopP2?.x||0)>=g.runLength-265){
+  say('NAUGHTY DELIVERED TO THE PRISON! NOW SEAL HIS CELL.',3);sfx('win');setupSub(1);return;
+ }
  if(hardMode){if(g.freezeTime<=0)g.timer-=dt;if(g.timer<=0){die('TIME IS UP! Retry this checkpoint, move faster and use your powers.');return;}}else if(level===3){g.deadline-=dt;if(g.deadline<=0){die('The countdown reached zero. Restart from your latest checkpoint.');return;}}
  for(const h of g.hazards){h.stun=Math.max(0,h.stun-dt);if((g.freezeTime||0)>0)h.stun=Math.max(h.stun,dt+.16);if(h.stun<=0){
  if(h.hunter&&Math.hypot(g.x-h.x,g.y-h.y)<(nightmare()?360:285)){const angle=Math.atan2(g.y-h.y,g.x-h.x);const chase=nightmare()?171:115;h.x=clamp(h.x+Math.cos(angle)*chase*dt,95,(g.runLength||W)-95);h.y=clamp(h.y+Math.sin(angle)*chase*dt,170,540);}
@@ -2398,7 +2403,7 @@ function target(x,y,type,label,available){if(window.FishmanV29Art?.gate(c,type,x
  c.restore();txt(label,x,y+78,15,available?'#fff1b9':'#d9f6eb','center',850);
 }
 function hud(){c.save();roundRect(16,15,968,84,15,'#062234e5');c.strokeStyle='#3d718a9c';c.lineWidth=1.4;c.strokeRect(17,16,965,82);
- txt('CHAPTER '+(level+1)+' / '+N,36,38,13,'#83ecdf');txt('★ '+progress.stars+'  ·  ⚡ '+(WEAPON_LABEL[g.weapon||'basic']||'Basic')+' Lv.'+(g.weaponLevels?.[g.weapon||'basic']||1)+'  ◂ TAP TO SWITCH ▸',38,93,12,'#ffe48a');txt(chapters[level].short,36,72,22,'#fff');
+ txt('CHAPTER '+(level+1)+' / '+N,36,38,13,'#83ecdf');txt(window.FishmanHeroMotionV35?.STYLES?.[g.hero]?.title||'',810,93,12,'#bafaff','center',850);txt('★ '+progress.stars+'  ·  ⚡ '+(WEAPON_LABEL[g.weapon||'basic']||'Basic')+' Lv.'+(g.weaponLevels?.[g.weapon||'basic']||1)+'  ◂ TAP TO SWITCH ▸',38,93,12,'#ffe48a');txt(chapters[level].short,36,72,22,'#fff');
  if(net()?.connected&&g.coopP2)txt('P2 '+g.coopP2.hero.toUpperCase()+' ♥ '+Math.max(0,g.coopP2.hp)+'/'+g.coopP2.maxHp+'  L '+g.coopP2.lives,482,104,12,'#96ffe5','center',950);txt('LIVES',376,38,13,'#b8f3ee');
  for(let i=0;i<g.maxLives;i++)txt(i<g.lives?'♥':'♡',435+i*29,39,24,i<g.lives?'#ff809e':'#65889e','center',900);
  roundRect(369,52,238,22,9,'#102d41');
@@ -2406,7 +2411,7 @@ function hud(){c.save();roundRect(16,15,968,84,15,'#062234e5');c.strokeStyle='#3
  if(hpWidth>0)roundRect(373,56,hpWidth,14,6,g.hp/g.maxHp<=.3?'#ff6c79':'#4de0a0');
  txt('HP '+Math.max(0,g.hp)+' / '+g.maxHp,487,69,12,'#fffdf0','center',950);
  const tag=g.adventureMission?'STORY MISSION':g.challenge?'BOSS ARENA':level===4?'NAUGHTY HP':level===3?'DISARM BOMBS':level===5?'PRISON MISSION':'AREA '+(g.wave+1)+' OF 2';txt(tag,957,38,13,'#a7cad8','right');
- const stat=g.adventureMission?g.adventureMission.progress+'/'+g.adventureMission.nodes.length+' MISSIONS':g.challenge?`${Math.ceil(g.challenge.hp)} / ${g.challenge.maxHp}`:level===4?`${Math.ceil(g.boss)} / ${BOSS_MAX}`:level===5?`${g.collect}/${g.total} · PART ${g.wave+1}/2`:`${g.collect}/${g.total} OBJECTIVES`;
+ const stat=g.adventureMission?g.adventureMission.progress+'/'+g.adventureMission.nodes.length+' CHALLENGES':level===5&&g.wave===0?(g.captured?'NAUGHTY ABOARD':'CAPTURE NAUGHTY'):g.challenge?`${Math.ceil(g.challenge.hp)} / ${g.challenge.maxHp}`:level===4?`${Math.ceil(g.boss)} / ${BOSS_MAX}`:level===5?`${g.collect}/${g.total} · PART ${g.wave+1}/2`:`${g.collect}/${g.total} OBJECTIVES`;
  txt(stat,957,72,19,'#ffe49d','right');if(level===4){roundRect(360,78,247,7,3,'#485769');roundRect(360,78,247*g.boss/BOSS_MAX,7,3,'#ff876b');}
  if(hardMode&&!g.challenge){const left=Math.max(0,Math.ceil(g.timer));roundRect(629,25,183,57,11,nightmare()?'#551c39df':'#442632b8');txt((nightmare()?'💀 NIGHTMARE':'🔥 EXPERT')+' ⏳ '+left+'s',720,51,nightmare()?14:15,left<18?'#ff858e':'#ffd48a','center',920);roundRect(647,67,147,6,3,'#572d39');roundRect(647,67,147*Math.min(1,g.timer/Math.max(1,g.maxTimer)),6,3,left<18?'#ff6670':'#ffe17f');}
  else if(level===3)txt('TIME: '+Math.ceil(g.deadline)+'s',710,45,13,'#ffe5a0','center');
@@ -3009,7 +3014,7 @@ function objective(){let message='';
  if(g.adventureMission)message=window.FishmanAdventureV35.message(g.adventureMission);
  else if(level===4)message=`${difficultyTitle()} · TRIAL ${bossPhase()+1}/3 · ${['BARKSHIP','PORTALS','CROWN'][bossPhase()]} · PATTERNS ${g.arena.clearedCount}/${g.arena.required} · ${Math.ceil(g.boss)} HP · RIGHT STICK TO AIM · B DODGE ${g.dodgeCool>0?'('+g.dodgeCool.toFixed(1)+'s)':'READY'}`;
  else if(g.challenge){message=`${g.challenge.final?'FINAL BOSS RUSH '+g.challenge.round+'/'+g.challenge.total:'CHAPTER '+(level+1)+' BOSS'} · ${g.challenge.def.short.toUpperCase()} · ${Math.ceil(g.challenge.hp)} HP · AIM, FIRE, DODGE, USE S SKILLS`;}
- else if(level===5){message=g.wave===0?(!g.captured?'YOU = HUGE YELLOW SUB ★  Find NAUGHTY · PRESS B':g.collect<g.total?`COLLECT ${g.total-1} SECURITY PASSES (${g.collect-1}/${g.total-1}) · RIGHT STICK = TORPEDOES`:'PASSES DONE! YELLOW SUB TO PRISON DOCK RIGHT · PRESS B'):g.collect<g.total?`PRISON CHECKPOINT · POWER CELLS ${g.collect}/${g.total} · DODGE RED RINGS`:'ALL CELLS! PRISON DOCK ON RIGHT · PRESS B';}
+ else if(level===5){message=g.wave===0?(!g.captured?'YELLOW SUBMARINE · FIND NAUGHTY · PRESS B TO CAPTURE':'ESCORT NAUGHTY TO PRISON DOCK · DODGE MINES · NO PASSES REQUIRED'):'SUBMARINE PRISON BREAK-IN · SEAL THE CELL';}
  else if(level===3)message=g.collect<g.total?`LONG CITY RUN ${g.wave+1}/2 · DISARM BOMBS ${g.collect}/${g.total} · PRESS B · RIGHT STICK = FIRE BREATH`:`DISTRICT CLEAR! EXIT GATE ON RIGHT · PRESS B`;
  else message=g.collect<g.total?`LONG RUN ${g.wave+1}/2 · ${g.collect}/${g.total} ${itemType(level,g.wave)==='shark'?'ALLIES':'ITEMS'} · ${nightmare()?'💀 ESCAPE TRACKING STRIKES!':hardMode?'WATCH RED HUNTERS!':'RIGHT STICK = AIM + FIRE'}`:`ALL OBJECTIVES COMPLETE! EXIT GATE ON RIGHT · PRESS B`;
  roundRect(19,568,962,39,11,'#051c31e8');txt(message,500,594,14,'#dcffff','center',850);}
@@ -3036,8 +3041,19 @@ function draw(){c.clearRect(0,0,W,H);if(!g){if(window.FishmanVisuals)window.Fish
   const gate=g.adventureMission?null:worldGate();if(gate){const ready=gateReady(),word=level===5?'PRISON DOCK · B':level===0?'MIXING MACHINE · B':level===3?'DISTRICT GATE · B':'EXIT GATE · B';target(gate.x,gate.y,gate.type,word,ready);if(ready)infoPrompt(gate.x,gate.y,'PRESS B TO CONTINUE');}
   window.FishmanAdventureV35?.draw(c,g.adventureMission,t);
   if(g.adventureMission){
-   const node=window.FishmanAdventureV35.closest(g.adventureMission,g.x,g.y,120);
-   if(node)infoPrompt(node.x,node.y,node.kind==='shoot'?'AIM + FIRE':node.kind==='ring'?'SWIM THROUGH':node.kind==='defend'&&node.active?'PROTECT THE SHARK':node.kind==='bomb'&&node.active?'HOLD POSITION':'PRESS B');
+   const A=window.FishmanAdventureV35,node=A.closest(g.adventureMission,g.x,g.y,165);
+   if(node){
+    const pos=A.targetPosition(node);
+    const prompt=['shoot','hunt'].includes(node.kind)?'AIM + FIRE':
+     ['ring','escape'].includes(node.kind)?'SWIM / RUN THROUGH':
+     node.kind==='align'?'TIME THE DIAL · B':
+     node.kind==='sequence'?'PRESS B AT NUMBERED PAD':
+     node.kind==='escort'&&node.active?'FOLLOW YOUR FRIEND':
+     node.kind==='defend'&&node.active?'PROTECT · STUN ENEMIES':
+     node.kind==='bomb'&&node.active?'DISARM · STAY CLOSE':
+     node.kind==='stealth'?'SNEAK SLOWLY · B':'PRESS B TO INTERACT';
+    infoPrompt(pos.x,pos.y,prompt);
+   }
   }
   for(const it of g.items)if(!it.got&&it.x>cameraX-75&&it.x<cameraX+W+75)itemArt(it);
   drawRewardsAndShots();
@@ -3045,6 +3061,11 @@ function draw(){c.clearRect(0,0,W,H);if(!g){if(window.FishmanVisuals)window.Fish
   if(level===3&&!g.adventureMission)for(const it of g.items)if(!it.got&&near(it,100))infoPrompt(it.x,it.y,'PRESS B TO DISARM');
   if(level===5&&!g.captured&&g.items?.[0]&&near(g.items[0],158))infoPrompt(g.items[0].x,g.items[0].y,'PRESS B TO CAPTURE');
   drawPlayer();if(net()?.connected)drawCoopSecond();
+  if(level===5&&g.wave===0&&g.captured){
+   c.save();line(g.x-25,g.y+8,g.x-79,g.y+9,'#dce8fa',3);
+   glow(g.x-87,g.y,47,'#fdeca04d');circle(g.x-87,g.y,23,'#ffdb88');
+   circle(g.x-79,g.y-7,5,'#164769');txt('NAUGHTY',g.x-87,g.y-37,12,'#fff5b7','center',950);c.restore();
+  }
   c.restore();
  }
  if(['playing','paused','gameOver','chapterWin','gameWin'].includes(scene)){hud();objective();if(toastLife>0){const width=Math.min(860,Math.max(320,toast.length*8));roundRect((W-width)/2,104,width,42,12,'#043247ed');txt(toast,500,131,14,'#dcfff1','center',850);}for(const p of particles){c.globalAlpha=clamp(p.life/.5,0,1);circle(p.x-(level===4?0:cameraX),p.y,p.r,p.color);}c.globalAlpha=1;}
