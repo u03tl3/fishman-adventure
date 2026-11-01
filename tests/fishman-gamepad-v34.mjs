@@ -98,7 +98,7 @@ for(const [name,engine] of [['chromium',chromium],['webkit',webkit]]){
   const after=await page.evaluate(()=>FishmanMultiplayerBridge.getG().x);
   assert.ok(Math.abs(after-stopped)<1.5,'Movement did not stop on disconnect');
   await page.evaluate(()=>{document.body.tabIndex=-1;document.body.focus();});
-  await page.keyboard.down('d');await page.waitForTimeout(850);await page.keyboard.up('d');
+  await page.keyboard.down('d');await page.evaluate(()=>fishmanTest.step(.65));await page.keyboard.up('d');
   const withKeyboard=await page.evaluate(()=>FishmanMultiplayerBridge.getG().x);
   assert.ok(withKeyboard>after+8,'Keyboard fallback did not move the character after Xbox disconnect: '+JSON.stringify({before:after,after:withKeyboard}));
   assert.ok(await page.evaluate(()=>__rumbles.length)>0,'Controller feedback was never attempted');
