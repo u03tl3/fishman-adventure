@@ -47,10 +47,10 @@ jobs:
           python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/fishman-web.log 2>&1 &
           echo $! > /tmp/fishman-server.pid
           sleep 2
-      - name: Test Xbox ABXY, twin sticks, RT and menu in Chromium/WebKit
-        run: node tests/fishman-gamepad-v34.mjs
       - name: Test unique v35 hero movement, chapter challenges and story transitions in Chromium/WebKit
         run: node tests/fishman-gameplay-v35.mjs
+      - name: Test Xbox ABXY, twin sticks, RT and menu in Chromium/WebKit
+        run: node tests/fishman-gamepad-v34.mjs
       - name: Test multiplayer and visual layouts
         run: node tests/fishman-qa.mjs
       - name: Test Safari-style WebKit touch interactions
