@@ -136,7 +136,7 @@ for(const [label,engine] of [['chromium',chromium],['webkit',webkit]]){
    fishmanTest.intro(0);fishmanTest.start(0);
    FishmanMultiplayerBridge.getG().weaponPickups=[{x:430,y:325,type:'rapid',got:false},{x:540,y:380,type:'charge',got:false}];
   });
-  await page.waitForTimeout(200);
+  await page.waitForFunction(()=>window.__weaponDraws?.includes('rapid')&&window.__weaponDraws?.includes('charge'),{timeout:8000});
   const seen=await page.evaluate(()=>window.__weaponDraws);
   assert.ok(seen.includes('rapid')&&seen.includes('charge'),'Dimensional weapon objects did not render');
  });
