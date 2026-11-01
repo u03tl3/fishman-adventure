@@ -1138,7 +1138,8 @@ window.FishmanV29Art={enemy:render,version:'v29-sculpted-enemies'};
 })();
 </script>
 <script src="art-v29.js?v=29"></script>
-<script src="adventure-v33.js?v=33"></script>
+<script src="adventure-v35.js?v=35"></script>
+<script src="hero-motion-v35.js?v=35"></script>
 <script src="gamepad-v34.js?v=34"></script>
 <style>
 #screen button.gamepad-selected {
@@ -1372,7 +1373,7 @@ function aimVector(){if(coopAimOverride)return coopAimOverride;let dx=1,dy=0,tar
  else if(g.challenge){tar={x:g.challenge.x,y:g.challenge.y};}
  else if(level===4&&g.arena){tar={x:g.arena.bossX,y:g.arena.bossY};}
  else {let nearest=Infinity;for(const h of g.hazards){if(h.stun>0)continue;const d=Math.hypot(g.x-h.x,g.y-h.y);if(d<nearest){nearest=d;tar=h;}}
-  const active=window.FishmanAdventureV33?.next(g.adventureMission);if(active?.kind==='shoot'&&Math.hypot(g.x-active.x,g.y-active.y)<550&&(!tar||nearest>Math.hypot(g.x-active.x,g.y-active.y)*.8))tar=active;}
+  const active=window.FishmanAdventureV35?.next(g.adventureMission);if(active?.kind==='shoot'&&Math.hypot(g.x-active.x,g.y-active.y)<550&&(!tar||nearest>Math.hypot(g.x-active.x,g.y-active.y)*.8))tar=active;}
  if(tar){dx=tar.x-g.x;dy=tar.y-g.y;}
  else if(!aim.manual){dx=g.lastDx||1;dy=g.lastDy||0;}
  const n=Math.max(.001,Math.hypot(dx,dy));return {x:dx/n,y:dy/n};
@@ -1442,7 +1443,7 @@ function fireElectric(sp,origin,v){
   g.shots.push({x:a.bossX,y:a.bossY,sx:origin.x,sy:origin.y,tx:a.bossX,ty:a.bossY,life:.28,kind:g.hero,weapon:'electric',damage:sp.damage*1.3,aimed:false});
  }
  if(g.adventureMission){
-  const A=window.FishmanAdventureV33,root=A?.next(g.adventureMission);
+  const A=window.FishmanAdventureV35,root=A?.next(g.adventureMission);
   if(root?.kind==='shoot'){
    const dx=root.x-origin.x,dy=root.y-origin.y,dist=Math.hypot(dx,dy);
    if(dist<520&&dist>0&&(dx*v.x+dy*v.y)>dist*.77){
@@ -1506,7 +1507,7 @@ function tickProjectiles(dt){if(!g||level===4)return;
   }
   p.x+=p.vx*dt;p.y+=p.vy*dt;
   if(g.adventureMission){
-   const result=window.FishmanAdventureV33.projectile(g.adventureMission,p);
+   const result=window.FishmanAdventureV35.projectile(g.adventureMission,p);
    if(result?.hit){weaponVisual('impact',p.weapon||'basic',p.x,p.y,30);
     if(result.completed){burst(result.node.x,result.node.y,'#ffe7a3',22);say(result.message+' · '+g.adventureMission.progress+'/4',2.3);sfx('win');}
     g.proj.splice(i,1);continue;
@@ -1947,40 +1948,62 @@ function restoreRunCheckpoint(){
 }
 /* v33 interactive chapter missions replace the repetitive collect-to-open progression. */
 function setupAdventureMission(){
- g.adventureMission=window.FishmanAdventureV33?.create(level,g.wave,W)||null;
+ g.adventureMission=window.FishmanAdventureV35?.create(level,g.wave,W)||null;
  if(!g.adventureMission)return;
  // Stars, weapon cores and skill food remain optional exploration rewards.
- g.items=[];g.collect=0;g.total=g.adventureMission.nodes.length;
- say(window.FishmanAdventureV33.message(g.adventureMission),4);
+ g.items=[];g.collect=0;g.total=g.adventureMission.nodes.length;g.storyExitClock=null;
+ say(window.FishmanAdventureV35.message(g.adventureMission),4);
 }
 function tickAdventure(dt,motion){
- if(!g?.adventureMission||g.challenge)return;
- const A=window.FishmanAdventureV33;
- if(level===7){ // Actual sideways current: steer across turbulence instead of collecting pearls.
-  const a=g.adventureMission,active=A.next(a);
-  if(active&&Math.hypot(g.x-active.x,g.y-active.y)<310){
-   g.x=clamp(g.x+Math.sin(t*2.4+g.y*.018)*dt*53,110,g.runLength-110);
-   g.y=clamp(g.y+Math.cos(t*1.8+g.x*.013)*dt*82,168,535);
+ if(!g?.adventureMission||g.challenge)return false;
+ const A=window.FishmanAdventureV35,m=g.adventureMission;
+ if(A.complete(m)){
+  if(g.storyExitClock===null||g.storyExitClock===undefined){
+   g.storyExitClock=1.5;say('★ '+m.title+' COMPLETE! THE STORY CONTINUES…',2.2);sfx('win');
+  }
+  g.storyExitClock-=dt;
+  if(g.storyExitClock<=0){
+   if(level===5)startChapterArena(false,5);
+   else if(g.wave===0)setupArea(1);
+   else startChapterArena(false,level);
+   return true;
+  }
+  return false;
+ }
+ if(level===7){ // Dynamic water currents that push Fishman off course.
+  const active=A.next(m);
+  if(active){const d=Math.hypot(g.x-active.x,g.y-active.y);
+   if(d<390){const push=1-d/390;
+    g.x=clamp(g.x+Math.sin(t*2.2+g.y*.018)*dt*91*push,110,g.runLength-110);
+    g.y=clamp(g.y+Math.cos(t*2+g.x*.013)*dt*104*push,168,535);
+   }
   }
  }
  const peers=[g];if(g.coopP2&&!g.coopP2.down)peers.push(g.coopP2);
- for(const event of A.update(g.adventureMission,dt,peers,motion)){
+ for(const event of A.update(m,dt,peers,motion,g.hazards||[],t)){
   if(event.type==='alarm'){
    const n=event.node;
-   g.hazards.push(hazard(n.x+90,n.y+35,33,42,1.8,n.id,'root',true));
+   g.hazards.push(hazard(n.x+90,n.y+35,35,42,1.8,n.id,'root',true));
    say(event.message,2.2);sfx('hit');
   }else{
    burst(event.node.x,event.node.y,'#a5f9db',24);sfx('win');
-   say(event.message+' · '+g.adventureMission.progress+'/4',2.4);
+   say(event.message+' · '+m.progress+'/'+m.nodes.length,2.4);
   }
  }
+ return false;
 }
 function interactAdventureMission(){
  if(!g?.adventureMission)return false;
- const A=window.FishmanAdventureV33,out=A.interact(g.adventureMission,g.x,g.y);
+ const A=window.FishmanAdventureV35,out=A.interact(g.adventureMission,g.x,g.y);
  if(!out.handled)return false;
+ if(out.started&&out.node?.kind==='defend'){
+  const n=out.node,type=level===2?'jelly':level===5?'mine':'root';
+  // Real enemies must be stunned to keep defending; no idle waiting wins.
+  g.hazards.push(hazard(n.x+125,n.y-32,33,46,1.7,n.id,type,true));
+  g.hazards.push(hazard(n.x-130,n.y+42,32,37,1.5,n.id+2,type,true));
+ }
  if(out.completed){burst(out.node.x,out.node.y,'#a5f9db',25);sfx('win');}
- if(out.message)say(out.message+(out.completed?' · '+g.adventureMission.progress+'/4':''),2.5);
+ if(out.message)say(out.message+(out.completed?' · '+g.adventureMission.progress+'/'+g.adventureMission.nodes.length:''),2.5);
  return true;
 }
 function setupArea(w){cameraX=0;g.proj=[];g.shots=[];g.skillCooldown=0;g.skillEffect=0;g.freezeTime=0;g.sonarTime=0;g.speedBoost=0;g.moveIntensity=0;g.attackFlash=0;g.stepPhase=0;g.wave=w;g.collect=0;g.total=nightmare()?8:hardMode?6:4;g.x=116;g.y=425;g.hp=Math.min(g.maxHp,g.hp+1);g.inv=nightmare()?1.8:1.4;
@@ -2028,7 +2051,7 @@ function start(checkpoint=0,remainingLives=null){scene='playing';aim.manual=fals
 function say(message,seconds=2.4){toast=message;toastLife=seconds;}
 function burst(x,y,color='#82f4e6',n=15){for(let i=0;i<n;i++)particles.push({x,y,vx:rand(-140,140),vy:rand(-150,90),life:rand(.35,.9),color,r:rand(2,6)});}
 function near(o,r=78){return Math.hypot(g.x-o.x,g.y-o.y)<r;}
-function gateReady(){if(g?.adventureMission)return window.FishmanAdventureV33.complete(g.adventureMission);return g.collect>=g.total&&(level!==5||g.wave===1||g.captured);}
+function gateReady(){if(g?.adventureMission)return window.FishmanAdventureV35.complete(g.adventureMission);return g.collect>=g.total&&(level!==5||g.wave===1||g.captured);}
 function interact(){if(net()?.role==='guest'){net()?.sendAction('interact');return;}if(scene!=='playing')return;
  if(g.challenge){const a=g.challenge;
   if(a.dodgeCool>0){say('DODGE RECHARGING '+a.dodgeCool.toFixed(1)+'s',1);return;}
@@ -2041,6 +2064,7 @@ function interact(){if(net()?.role==='guest'){net()?.sendAction('interact');retu
  
 if(level===5&&g.wave===0&&!g.captured){if(g.items?.[0]&&near(g.items[0],135)){g.captured=true;g.items[0].got=true;g.collect=1;g.shield=1.4;burst(g.items[0].x,g.items[0].y,'#ffd465',25);sfx('collect');say('NAUGHTY CAPTURED! Collect '+(g.total-1)+' yellow passes!',3);}else say('YOU are the big yellow submarine! Steer to bandaged Naughty and press B.',2);return;}
  if(interactAdventureMission())return;
+ if(g.adventureMission){say(window.FishmanAdventureV35.message(g.adventureMission),2.1);return;}
  if(level===3&&!g.adventureMission){const b=g.items.find(i=>!i.got&&near(i,87));if(b){b.got=true;g.collect++;sfx('collect');burst(b.x,b.y,'#ffca61',22);say('Device disabled! '+g.collect+'/'+g.total+' in this district.',1.6);if(g.collect===g.total)say('DISTRICT CLEAR! Get to the EXIT GATE and press B.',4);return;}}
  const gate=worldGate();if(gate&&near(gate,125)){
   if(gateReady()){
@@ -2048,9 +2072,9 @@ if(level===5&&g.wave===0&&!g.captured){if(g.items?.[0]&&near(g.items[0],135)){g.
    if(level===5){if(g.wave===0){setupSub(1);return;}startChapterArena(false,5);return;}
    if(g.wave===0){setupArea(1);return;}startChapterArena(false,level);return;
   }
-  say(g.adventureMission?window.FishmanAdventureV33.message(g.adventureMission):(level===5?(g.captured?`Still need ${g.total-g.collect} more ${g.wave?'power cells':'security passes'}!`:'Capture Naughty first!'):`Still need ${g.total-g.collect} objectives in this area.`),2.6);return;
+  say(g.adventureMission?window.FishmanAdventureV35.message(g.adventureMission):(level===5?(g.captured?`Still need ${g.total-g.collect} more ${g.wave?'power cells':'security passes'}!`:'Capture Naughty first!'):`Still need ${g.total-g.collect} objectives in this area.`),2.6);return;
  }
- say(g.adventureMission?window.FishmanAdventureV33.message(g.adventureMission):level===3?'Use B near a blinking bomb. Get to the gate after disarming all!':level===5?'Pilot the BRIGHT YELLOW SUB to the glowing prison dock on the right.':g.collect===g.total?'Go to the EXIT on the right and press B.':'Find '+(g.total-g.collect)+' more glowing objects then reach the exit.',2);
+ say(g.adventureMission?window.FishmanAdventureV35.message(g.adventureMission):level===3?'Use B near a blinking bomb. Get to the gate after disarming all!':level===5?'Pilot the BRIGHT YELLOW SUB to the glowing prison dock on the right.':g.collect===g.total?'Go to the EXIT on the right and press B.':'Find '+(g.total-g.collect)+' more glowing objects then reach the exit.',2);
 }
 function attack(){if(net()?.role==='guest'){net()?.sendAction('fire');return;}if(scene!=='playing'||!g||g.cool>0)return;weaponFire();}
 
@@ -2192,7 +2216,7 @@ function tick(dt){t+=dt;if(toastLife>0)toastLife-=dt;for(let i=particles.length-
  if(h.hunter&&Math.hypot(g.x-h.x,g.y-h.y)<(nightmare()?360:285)){const angle=Math.atan2(g.y-h.y,g.x-h.x);const chase=nightmare()?171:115;h.x=clamp(h.x+Math.cos(angle)*chase*dt,95,(g.runLength||W)-95);h.y=clamp(h.y+Math.sin(angle)*chase*dt,170,540);}
  else if(h.hunter){const tx=h.bx+Math.sin(t*h.rate+h.phase)*h.ax,ty=h.by+Math.cos(t*h.rate*.83+h.phase)*h.ay;h.x+=(tx-h.x)*Math.min(1,dt*1.3);h.y+=(ty-h.y)*Math.min(1,dt*1.3);}
  else{h.x=h.bx+Math.sin(t*h.rate+h.phase)*h.ax;h.y=h.by+Math.cos(t*h.rate*.83+h.phase)*h.ay;}}if(h.stun<=0&&Math.hypot(g.x-h.x,g.y-h.y)< (g.hero==='sub'?39:29))hit();if(scene!=='playing')return;}
- tickAdventure(dt,motion);
+ if(tickAdventure(dt,motion))return;
  if(level!==3&&level!==4){for(const i of g.items){if(i.got||i.type==='naughty'||(i.type==='pass'&&!g.captured))continue;if(near(i,g.hero==='sub'?65:54)){i.got=true;g.collect++;sfx('collect');burst(i.x,i.y,'#b4f6c3',17);
   const name=i.type==='shark'?'Shark friend':i.type==='pass'?'Security pass':i.type==='battery'?'Power cell':i.type==='seed'?'Anti-root seed':i.type==='lantern'?'Lantern':i.type==='pearl'?'Pearl':i.type==='relic'?'Ancient scroll':i.type==='crystal'?'Crystal':'Formula';
   say(name+' collected! '+g.collect+'/'+g.total,1.5);
@@ -2972,7 +2996,7 @@ function drawBoss(){const a=g.arena;if(!a)return;
  if(phase===2){for(let i=0;i<6;i++){const x=150+i*75,y=210+Math.sin(t*2+i)*13;shark(x,y,.28,'#e1c38f');}txt('PUFFER-FISH ALLIES!',347,174,13,'#ffe9b4','center');}
 }
 function objective(){let message='';
- if(g.adventureMission)message=window.FishmanAdventureV33.message(g.adventureMission);
+ if(g.adventureMission)message=window.FishmanAdventureV35.message(g.adventureMission);
  else if(level===4)message=`${difficultyTitle()} · TRIAL ${bossPhase()+1}/3 · ${['BARKSHIP','PORTALS','CROWN'][bossPhase()]} · PATTERNS ${g.arena.clearedCount}/${g.arena.required} · ${Math.ceil(g.boss)} HP · RIGHT STICK TO AIM · B DODGE ${g.dodgeCool>0?'('+g.dodgeCool.toFixed(1)+'s)':'READY'}`;
  else if(g.challenge){message=`${g.challenge.final?'FINAL BOSS RUSH '+g.challenge.round+'/'+g.challenge.total:'CHAPTER '+(level+1)+' BOSS'} · ${g.challenge.def.short.toUpperCase()} · ${Math.ceil(g.challenge.hp)} HP · AIM, FIRE, DODGE, USE S SKILLS`;}
  else if(level===5){message=g.wave===0?(!g.captured?'YOU = HUGE YELLOW SUB ★  Find NAUGHTY · PRESS B':g.collect<g.total?`COLLECT ${g.total-1} SECURITY PASSES (${g.collect-1}/${g.total-1}) · RIGHT STICK = TORPEDOES`:'PASSES DONE! YELLOW SUB TO PRISON DOCK RIGHT · PRESS B'):g.collect<g.total?`PRISON CHECKPOINT · POWER CELLS ${g.collect}/${g.total} · DODGE RED RINGS`:'ALL CELLS! PRISON DOCK ON RIGHT · PRESS B';}
@@ -2999,16 +3023,16 @@ function draw(){c.clearRect(0,0,W,H);if(!g){if(window.FishmanVisuals)window.Fish
    else {roundRect(x-11,240,22,277,6,'#207b80a6');circle(x,230,32,'#ffe7a0');}
    txt('CHECKPOINT '+mark,x,188,18,'#f6ffe7','center',900);
   }
-  const gate=worldGate();if(gate){const ready=gateReady(),word=level===5?'PRISON DOCK · B':level===0?'MIXING MACHINE · B':level===3?'DISTRICT GATE · B':'EXIT GATE · B';target(gate.x,gate.y,gate.type,word,ready);if(ready)infoPrompt(gate.x,gate.y,'PRESS B TO CONTINUE');}
-  window.FishmanAdventureV33?.draw(c,g.adventureMission,t);
+  const gate=g.adventureMission?null:worldGate();if(gate){const ready=gateReady(),word=level===5?'PRISON DOCK · B':level===0?'MIXING MACHINE · B':level===3?'DISTRICT GATE · B':'EXIT GATE · B';target(gate.x,gate.y,gate.type,word,ready);if(ready)infoPrompt(gate.x,gate.y,'PRESS B TO CONTINUE');}
+  window.FishmanAdventureV35?.draw(c,g.adventureMission,t);
   if(g.adventureMission){
-   const node=window.FishmanAdventureV33.closest(g.adventureMission,g.x,g.y,120);
+   const node=window.FishmanAdventureV35.closest(g.adventureMission,g.x,g.y,120);
    if(node)infoPrompt(node.x,node.y,node.kind==='shoot'?'AIM + FIRE':node.kind==='ring'?'SWIM THROUGH':node.kind==='defend'&&node.active?'PROTECT THE SHARK':node.kind==='bomb'&&node.active?'HOLD POSITION':'PRESS B');
   }
   for(const it of g.items)if(!it.got&&it.x>cameraX-75&&it.x<cameraX+W+75)itemArt(it);
   drawRewardsAndShots();
   for(const h of g.hazards)if(h.x>cameraX-100&&h.x<cameraX+W+100)drawHazard(h);
-  if(level===3)for(const it of g.items)if(!it.got&&near(it,100))infoPrompt(it.x,it.y,'PRESS B TO DISARM');
+  if(level===3&&!g.adventureMission)for(const it of g.items)if(!it.got&&near(it,100))infoPrompt(it.x,it.y,'PRESS B TO DISARM');
   if(level===5&&!g.captured&&g.items?.[0]&&near(g.items[0],158))infoPrompt(g.items[0].x,g.items[0].y,'PRESS B TO CAPTURE');
   drawPlayer();if(net()?.connected)drawCoopSecond();
   c.restore();
