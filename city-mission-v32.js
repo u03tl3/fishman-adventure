@@ -13,7 +13,9 @@
    bombStabilized:false,bossDefeated:false,failed:false,events:[]};
  }
  function dispatch(state,action){
-  if(!state||!action||state.failed||state.phase==='complete')return state;
+  if(!state||!action)return state;
+  if(action.type==='RETRY'&&state.failed)return createCityMission({requiredRescues:state.requiredRescues});
+  if(state.failed||state.phase==='complete')return state;
   const s={...state,civilians:state.civilians.map(c=>({...c})),events:[...state.events]};
   const emit=(type)=>s.events.push(type);
   if(action.type==='RESCUE'&&s.phase==='rescue'){
