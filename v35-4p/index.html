@@ -216,6 +216,15 @@ html,body{background:#072a56}
 .mp-small{font-size:11px;color:#b3d4df}.mp-choice{background:#184357;border-radius:12px;padding:11px}
 @media (orientation:landscape) and (max-height:430px){.mp-panel{max-height:95dvh;padding:10px}.mp-panel h2{font-size:18px}.mp-panel p{font-size:12px;margin:4px 0}.mp-code{font-size:23px;margin:3px}.mp-panel button:not(.mp-close){min-height:37px;padding:7px 10px}}
 </style>
+<style id="fourPlayerBoardFix">
+.stage-wrap{position:relative!important;isolation:isolate}
+#onBoardControlDeck{z-index:100!important;grid-template-columns:repeat(var(--players),minmax(0,1fr))!important;pointer-events:none!important}
+#onBoardControlDeck #touchControl{display:flex!important;visibility:visible!important;opacity:1!important}
+#onBoardControlDeck #localTouchPlayers{display:contents!important;visibility:visible!important}
+#onBoardControlDeck .local-touch-panel{display:flex!important;visibility:visible!important;opacity:1!important}
+#onBoardControlDeck button,#onBoardControlDeck .local-touch-stick,#onBoardControlDeck .stick-base{touch-action:none!important}
+#multiplayerControlHeading{display:none!important}
+</style>
 </head>
 <body>
 <main class="shell">
@@ -3378,13 +3387,13 @@ function localTouchUI(){
   }
   row.append(buttons);panel.append(row);wrap.append(panel);
  }
- wrap.style.setProperty('display',localCount>1?'grid':'none','important');wrap.style.setProperty('visibility','visible','important');
+ wrap.style.setProperty('display',localCount>1?'contents':'none','important');wrap.style.setProperty('visibility','visible','important');
 }
 
 function localUI(){
  const bar=document.body;if(!bar||document.getElementById('localCount'))return;
  const label=document.createElement('label');label.style.cssText='position:fixed;z-index:10000;top:72px;right:12px;display:flex;align-items:center;gap:7px;color:white;font-weight:900;font-size:14px;background:#073450ee;padding:12px;border:3px solid #69e7e2;border-radius:14px;box-shadow:0 5px 25px #0009';
- label.textContent='🎮 PLAYERS ';
+ label.textContent='🎮 V35 FIXED · PLAYERS ';
  const select=document.createElement('select');select.id='localCount';select.setAttribute('aria-label','Number of local players');
  select.style.cssText='background:#0b3855;color:white;border:2px solid #69e7e2;border-radius:9px;padding:7px';
  for(let i=1;i<=4;i++){const o=document.createElement('option');o.value=i;o.textContent=i+' player'+(i>1?'s':'');select.appendChild(o);}
@@ -3393,45 +3402,43 @@ function localUI(){
 }
 
 /* Compact on-board control deck: four independent sets inside the canvas frame. */
+
 function fitLocalControlDeck(){
- const stage=document.querySelector('.stage-wrap'),main=document.getElementById('touchControl'),extra=document.getElementById('localTouchPlayers');
+ const stage=document.querySelector('.stage-wrap');
+ const main=document.getElementById('touchControl');
+ const extra=document.getElementById('localTouchPlayers');
  if(!stage||!main||!extra)return;
  let deck=document.getElementById('onBoardControlDeck');
  if(!deck){
-  deck=document.createElement('div');deck.id='onBoardControlDeck';
-  stage.appendChild(deck);deck.appendChild(main);deck.appendChild(extra);
-  const style=document.createElement('style');
-  style.textContent=`
-  #onBoardControlDeck{position:absolute;bottom:3px;left:3px;right:3px;z-index:4;display:grid;grid-template-columns:repeat(var(--players),minmax(0,1fr));gap:4px;align-items:stretch;pointer-events:none;max-height:30%;overflow:visible}
-  #onBoardControlDeck>*,#onBoardControlDeck button,#onBoardControlDeck .stick-base{pointer-events:auto}
-  #onBoardControlDeck #touchControl{min-width:0!important;width:100%!important;margin:0!important;padding:3px!important;gap:2px!important;border-radius:10px!important;display:flex!important;align-items:center!important;justify-content:space-around!important;background:#092d48d9!important;box-shadow:none!important}
-  #onBoardControlDeck .stick-unit{gap:2px!important;flex:0 1 auto!important}
-  #onBoardControlDeck .stick-base{width:clamp(34px,6.2vw,68px)!important;height:clamp(34px,6.2vw,68px)!important;box-shadow:none!important;border-width:2px!important}
-  #onBoardControlDeck .stick-knob{width:35%!important;height:35%!important}
-  #onBoardControlDeck .stick-caption,#onBoardControlDeck .stick-arrows,#onBoardControlDeck .aim-mark{display:none!important}
-  #onBoardControlDeck .touch-right{gap:2px!important;min-width:0!important;flex:0 1 auto!important}
-  #onBoardControlDeck .action-pair{display:flex!important;gap:2px!important;flex-wrap:wrap!important;justify-content:center!important}
-  #onBoardControlDeck .joy-button{width:clamp(24px,3.2vw,40px)!important;height:clamp(29px,4vw,44px)!important;min-width:0!important;min-height:0!important;padding:1px!important;font-size:10px!important;border-radius:8px!important}
-  #onBoardControlDeck .button-name,#onBoardControlDeck .skill-cooldown{display:none!important}
-  #onBoardControlDeck #localTouchPlayers{display:contents!important;padding:0!important;margin:0!important}
-  #onBoardControlDeck .local-touch-panel{min-width:0!important;padding:4px!important;gap:2px!important;border-width:2px!important;border-radius:10px!important;background:#092d48d9!important}
-  #onBoardControlDeck .local-touch-title{font-size:10px!important;line-height:1!important;text-align:center!important}
-  #onBoardControlDeck .local-touch-row{gap:3px!important;justify-content:center!important}
-  #onBoardControlDeck .local-touch-stick{width:clamp(34px,6.2vw,68px)!important;height:clamp(34px,6.2vw,68px)!important}
-  #onBoardControlDeck .local-touch-buttons{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:2px!important}
-  #onBoardControlDeck .local-touch-buttons button{min-height:28px!important;min-width:0!important;font-size:9px!important;padding:1px!important;border-radius:6px!important}
-  @media(max-width:620px){
-    #onBoardControlDeck{gap:1px;left:1px;right:1px;max-height:36%}
-    #onBoardControlDeck .stick-base,#onBoardControlDeck .local-touch-stick{width:clamp(25px,6vw,38px)!important;height:clamp(25px,6vw,38px)!important}
-    #onBoardControlDeck .joy-button{width:22px!important;height:26px!important;font-size:8px!important}
-    #onBoardControlDeck .local-touch-buttons button{font-size:8px!important;min-height:23px!important}
-    #onBoardControlDeck .local-touch-panel{padding:2px!important}
-  }`;
-  document.head.appendChild(style);
+  deck=document.createElement('section');
+  deck.id='onBoardControlDeck';
+  deck.setAttribute('aria-label','Compact controls for one to four players');
+  const toolbar=document.createElement('div');
+  toolbar.id='localControlToolbar';
+  deck.appendChild(toolbar);
+  const label=document.getElementById('localCount')?.parentElement;
+  if(label){label.firstChild.textContent='🎮 PLAYERS ';toolbar.appendChild(label);}
+  const heroes=document.getElementById('heroSwitch');
+  if(heroes)toolbar.appendChild(heroes);
+  deck.appendChild(main);deck.appendChild(extra);
+  stage.insertAdjacentElement('afterend',deck);
+  const st=document.createElement('style');
+  st.id='fishmanNonOverlappingControlsCSS';
+  st.textContent="\nhtml.fishman-compact-playing,html.fishman-compact-playing body{width:100%!important;height:100%!important;overflow:hidden!important}\nhtml.fishman-compact-playing .shell{position:relative!important;display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr) var(--fishman-deck-height,110px)!important;gap:3px!important;width:100%!important;max-width:none!important;height:100dvh!important;min-height:0!important;max-height:100dvh!important;overflow:hidden!important;align-items:stretch!important;margin:0!important;padding:3px!important}\nhtml.fishman-compact-playing .head{position:absolute!important;top:2px!important;right:3px!important;left:auto!important;margin:0!important;z-index:15!important;pointer-events:none!important}\nhtml.fishman-compact-playing .head .brand{display:none!important}\nhtml.fishman-compact-playing .head .top-actions{pointer-events:auto!important;gap:3px!important}\nhtml.fishman-compact-playing .head .tiny-button{font-size:10px!important;padding:2px 4px!important}\nhtml.fishman-compact-playing .under,html.fishman-compact-playing #multiplayerControlHeading{display:none!important}\nhtml.fishman-compact-playing .stage-wrap{grid-column:1!important;grid-row:1!important;position:relative!important;width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;min-width:0!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important;display:flex!important;align-items:center!important;justify-content:center!important}\nhtml.fishman-compact-playing .stage-wrap canvas{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important;aspect-ratio:auto!important;min-width:0!important;min-height:0!important}\nhtml.fishman-compact-playing #onBoardControlDeck{position:relative!important;inset:auto!important;grid-column:1!important;grid-row:2!important;z-index:2!important;display:grid!important;grid-template-columns:repeat(var(--cols,4),minmax(0,1fr))!important;grid-template-rows:22px repeat(var(--rows,1),minmax(0,1fr))!important;gap:3px!important;width:100%!important;height:100%!important;max-height:100%!important;min-height:0!important;overflow:hidden!important;box-sizing:border-box!important;margin:0!important;padding:2px!important;background:#061e30!important;border:1px solid #387b82!important;border-radius:8px!important;pointer-events:auto!important}\nhtml.fishman-compact-playing #localControlToolbar{grid-column:1/-1!important;grid-row:1!important;display:flex!important;align-items:center!important;justify-content:space-between!important;min-height:0!important;height:20px!important;gap:4px!important;overflow:hidden!important}\nhtml.fishman-compact-playing #localControlToolbar label{position:static!important;inset:auto!important;display:inline-flex!important;align-items:center!important;gap:4px!important;flex:0 0 auto!important;margin:0!important;padding:0 4px!important;font-size:10px!important;line-height:1!important;background:#17405b!important;border:1px solid #6fe3da!important;border-radius:5px!important;box-shadow:none!important}\nhtml.fishman-compact-playing #localCount{font-size:11px!important;height:18px!important;padding:0 3px!important;border-width:1px!important}\nhtml.fishman-compact-playing #localControlToolbar #heroSwitch{position:static!important;inset:auto!important;transform:none!important;display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:center!important;gap:2px!important;width:auto!important;max-width:66%!important;height:20px!important;margin:0!important;padding:0!important;overflow:hidden!important}\nhtml.fishman-compact-playing #localControlToolbar #heroSwitch button{flex:0 1 auto!important;min-width:0!important;min-height:0!important;width:auto!important;height:18px!important;margin:0!important;padding:1px 3px!important;font-size:9px!important;line-height:1!important;white-space:nowrap!important;overflow:hidden!important}\nhtml.fishman-compact-playing #onBoardControlDeck #touchControl{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-around!important;grid-row:auto!important;min-width:0!important;min-height:0!important;max-height:100%!important;width:100%!important;height:100%!important;margin:0!important;padding:2px!important;gap:2px!important;border-radius:6px!important;background:#123752de!important;overflow:hidden!important;box-shadow:none!important}\nhtml.fishman-compact-playing #onBoardControlDeck .stick-unit,html.fishman-compact-playing #onBoardControlDeck .touch-right{position:static!important;inset:auto!important;transform:none!important;display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;flex:0 1 auto!important;min-width:0!important;min-height:0!important;margin:0!important;padding:0!important;gap:2px!important}\nhtml.fishman-compact-playing #onBoardControlDeck .stick-base{flex:0 0 auto!important;width:clamp(32px,5.1vw,58px)!important;height:clamp(32px,5.1vw,58px)!important;min-width:0!important;min-height:0!important;max-width:100%!important;border-width:2px!important;box-shadow:none!important}\nhtml.fishman-compact-playing #onBoardControlDeck .stick-knob{width:38%!important;height:38%!important;border-width:1px!important}\nhtml.fishman-compact-playing #onBoardControlDeck .stick-arrows,html.fishman-compact-playing #onBoardControlDeck .stick-caption,html.fishman-compact-playing #onBoardControlDeck .aim-mark{display:none!important}\nhtml.fishman-compact-playing #onBoardControlDeck .action-pair{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:2px!important;min-width:0!important;min-height:0!important}\nhtml.fishman-compact-playing #onBoardControlDeck .joy-button{display:flex!important;align-items:center!important;justify-content:center!important;width:clamp(25px,3.1vw,35px)!important;height:clamp(25px,3.1vw,35px)!important;min-width:0!important;min-height:0!important;max-width:none!important;margin:0!important;padding:1px!important;border-radius:6px!important}\nhtml.fishman-compact-playing #onBoardControlDeck .joy-button .button-letter{font-size:clamp(11px,1.6vw,17px)!important;line-height:1!important}\nhtml.fishman-compact-playing #onBoardControlDeck .button-name,html.fishman-compact-playing #onBoardControlDeck .skill-cooldown{display:none!important}\nhtml.fishman-compact-playing #onBoardControlDeck #localTouchPlayers{display:contents!important;min-width:0!important;min-height:0!important;width:auto!important;margin:0!important;padding:0!important}\nhtml.fishman-compact-playing #onBoardControlDeck .local-touch-panel{display:flex!important;flex-direction:column!important;min-width:0!important;min-height:0!important;max-height:100%!important;margin:0!important;padding:2px!important;gap:2px!important;border:1px solid #5fd6d0!important;border-radius:6px!important;background:#123752de!important;overflow:hidden!important}\nhtml.fishman-compact-playing #onBoardControlDeck .local-touch-title{font-size:10px!important;line-height:1!important;text-align:center!important;white-space:nowrap!important}\nhtml.fishman-compact-playing #onBoardControlDeck .local-touch-row{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;flex:1!important;min-width:0!important;min-height:0!important;gap:3px!important}\nhtml.fishman-compact-playing #onBoardControlDeck .local-touch-stick{flex:0 0 auto!important;width:clamp(34px,5.3vw,61px)!important;height:clamp(34px,5.3vw,61px)!important;min-width:0!important;min-height:0!important;border-width:2px!important}\nhtml.fishman-compact-playing #onBoardControlDeck .local-touch-buttons{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:2px!important;min-width:0!important}\nhtml.fishman-compact-playing #onBoardControlDeck .local-touch-buttons button{width:clamp(28px,3.5vw,42px)!important;height:clamp(26px,3vw,34px)!important;min-width:0!important;min-height:0!important;margin:0!important;padding:1px!important;font-size:9px!important;border-width:1px!important;border-radius:6px!important}\n@media (orientation:portrait) and (max-width:700px){\n html.fishman-compact-playing #onBoardControlDeck .stick-base,html.fishman-compact-playing #onBoardControlDeck .local-touch-stick{width:clamp(42px,12vw,58px)!important;height:clamp(42px,12vw,58px)!important}\n html.fishman-compact-playing #onBoardControlDeck .joy-button{width:30px!important;height:30px!important}\n html.fishman-compact-playing #onBoardControlDeck .local-touch-buttons button{width:36px!important;height:29px!important}\n}\n@media (max-height:420px) and (orientation:landscape){\n html.fishman-compact-playing #onBoardControlDeck .local-touch-stick,html.fishman-compact-playing #onBoardControlDeck .stick-base{width:clamp(30px,4.5vw,46px)!important;height:clamp(30px,4.5vw,46px)!important}\n html.fishman-compact-playing #onBoardControlDeck .local-touch-buttons button{width:clamp(27px,3.4vw,36px)!important;height:25px!important}\n}\n";
+  document.head.appendChild(st);
  }
+ const active=scene==='playing';
+ document.documentElement.classList.toggle('fishman-compact-playing',active);
+ const portrait=innerHeight>innerWidth&&innerWidth<=700;
+ const rows=portrait&&localCount>2?2:1;
+ const cols=portrait?Math.min(2,localCount):localCount;
+ const height=rows===2?'clamp(177px,29dvh,235px)':'clamp(100px,22dvh,132px)';
+ document.documentElement.style.setProperty('--fishman-deck-height',height);
  deck.style.setProperty('--players',String(localCount));
- deck.style.display=scene==='playing'?'grid':'none';
- // Existing v35 artwork and rendering remain untouched.
+ deck.style.setProperty('--rows',String(rows));
+ deck.style.setProperty('--cols',String(cols));
+ deck.style.setProperty('display',active?'grid':'none','important');
+ deck.dataset.players=String(localCount);
 }
 
 localUI();localTouchUI();fitLocalControlDeck();
