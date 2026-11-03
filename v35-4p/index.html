@@ -3256,7 +3256,7 @@ function pollXboxController(){
 
 /* V35 LOCAL 1–4 PLAYER MODE: each additional player has independent movement,
    weapons, HP, hero and controller. Original story engine stays authoritative. */
-let localCount=1,localTeam=[],localHeld={};
+let localCount=4,localTeam=[],localHeld={};
 const localControls=[
  {up:'w',down:'s',left:'a',right:'d',fire:'f',skill:'g'},
  {up:'i',down:'k',left:'j',right:'l',fire:'o',skill:'p'},
@@ -3333,13 +3333,13 @@ window.addEventListener('keydown',e=>{if(e.target?.matches?.('input,select,texta
  if(localCount>1&&localControls.slice(0,localCount-1).some(m=>Object.values(m).includes(e.key.toLowerCase())))e.preventDefault();});
 window.addEventListener('keyup',e=>{localHeld[e.key.toLowerCase()]=false;});
 function localUI(){
- const bar=document.querySelector('.top-actions');if(!bar||document.getElementById('localCount'))return;
- const label=document.createElement('label');label.style.cssText='display:inline-flex;align-items:center;gap:5px;color:white;font-weight:800;font-size:12px';
- label.textContent='LOCAL PLAYERS ';
+ const bar=document.body;if(!bar||document.getElementById('localCount'))return;
+ const label=document.createElement('label');label.style.cssText='position:fixed;z-index:10000;top:72px;right:12px;display:flex;align-items:center;gap:7px;color:white;font-weight:900;font-size:14px;background:#073450ee;padding:12px;border:3px solid #69e7e2;border-radius:14px;box-shadow:0 5px 25px #0009';
+ label.textContent='🎮 PLAYERS ';
  const select=document.createElement('select');select.id='localCount';select.setAttribute('aria-label','Number of local players');
  select.style.cssText='background:#0b3855;color:white;border:2px solid #69e7e2;border-radius:9px;padding:7px';
  for(let i=1;i<=4;i++){const o=document.createElement('option');o.value=i;o.textContent=i+' player'+(i>1?'s':'');select.appendChild(o);}
- select.onchange=()=>{localCount=Number(select.value);localTeam=[];if(g)localPrepare();};
+ select.value='4';select.onchange=()=>{localCount=Number(select.value);localTeam=[];if(g)localPrepare();};
  label.appendChild(select);bar.appendChild(label);
 }
 localUI();
