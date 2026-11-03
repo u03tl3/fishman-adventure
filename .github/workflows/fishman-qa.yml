@@ -53,6 +53,8 @@ jobs:
         run: node tests/fishman-gamepad-v34.mjs
       - name: Test multiplayer and visual layouts
         run: node tests/fishman-qa.mjs
+      - name: Test 1–4 player controls do not obscure the artwork
+        run: node tests/fishman-v35-4p-layout.mjs
       - name: Test Safari-style WebKit touch interactions
         run: node tests/fishman-webkit.mjs
       - name: Test master artwork, ten chapters, land/water and two-player sync
