@@ -3759,7 +3759,7 @@ updateUI();
  const icon={fish:'🐟',kai:'🧪',roxy:'🦖',humpty:'🥚',gozilla:'🐲',sub:'🚤'};
  const colors={1:'#a6f8ff',2:'#9effdf',3:'#ffdb91',4:'#edb2ff'};
  const board=document.createElement('section');board.id='localControllerBoard';board.setAttribute('aria-label','Individual gamepads for each active player');
- const anchor=document.createComment('Original v35 P1 controls');mainControls.insertAdjacentElement('beforebegin',anchor);mainControls.insertAdjacentElement('afterend',board);
+ const anchor=document.createComment('Original v35 P1 controls');mainControls.parentNode.insertBefore(anchor,mainControls);mainControls.insertAdjacentElement('afterend',board);
  let localCount=1,lastUpdate=0;
  const sticks=new Map(),fireHeld=new Map();
  const getG=()=>window.FishmanMultiplayerBridge?.getG?.();
