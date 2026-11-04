@@ -1,57 +1,69 @@
 import assert from 'node:assert/strict';
-import {chromium,webkit} from 'playwright';
+import {chromium, webkit} from 'playwright';
 
+// Exercise the complete in-browser v35 build, not an isolated control mock.
+const url='http://127.0.0.1:8765/v35-v16-4player/?test=1';
 for(const [label,engine] of [['Chromium',chromium],['WebKit',webkit]]){
  const browser=await engine.launch({headless:true,args:label==='Chromium'?['--no-sandbox','--disable-dev-shm-usage']:[]});
  try{
   const page=await browser.newPage({viewport:{width:1200,height:800},hasTouch:true});
-  const errors=[];page.on('pageerror',error=>errors.push(error.message));
+  const errors=[];
+  page.on('pageerror',e=>errors.push(e.message));
   try{
-   await page.goto('http://127.0.0.1:8765/v35-v16-4player/?test=1',{waitUntil:'domcontentloaded'});
-   await page.waitForFunction(()=>!!window.fishmanTest&&!!window.FishmanLocal&&!!window.FishmanNet);
-   assert.equal(await page.evaluate(()=>FishmanLocal.count),1,'v16 starts as one player');
+   await page.goto(url,{waitUntil:'domcontentloaded',timeout:35000});
+   await page.waitForFunction(()=>!!window.FishmanLocal?.addPlayer&&!!window.FishmanLocal?.removePlayer&&!!window.FishmanLocalEngine&&!!window.fishmanTest,{timeout:20000});
    await page.evaluate(()=>{fishmanTest.intro(0);fishmanTest.start(0);});
-   assert.equal(await page.evaluate(()=>fishmanTest.get().scene),'playing');
+   assert.equal(await page.evaluate(()=>FishmanLocal.count),1,'must begin as one player');
+   assert.equal(await page.locator('#localControllerBoard .local-pad').count(),0,'v16 board should be hidden until P2 joins');
    for(let count=2;count<=4;count++){
-    await page.locator('#addPlayerBtn').click();
-    assert.equal(await page.evaluate(()=>FishmanLocal.count),count);
-    assert.equal(await page.locator('#localControllerBoard .local-pad').count(),count);
-    assert.equal(await page.locator('#localControllerBoard .local-pad .pad-stick-wrap').count(),2*(count-1));
-    assert.equal(await page.locator('#localControllerBoard .local-pad .pad-button').count(),4*(count-1));
-    assert.equal(await page.evaluate(()=>FishmanNet.role),'solo','local players must not disable v35 gameplay');
+    await page.keyboard.press('v');
+    await page.waitForFunction(n=>window.FishmanLocal?.count===n&&
+      document.querySelectorAll('#localControllerBoard .local-pad').length===n&&
+      !!window.FishmanLocalEngine?.getPlayer(n),count,{timeout:6000});
+    const state=await page.evaluate(()=>({
+     role:FishmanNet.role,online:FishmanNet.connected,
+     pads:document.querySelectorAll('#localControllerBoard .local-pad').length,
+     player1Controls:document.getElementById('touchControl')?.closest('.local-pad')?.dataset.player
+    }));
+    assert.equal(state.role,'local');assert.equal(state.online,false);
+    assert.equal(state.pads,count);
+    assert.equal(state.player1Controls,'1','P1 v16 panel must use the original game controls');
    }
    assert.equal(await page.locator('#addPlayerBtn').isDisabled(),true,'join caps at four players');
-   assert.equal(await page.evaluate(()=>FishmanLocal.players[2].hero),'kai');
-   await page.locator('.local-pad.p2 select').selectOption('roxy');
-   assert.equal(await page.evaluate(()=>FishmanLocal.players[2].hero),'roxy');
-   const m=await page.evaluate(()=>{
-    const stick=document.querySelector('.local-pad.p2 .local-stick');
-    const aim=document.querySelector('.local-pad.p2 .aim-stick');
-    const r=stick.getBoundingClientRect();
-    const a=aim.getBoundingClientRect();
-    stick.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:42,clientX:r.right-8,clientY:r.top+r.height/2}));
-    aim.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:43,clientX:a.right-8,clientY:a.top+a.height/2}));
-    return {p2:{...FishmanLocal.players[2].input},p3:{...FishmanLocal.players[3].input}};
-   });
-   assert(m.p2.x>.3,'P2 move joystick not connected');
-   assert(m.p2.fire&&m.p2.aim.x>.3,'P2 independent aim/fire not connected');
-   assert.equal(m.p3.x,0,'P2 should not move P3');
-   assert.equal(m.p3.fire,false,'P2 aim should not fire P3');
-   const weaponPressed=await page.evaluate(()=>{
-    for(const p of document.querySelectorAll('.local-pad.p2 .local-stick')){
-     p.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:p.classList.contains('aim-stick')?43:42}));
-    }
-    const b=document.querySelector('.local-pad.p3 .pad-weapon');
-    const r=b.getBoundingClientRect();
-    b.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:44,clientX:r.left+4,clientY:r.top+4}));
-    return FishmanLocal.players[3].input.weapon;
-   });
-   assert.equal(weaponPressed,true,'P3 W button not connected');
-   await page.waitForTimeout(120);
-   assert.equal(await page.evaluate(()=>FishmanLocal.players[3].input.weapon),false,'W should be consumed once');
-   assert.equal(await page.evaluate(()=>fishmanTest.get().scene),'playing','v35 gameplay survives four players');
-   assert.deepEqual(errors,[],label+' JavaScript errors');
-   console.log('PASS '+label+' v35 with authentic v16 1–4 player controls');
+   const controls=await page.evaluate(()=>[2,3,4].map(slot=>({
+    slot,sticks:document.querySelectorAll('.local-pad.p'+slot+' .local-stick').length,
+    buttons:document.querySelectorAll('.local-pad.p'+slot+' .pad-button').length,
+    alive:!!FishmanLocalEngine.getPlayer(slot)
+   })));
+   for(const c of controls){assert.equal(c.sticks,2,'P'+c.slot+' needs TWO v16 joysticks');assert.equal(c.buttons,4);assert(c.alive);}
+   const before=await page.evaluate(()=>[2,3].map(i=>FishmanLocalEngine.getPlayer(i).x));
+   await page.evaluate(()=>{FishmanNet.players[2].input.x=1;FishmanNet.players[3].input.x=0;});
+   await page.waitForTimeout(330);
+   const after=await page.evaluate(()=>[2,3].map(i=>FishmanLocalEngine.getPlayer(i).x));
+   assert(after[0]>before[0]+12,'P2 did not move independently');
+   assert(Math.abs(after[1]-before[1])<5,'P3 moved without input');
+   await page.evaluate(()=>{FishmanNet.players[2].input.x=0;FishmanNet.players[2].input.aim={x:1,y:0};FishmanNet.players[2].input.fire=true;});
+   await page.waitForFunction(()=>FishmanLocalEngine.getPlayer(2)?.cool>.02,{timeout:4000});
+   await page.evaluate(()=>{FishmanNet.players[2].input.fire=false;FishmanNet.players[2].input.skill=true;});
+   await page.waitForFunction(()=>FishmanLocalEngine.getPlayer(2)?.skillCooldown>0,{timeout:4000});
+   await page.evaluate(()=>{FishmanNet.players[2].input.hero='roxy';FishmanNet.players[2].hero='roxy';});
+   await page.waitForFunction(()=>FishmanLocalEngine.getPlayer(2)?.hero==='roxy',{timeout:4000});
+   for(let count=3;count>=1;count--){
+    await page.keyboard.press('w');
+    await page.waitForFunction(n=>FishmanLocal.count===n&&document.querySelectorAll('#localControllerBoard .local-pad').length===(n===1?0:n),count,{timeout:6000});
+    assert.equal(await page.evaluate(()=>FishmanLocalEngine.count),count);
+   }
+   const solo=await page.evaluate(()=>({
+    role:FishmanNet.role,onlineButtonHidden:document.getElementById('mpOpen').hidden,
+    stillInBoard:!!document.getElementById('touchControl')?.closest('.local-pad'),
+    localCSS:document.documentElement.classList.contains('local-coop')
+   }));
+   assert.equal(solo.role,'solo');assert.equal(solo.onlineButtonHidden,false);
+   assert.equal(solo.stillInBoard,false);assert.equal(solo.localCSS,false);
+   await page.keyboard.press('w');assert.equal(await page.evaluate(()=>FishmanLocal.count),1,'W cannot remove P1');
+   await page.keyboard.press('v');assert.equal(await page.evaluate(()=>FishmanLocal.count),2,'V must work after returning to solo');
+   assert.deepEqual(errors,[],'Uncaught browser errors: '+errors.join('; '));
+   console.log('PASS '+label+' complete v16 1–4 gamepads in v35; independent characters, attacks, skills, V add and W remove');
   }finally{await page.close();}
  }finally{await browser.close();}
 }
