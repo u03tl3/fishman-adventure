@@ -37,15 +37,16 @@ for(const [label,engine] of [['Chromium',chromium],['WebKit',webkit]]){
    assert(m.p2.fire&&m.p2.aim.x>.3,'P2 independent aim/fire not connected');
    assert.equal(m.p3.x,0,'P2 should not move P3');
    assert.equal(m.p3.fire,false,'P2 aim should not fire P3');
-   await page.evaluate(()=>{
+   const weaponPressed=await page.evaluate(()=>{
     for(const p of document.querySelectorAll('.local-pad.p2 .local-stick')){
      p.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:p.classList.contains('aim-stick')?43:42}));
     }
     const b=document.querySelector('.local-pad.p3 .pad-weapon');
     const r=b.getBoundingClientRect();
     b.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:44,clientX:r.left+4,clientY:r.top+4}));
+    return FishmanLocal.players[3].input.weapon;
    });
-   assert.equal(await page.evaluate(()=>FishmanLocal.players[3].input.weapon),true,'P3 W button not connected');
+   assert.equal(weaponPressed,true,'P3 W button not connected');
    await page.waitForTimeout(120);
    assert.equal(await page.evaluate(()=>FishmanLocal.players[3].input.weapon),false,'W should be consumed once');
    assert.equal(await page.evaluate(()=>fishmanTest.get().scene),'playing','v35 gameplay survives four players');
