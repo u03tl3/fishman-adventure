@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#06233b">
+  <meta name="description" content="Fishman Adventure original v35 with v16-style 1–4 local players and a shared V add-player button.">
+  <title>Fishman Adventure v35 — 1–4 Players</title>
+  <style>
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#06233b;color:#fff;font-family:system-ui,sans-serif}
+    #fishmanGame{position:fixed;inset:0;width:100%;height:100%;height:100dvh;border:0;display:block}
+    #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;background:#06233b;z-index:2;text-align:center}
+    #loading[hidden]{display:none}
+    .error{padding:1rem;max-width:25rem;line-height:1.5}
+    a{color:#82eaff}
+  </style>
+</head>
+<body>
+  <div id="loading">🐟 Loading Fishman v35 · 1–4 players…</div>
+  <iframe id="fishmanGame" title="Fishman v35 local multiplayer game" allow="fullscreen; autoplay; gamepad" allowfullscreen></iframe>
+  <script>
+  (function(){
+    'use strict';
+    const frame=document.getElementById('fishmanGame');
+    const loading=document.getElementById('loading');
+    let addPlayer=()=>false;
+    let initialized=false;
+
+    function install(){
+      let win,doc,select;
+      try{
+        win=frame.contentWindow;
+        doc=win.document;
+        select=doc.getElementById('localCount');
+      }catch(e){return false;}
+      if(!select)return false;
+      if(doc.getElementById('v16AddPlayerBtn'))return true;
+
+      const button=doc.createElement('button');
+      button.id='v16AddPlayerBtn';
+      button.type='button';
+      button.className='tiny-button local-add';
+      button.setAttribute('aria-label','V: add next local player (up to four)');
+      button.style.cssText='display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;min-height:30px;padding:5px 9px;border:1px solid #73e7ff;border-radius:9px;background:#10516c;color:#fff;font:800 12px system-ui,sans-serif;cursor:pointer;touch-action:manipulation;flex-shrink:0;';
+
+      const sync=()=>{
+        const count=Math.max(1,Math.min(4,Number(select.value)||1));
+        button.disabled=count>=4;
+        button.style.opacity=count>=4?'.65':'1';
+        button.textContent=count>=4?'✓ 4 / 4 PLAYERS':'ⓥ V · ADD P'+(count+1);
+        button.title=count>=4?'All four players have joined':'Tap here or press V to add Player '+(count+1);
+      };
+      addPlayer=()=>{
+        if(!select.isConnected) return false;
+        const count=Math.max(1,Math.min(4,Number(select.value)||1));
+        if(count>=4)return false;
+        select.value=String(count+1);
+        select.dispatchEvent(new win.Event('input',{bubbles:true}));
+        select.dispatchEvent(new win.Event('change',{bubbles:true}));
+        sync();
+        return true;
+      };
+      button.addEventListener('click',()=>addPlayer());
+      select.addEventListener('change',sync);
+      select.addEventListener('input',sync);
+      const nearby=doc.getElementById('mpOpen')||doc.getElementById('menuBtn');
+      if(nearby&&nearby.parentElement) nearby.insertAdjacentElement('beforebegin',button);
+      else{
+        button.style.cssText+='position:fixed;top:8px;right:8px;z-index:100000;';
+        doc.body.appendChild(button);
+      }
+
+      doc.addEventListener('keydown',ev=>{
+        if(String(ev.key).toLowerCase()!=='v'||ev.repeat||ev.altKey||ev.ctrlKey||ev.metaKey)return;
+        const tag=doc.activeElement?.tagName;
+        if(['INPUT','TEXTAREA','SELECT'].includes(tag)||doc.activeElement?.isContentEditable)return;
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        addPlayer();
+      },true);
+
+      // On smaller displays, v35 already lays out 1–4 independent control panels
+      // beneath the game canvas. Keep that responsive deck unchanged.
+      sync();
+      initialized=true;
+      loading.hidden=true;
+      win.FishmanV16PlayerAdd={addPlayer,get count(){return Number(select.value)||1;}};
+      return true;
+    }
+    window.addEventListener('keydown',ev=>{
+      if(String(ev.key).toLowerCase()!=='v'||ev.repeat||ev.altKey||ev.ctrlKey||ev.metaKey)return;
+      if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;
+      if(addPlayer())ev.preventDefault();
+    });
+    frame.addEventListener('load',()=>{
+      if(install())return;
+      let tries=0;
+      const ticker=setInterval(()=>{
+        if(install()||++tries>=150){
+          clearInterval(ticker);
+          if(!initialized){
+            loading.hidden=false;
+            loading.innerHTML='<div class="error">The v35 controls could not be loaded. <a href="../v35-4p-clear/">Open the original 1–4 player build</a>.</div>';
+            loading.style.pointerEvents='auto';
+          }
+        }
+      },200);
+    });
+    frame.src='../v35-4p-clear/'+location.search+location.hash;
+  })();
+  </script>
+</body>
+</html>
