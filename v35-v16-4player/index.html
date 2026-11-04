@@ -2825,7 +2825,7 @@ function drawSkillAnimation(h){if(!g||g.skillEffect<=0)return;const progressPuls
  if(h==='sub'){for(let i=0;i<3;i++){c.beginPath();c.arc(0,0,70+i*32+Math.sin(t*3+i)*5,0,TAU);c.stroke();}}
  c.globalAlpha=1;c.restore();}
 
-const COOP_FIELDS=['motionVX','motionVY','motionCharge','motionHero','motionTrail','motionTrailClock','motionPassiveClock','motionPulse','weapon','weaponLevels','weaponsOwned','weaponShield','x','y','hero','hp','maxHp','lives','maxLives','inv','shield','cool','actionWave','skillCooldown','skillCooldowns','skillEffect','skillKind','skillFlash','freezeTime','sonarTime','speedBoost','attackFlash','lastAim','moveIntensity','stepPhase','lastDx','lastDy','facing','poseFacing','poseAngle','poseRecoil','aimHold','lastTerrain','rollBoost','transformFrom','transformMotion','deathMotion','reviveMotion','dodge','dodgeCool'];
+const COOP_FIELDS=['motionVX','motionVY','motionCharge','motionHero','motionTrail','motionTrailClock','motionPassiveClock','motionPulse','weapon','weaponLevels','weaponsOwned','weaponShield','x','y','hero','hp','maxHp','lives','maxLives','inv','shield','cool','actionWave','skillCooldown','skillCooldowns','skillEffect','skillKind','skillFlash','freezeTime','sonarTime','speedBoost','attackFlash','lastAim','moveIntensity','stepPhase','lastDx','lastDy','facing','poseFacing','poseAngle','poseRecoil','aimHold','lastTerrain','rollBoost','transformFrom','transformMotion','deathMotion','reviveMotion','dodge','dodgeCool','uniqueVortex','uniqueAlchemy','uniqueFlames','uniqueRicochet','uniqueGravity','uniqueSonar'];
 function coopHeroAvailable(h,x=g?.coopP2?.x??g?.x){if(!terrainHeroAllowed(h,x))return false;if(level===5)return h==='sub';return ['fish','kai','roxy','humpty','gozilla'].includes(h)&&(h!=='gozilla'||progress.godzilla);}
 function createCoopPlayer(){
  if(!g||scene!=='playing'||net()?.role!=='host'||!net()?.connected)return null;
@@ -3440,6 +3440,11 @@ function localTick(dt){
  for(let slot=1;slot<localCount;slot++){
   const p=localTeam[slot],touch=localTouch[slot]||{},pad=navigator.getGamepads?.()?.[slot]||null;
   if(!p)continue;
+  // Unlock acquired weapons for all local teammates while leaving each selection independent.
+  for(const weapon of g.weaponsOwned||[]){
+   if(!p.weaponsOwned.includes(weapon))p.weaponsOwned.push(weapon);
+   p.weaponLevels[weapon]=Math.max(p.weaponLevels[weapon]||1,g.weaponLevels?.[weapon]||1);
+  }
   const dead=v=>Math.abs(v||0)>.16?v:0;
   const ax=dead(pad?.axes?.[0]),ay=dead(pad?.axes?.[1]);
   const tx=Math.abs(touch.x||0)>.05?touch.x:ax,ty=Math.abs(touch.y||0)>.05?touch.y:ay;
