@@ -3405,7 +3405,7 @@ function pollXboxController(){
    weapons, HP, hero and controller. Original story engine stays authoritative. */
 
 /* Original v35 world, story, art and bosses; v16 1–4 local-team controller backend. */
-let localCount=1,localTeam=[],localHeld=Object.create(null);
+let localCount=1,localTeam=[],localHeld=Object.create(null),localWorld=null;
 const localControls=[
  {up:'t',down:'g',left:'f',right:'h',fire:'r',skill:'y'},
  {up:'i',down:'k',left:'j',right:'l',fire:'o',skill:'p'},
@@ -3431,7 +3431,8 @@ function localCreate(slot){
  return p;
 }
 function localPrepare(){
- if(!g||scene!=='playing'){localTeam=[];return;}
+ if(!g||scene!=='playing'){localTeam=[];localWorld=null;return;}
+ if(localWorld!==g){localWorld=g;localTeam=[];}
  for(let slot=1;slot<localCount;slot++){
   const p=localTeam[slot];
   if(!p||p.localLevel!==level||p.localWave!==(g.wave||0)||p.localArena!==(!!g.challenge||level===4))
@@ -3922,6 +3923,7 @@ updateUI();
  window.addEventListener('keydown',ev=>{
   const key=String(ev.key||'').toLowerCase();
   if(!['v','w'].includes(key)||ev.repeat||ev.ctrlKey||ev.altKey||ev.metaKey)return;
+  if(key==='w'&&localCount===1)return; // Preserve P1's W movement in solo mode.
   if(['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName)||document.activeElement?.isContentEditable)return;
   ev.preventDefault();ev.stopImmediatePropagation();
   if(key==='v')addPlayer();else removePlayer();
