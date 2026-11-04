@@ -3621,6 +3621,20 @@ cv.addEventListener('pointerdown',e=>{if(scene==='playing'){const rect=cv.getBou
 document.querySelectorAll('.touch [data-key]').forEach(b=>{const k=b.dataset.key;const down=e=>{e.preventDefault();try{b.setPointerCapture(e.pointerId);}catch{}b.classList.add('down');if(k==='action'){aim.pointer={id:e.pointerId,x:e.clientX,y:e.clientY};held.action=true;attack();}else if(k==='interact')interact();else if(k==='skill')useSpecialSkill();else held[k]=true;};const up=e=>{e.preventDefault();b.classList.remove('down');held[k]=false;if(k==='action')aim.pointer=null;};if(k==='action')b.addEventListener('pointermove',e=>{if(!aim.pointer||e.pointerId!==aim.pointer.id)return;const dx=e.clientX-aim.pointer.x,dy=e.clientY-aim.pointer.y,d=Math.hypot(dx,dy);if(d>13){aim.manual=true;aim.point=null;aim.vx=dx/d;aim.vy=dy/d;}});b.addEventListener('pointerdown',down);for(const event of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(event,up);});
 // Optional test diagnostics only on local ?test=1; not needed to play.
 if(new URLSearchParams(location.search).has('test'))window.fishmanTest={get:()=>({terrain:terrainAt(g?.x),movement:movementMode(g?.hero,g?.x),p2Terrain:g?.coopP2?terrainAt(g.coopP2.x):null,p2Movement:g?.coopP2?movementMode(g.coopP2.hero,g.coopP2.x):null,weapon:g?.weapon,weaponLevels:g?.weaponLevels,weaponsOwned:g?.weaponsOwned,weaponPickups:g?.weaponPickups,scene,level,wave:g?.wave,collect:g?.collect,total:g?.total,captured:g?.captured,hp:g?.hp,maxHp:g?.maxHp,lives:g?.lives,maxLives:g?.maxLives,boss:g?.boss,timer:g?.timer,hardMode,difficulty,strike:g?.strike,challenge:g?.challenge?{index:g.challenge.index,final:g.challenge.final,hp:g.challenge.hp,maxHp:g.challenge.maxHp,pattern:g.challenge.pattern?.kind,phase:g.challenge.phase,completed:g.challenge.completed,required:g.challenge.required,barrier:g.challenge.barrier,bossX:g.challenge.x,bossY:g.challenge.y,bullets:g.challenge.bullet.length}:null,arena:g?.arena?{phase:g.arena.phase,attack:g.arena.attack,shield:g.arena.shield,orbs:g.arena.orbs.length,dodgeCool:g.dodgeCool,rest:g.arena.rest}:null,hazards:g?.hazards,items:g?.items,gate:worldGate(),runLength:g?.runLength,checkpoint:g?.checkpointIndex,cameraX,rightStick:{x:rightStick.x,y:rightStick.y,active:rightStick.pointerId!==null},unlock,position:g&&{x:g.x,y:g.y},hero:g?.hero,stars:progress.stars,upgrades:progress.upgrades,skillUpgrades:progress.skillUpgrades,skillCooldown:g?.skillCooldown,freezeTime:g?.freezeTime,skillCrystals:g?.skillCrystals,starPickups:g?.stars,awardPickups:g?.awards,aim}),intro:(n)=>intro(n),completeChapter:()=>chapterDone(),showMenu:()=>menu(),start:(n)=>start(n),teleport:(x,y)=>{if(g){g.x=x;g.y=y;g.inv=3;}},interact,attack,skill:useSpecialSkill,skillLevelUp:(h)=>skillLevelUp(h,'TEST'),step:(seconds=1)=>{for(let i=0;i<Math.ceil(seconds/.025);i++)tick(.025);},steer:(x,y,fire=false)=>{stick.x=x;stick.y=y;held.action=fire;},select:(d)=>{difficulty=d;hardMode=d!=='classic';},selectHero:(h)=>switchHero(h),giveStars:(n=5)=>{for(let i=0;i<n;i++){progress.stars++;if(progress.stars%5===0&&g){g.hp=Math.min(g.maxHp,g.hp+2);skillLevelUp(g.hero,'STAR BONUS');}}saveProgress();},completeCity:()=>unlockGozilla(),terrainAt:(x)=>terrainAt(x),modeFor:(h,x)=>movementMode(h,x),hit:()=>hit(),startChapterArena:(n=level,final=false)=>{if(g)startChapterArena(final,n);},finishChallenge:()=>{if(g?.challenge){g.challenge.hp=1;const a=g.challenge;g.proj.push({x:a.x-60,y:a.y,vx:3000,vy:0,age:0,life:1,kind:g.hero,damage:999,r:19});}},finishBoss:()=>{if(g&&level===4){g.arena.shield=0;g.boss=1;attack();}}};
+// Public four-player adapter MUST live in the game IIFE, where g, scene and localTeam exist.
+window.FishmanV16Adapter={
+ setCount(count){
+  localCount=Math.max(1,Math.min(4,Math.trunc(Number(count)||1)));
+  localTeam.length=localCount;
+  if(scene==='playing')localPrepare();
+ },
+ getPlayer(slot){const i=Number(slot)-1;return i>=1&&i<localCount?localTeam[i]||null:null;},
+ setHero(slot,hero){
+  const p=localTeam[Number(slot)-1];
+  if(p){p.hero=hero;p.motionHero=hero;p.transformMotion=.75;}
+ },
+ get scene(){return scene;}
+};
 menu();updateSkillButton();requestAnimationFrame(drawFrame);
 })();
 </script>
@@ -3749,15 +3763,6 @@ window.addEventListener('pagehide',()=>{try{n.connection?.close();n.peer?.destro
 updateUI();
 })();
 </script>
-<script>
-// v16 controller adapter to v35's original game engine and v35 graphics.
-window.FishmanV16Adapter={
- setCount(count){localCount=count;localTeam.length=count;if(scene==='playing')localPrepare();},
- getPlayer(slot){return localTeam[slot-1]||null;},
- setHero(slot,hero){const p=localTeam[slot-1];if(p){p.hero=hero;p.motionHero=hero;p.transformMotion=.75;}},
- get scene(){return scene;}
-};
-</script>
 <script id="fishmanLocalControllers">
 /* Same-device couch co-op: exactly one V button adds P2, P3 and P4 in order.
    Each player has independent MOVE stick, AIM+FIRE stick, USE, ATTACK and SKILL buttons.
@@ -3885,9 +3890,20 @@ window.FishmanV16Adapter={
    const special=pad.querySelector('.pad-skill small');if(special&&slot!==1){const player=p,cd=player?.skillCooldown||0;special.textContent=cd>.1?Math.ceil(cd)+'s':'SKILL';}
   }
  }
+ // Starting local co-op from the menu must also start the game itself.
+ // Previously V only created controllers, leaving g=null and no heroes to draw.
+ function ensureLocalGameStarted(){
+  const bridge=window.FishmanMultiplayerBridge;
+  if(!bridge)return;
+  if(bridge.getScene?.()==='menu')
+   document.querySelector('#screen button[data-start="0"]:not([disabled])')?.click();
+  if(bridge.getScene?.()==='intro')
+   document.querySelector('#screen button[data-do="play"]')?.click();
+ }
  function addPlayer(){
   if(n.role!=='solo'&&n.role!=='local')return;
   if(localCount>=4)return;
+  const firstJoin=n.role==='solo';
   const onlineModal=document.getElementById('mpScreen');if(onlineModal&&!onlineModal.hidden)onlineModal.hidden=true;
   if(n.role==='solo'){
    n.role='local';n.connected=false;n.slot=1;n.players={};n.localHero=getG()?.hero||n.localHero||'fish';
@@ -3901,6 +3917,11 @@ window.FishmanV16Adapter={
    input:{x:0,y:0,aim:null,fire:false,buttonFire:false,skill:false,interact:false,weapon:false,hero:defaults[slot]},lastInputAt:Date.now()};
   makePad(slot);
   window.FishmanV16Adapter?.setCount(localCount);
+  if(firstJoin){
+   ensureLocalGameStarted();
+   // The menu-to-playing transition creates the world; now create all teammate actors.
+   window.FishmanV16Adapter?.setCount(localCount);
+  }
   btn.textContent=localCount<4?'ⓥ V · ADD P'+(localCount+1):'✓ 4 / 4 PLAYERS';
   btn.disabled=localCount>=4;
   btn.title=localCount<4?'Press V to add Player '+(localCount+1):'All four players are here';
