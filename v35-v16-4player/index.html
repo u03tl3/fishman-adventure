@@ -3585,6 +3585,7 @@ window.addEventListener('keyup',e=>{localHeld[String(e.key||'').toLowerCase()]=f
 window.addEventListener('blur',()=>{localHeld=Object.create(null);});
 window.FishmanLocalEngine={
  setCount:localSetCount,
+ step:localTick,
  getPlayer(slot){return slot===1?g:localTeam[slot-1]||null;},
  get count(){return localCount;},
  get players(){return localTeam;}
