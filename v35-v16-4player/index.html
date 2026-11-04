@@ -3505,7 +3505,10 @@ function localDraw(){
    Each player has independent MOVE stick, AIM+FIRE stick, USE, ATTACK and SKILL buttons.
    The existing P1 game controls are moved, not cloned, so original listeners keep working. */
 (()=>{'use strict';
- const n=window.FishmanNet,btn=document.getElementById('addPlayerBtn'),openOnline=document.getElementById('mpOpen');
+ const n=new Proxy({},{
+   get(_target,key){return window.FishmanNet?.[key];},
+   set(_target,key,value){if(window.FishmanNet)window.FishmanNet[key]=value;return true;}
+ }),btn=document.getElementById('addPlayerBtn'),openOnline=document.getElementById('mpOpen');
  const shell=document.querySelector('.shell'),mainControls=document.getElementById('touchControl');
  const heroes=[['fish','🐟 Fishman'],['kai','🧪 Kai'],['roxy','🦖 Roxy'],['humpty','🥚 Humpty'],['gozilla','🐲 Gozilla'],['sub','🚤 Submarine']];
  const human={fish:'Fishman',kai:'Kai',roxy:'Roxy',humpty:'Humpty',gozilla:'Gozilla',sub:'Submarine'};
