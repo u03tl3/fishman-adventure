@@ -38,16 +38,20 @@ for(const [label,engine] of [['Chromium',chromium],['WebKit',webkit]]){
    for(const c of controls){assert.equal(c.sticks,2,'P'+c.slot+' needs TWO v16 joysticks');assert.equal(c.buttons,4);assert(c.alive);}
    const before=await page.evaluate(()=>[2,3].map(i=>FishmanLocalEngine.getPlayer(i).x));
    await page.evaluate(()=>{FishmanNet.players[2].input.x=1;FishmanNet.players[3].input.x=0;});
-   await page.waitForTimeout(330);
+   // Deterministically advance the same game loop on slow WebKit/CI runners.
+   await page.evaluate(()=>{for(let i=0;i<8;i++)FishmanLocalEngine.step(.033);});
    const after=await page.evaluate(()=>[2,3].map(i=>FishmanLocalEngine.getPlayer(i).x));
    assert(after[0]>before[0]+12,'P2 did not move independently');
    assert(Math.abs(after[1]-before[1])<5,'P3 moved without input');
    await page.evaluate(()=>{FishmanNet.players[2].input.x=0;FishmanNet.players[2].input.aim={x:1,y:0};FishmanNet.players[2].input.fire=true;});
-   await page.waitForFunction(()=>FishmanLocalEngine.getPlayer(2)?.cool>.02,{timeout:4000});
+   await page.evaluate(()=>FishmanLocalEngine.step(.033));
+   assert(await page.evaluate(()=>FishmanLocalEngine.getPlayer(2)?.cool>.02),'P2 fire must use their own weapon');
    await page.evaluate(()=>{FishmanNet.players[2].input.fire=false;FishmanNet.players[2].input.skill=true;});
-   await page.waitForFunction(()=>FishmanLocalEngine.getPlayer(2)?.skillCooldown>0,{timeout:4000});
+   await page.evaluate(()=>FishmanLocalEngine.step(.033));
+   assert(await page.evaluate(()=>FishmanLocalEngine.getPlayer(2)?.skillCooldown>0),'P2 special skill must activate independently');
    await page.evaluate(()=>{FishmanNet.players[2].input.hero='roxy';FishmanNet.players[2].hero='roxy';});
-   await page.waitForFunction(()=>FishmanLocalEngine.getPlayer(2)?.hero==='roxy',{timeout:4000});
+   await page.evaluate(()=>FishmanLocalEngine.step(.033));
+   assert.equal(await page.evaluate(()=>FishmanLocalEngine.getPlayer(2)?.hero),'roxy','P2 hero picker changes P2 only');
    for(let count=3;count>=1;count--){
     await page.keyboard.press('w');
     await page.waitForFunction(n=>FishmanLocal.count===n&&document.querySelectorAll('#localControllerBoard .local-pad').length===(n===1?0:n),count,{timeout:6000});
