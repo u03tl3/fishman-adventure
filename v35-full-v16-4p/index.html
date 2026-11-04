@@ -3885,9 +3885,20 @@ window.FishmanV16Adapter={
    const special=pad.querySelector('.pad-skill small');if(special&&slot!==1){const player=p,cd=player?.skillCooldown||0;special.textContent=cd>.1?Math.ceil(cd)+'s':'SKILL';}
   }
  }
+ // Starting local co-op from the menu must also start the game itself.
+ // Previously V only created controllers, leaving g=null and no heroes to draw.
+ function ensureLocalGameStarted(){
+  const bridge=window.FishmanMultiplayerBridge;
+  if(!bridge)return;
+  if(bridge.getScene?.()==='menu')
+   document.querySelector('#screen button[data-start="0"]:not([disabled])')?.click();
+  if(bridge.getScene?.()==='intro')
+   document.querySelector('#screen button[data-do="play"]')?.click();
+ }
  function addPlayer(){
   if(n.role!=='solo'&&n.role!=='local')return;
   if(localCount>=4)return;
+  const firstJoin=n.role==='solo';
   const onlineModal=document.getElementById('mpScreen');if(onlineModal&&!onlineModal.hidden)onlineModal.hidden=true;
   if(n.role==='solo'){
    n.role='local';n.connected=false;n.slot=1;n.players={};n.localHero=getG()?.hero||n.localHero||'fish';
@@ -3901,6 +3912,11 @@ window.FishmanV16Adapter={
    input:{x:0,y:0,aim:null,fire:false,buttonFire:false,skill:false,interact:false,weapon:false,hero:defaults[slot]},lastInputAt:Date.now()};
   makePad(slot);
   window.FishmanV16Adapter?.setCount(localCount);
+  if(firstJoin){
+   ensureLocalGameStarted();
+   // The menu-to-playing transition creates the world; now create all teammate actors.
+   window.FishmanV16Adapter?.setCount(localCount);
+  }
   btn.textContent=localCount<4?'ⓥ V · ADD P'+(localCount+1):'✓ 4 / 4 PLAYERS';
   btn.disabled=localCount>=4;
   btn.title=localCount<4?'Press V to add Player '+(localCount+1):'All four players are here';
