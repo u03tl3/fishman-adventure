@@ -4,6 +4,8 @@
 (function(root){
 'use strict';
 const TAU=Math.PI*2,clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+// Prevent excessive enemy allocation during repeated four-player interactions.
+const MAX_ACTIVE_ENEMIES=48;
 const PLANS={
  0:{title:'KAI’S LABORATORY',waves:[
   [['switch','Start the bubble reactor'],['shoot','Destroy the leaking coolant valve'],['align','Balance the glowing formula']],
@@ -85,6 +87,8 @@ function interact(m,x,y){
   return {handled:true,message:{shoot:'AIM AND FIRE TO BREAK THE TARGET!',hunt:'AIM AT THE MOVING ROOT HEART!',ring:'SWIM THROUGH THE CURRENT RING!',escape:'FOLLOW THE ESCAPE ARROW!'}[n.kind]};
  if(n.kind==='escort'||n.kind==='defend'||n.kind==='bomb'){
   if(n.kind==='bomb'&&m.chapter===3&&m.wave===0&&!m.pufferReady)return {handled:true,message:'FIND AND ESCORT THE PUFFER FISH FIRST!'};
+  // Idempotent: repeat button presses from P1–P4 must not spawn another defence wave.
+  if(n.active)return {handled:true,started:false,node:n,message:'OBJECTIVE ALREADY ACTIVE — KEEP GOING!'};
   n.active=true;
   return {handled:true,started:true,node:n,message:n.kind==='escort'?'THE ESCORT HAS STARTED! STAY WITH YOUR FRIEND.':n.kind==='defend'?'DEFEND THE SAFE AREA! STUN THE ATTACKERS.':'BOMB DISARMING — STAY NEAR, KEEP ENEMIES AWAY!'};
  }
@@ -164,7 +168,9 @@ function update(m,dt,players,movement=0,hazards=[],time=0){
   m.alarm=clamp(m.alarm+(exposed?dt*.85:-dt*.75),0,2);
   if(m.alarm>=1.88&&m.alarmCooldown<=0){
    m.alarm=1.1;m.alarmCooldown=8;
-   events.push({type:'alarm',node:n,message:'ROOT SENTRY ALERT! NEW GUARDS APPROACHING!'});
+   // Long-running stealth missions must not accumulate unlimited enemy reinforcements.
+   if(hazards.length<MAX_ACTIVE_ENEMIES)
+    events.push({type:'alarm',node:n,message:'ROOT SENTRY ALERT! NEW GUARDS APPROACHING!'});
   }
  }else m.alarm=Math.max(0,m.alarm-dt);
  for(const p of m.nodes)p.flash=Math.max(0,(p.flash||0)-dt);
