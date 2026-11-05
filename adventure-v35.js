@@ -132,7 +132,9 @@ function update(m,dt,players,movement=0,hazards=[],time=0){
  dt=clamp(Number(dt)||0,0,.11);
  const events=[],n=next(m),ps=(players||[]).filter(p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y));
  const nearby=(p,r)=>ps.some(h=>Math.hypot(h.x-p.x,h.y-p.y)<r);
- const threatened=(p,r)=>hazards.some(h=>(h.stun||0)<.2&&Math.hypot(h.x-p.x,h.y-p.y)<r);
+ // A defence objective is blocked only by its attackers, not by unrelated patrols.
+ const threatened=(p,r)=>hazards.some(h=>!h.defeated&&(n.kind!=='defend'||h.defenceGuard===true)&&
+  (h.stun||0)<.2&&Math.hypot(h.x-p.x,h.y-p.y)<r);
  const done=(msg)=>{if(finish(m,n))events.push({type:'complete',node:n,message:msg});};
  if(n.kind==='hunt'){
   n.x=n.baseX+Math.sin(time*2.05+n.id)*78;
