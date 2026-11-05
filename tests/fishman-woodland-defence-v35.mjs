@@ -62,7 +62,8 @@ for(const [label,engine] of [['Chromium',chromium],['WebKit',webkit]]){
       // Use real projectiles and the existing collision/damage system.
       g.proj.push({x:target.x,y:target.y,vx:0,vy:0,r:21,age:0,life:1,
         damage:100,weapon:'basic',hitIndices:[],homing:0});
-      fishmanTest.step(.025);
+      // Advance a second frame so the defeated guard is removed before the next target.
+      fishmanTest.step(.05);
      }
      fishmanTest.step(.1);
      return {cleared:n.done,kills:n.enemiesDefeated,next:FishmanAdventureV35.next(m)?.kind,
