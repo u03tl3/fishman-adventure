@@ -52,6 +52,8 @@ jobs:
         run: node tests/fishman-v35-v16-local.mjs
       - name: Test published v35 full four-player link draws all four heroes on joining
         run: node tests/fishman-v35-full-characters.mjs
+      - name: Test woodland clearing defence from Player 4
+        run: node tests/fishman-v35-woodland-clearing.mjs
       - name: Test unique v35 hero movement, chapter challenges and story transitions in Chromium/WebKit
         run: node tests/fishman-gameplay-v35.mjs
       - name: Test Xbox ABXY, twin sticks, RT and menu in Chromium/WebKit
