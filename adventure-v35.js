@@ -50,7 +50,7 @@ function create(chapter,wave,width=1000){
   const distance=steps.length===4?.43+i:steps.length===3?.55+i*1.48:.7+i*1.2;
   const x=distance*W,y=[352,433,293,412][i];
   return {id:i,kind,label,x,y,baseX:x,baseY:y,done:false,active:false,
-   hold:0,hp:['shoot','hunt'].includes(kind)?(kind==='hunt'?3:3):0,
+   hold:0,enemiesDefeated:0,hp:['shoot','hunt'].includes(kind)?(kind==='hunt'?3:3):0,
    flash:0,angle:i*.9,goalAngle:1.65+i*.75,solved:0,sequenceIndex:0,
    escortX:x,escortY:y,escortGoal:x+255,alert:0,seconds:0};
  });
@@ -152,6 +152,9 @@ function update(m,dt,players,movement=0,hazards=[],time=0){
    n.escortY=n.baseY+Math.sin(n.escortX/85)*20;
   }
   if(n.escortX>=n.escortGoal-1)done(m.chapter===3?'SPIKY PUFFER FISH IS SAFE!':'SHARK FAMILY REACHED SAFETY!');
+ }else if(n.kind==='defend'&&m.chapter===1&&m.wave===0&&n.active&&(n.enemiesDefeated||0)>=2){
+  // Two attackers defeated: the woodland is safe, no impossible hold required.
+  done('WOODLAND CLEARING PROTECTED!');
  }else if(['defend','bomb','disable'].includes(n.kind)&&n.active){
   const position=targetPosition(n),safe=nearby(position,n.kind==='disable'?100:145);
   const danger=threatened(position,n.kind==='disable'?120:165);
