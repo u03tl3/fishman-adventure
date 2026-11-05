@@ -1833,7 +1833,7 @@ function challengePhase(a){
  sfx('power');burst(a.x,a.y,a.def.color,44);
 }
 function challengeDamage(a,amount,px,py){
- if(!a||a.hp<=0)return;
+ if(!a||a!==g?.challenge||a.hp<=0)return;
  if(a.barrier>0){a.flash=.22;if(a.guardToast<=0){say('SHIELD ACTIVE — DODGE UNTIL THE BARRIER FALLS!',1.2);a.guardToast=2;}return;}
  const threshold=a.phase<2?a.maxHp*(2-a.phase)/3:0;
  const next=Math.max(threshold,a.hp-amount);
@@ -1964,7 +1964,7 @@ function tickChallenge(dt){
    if(Math.hypot(shot.x-a.x,shot.y-a.y)<a.r+shot.r){g.proj.splice(i,1);
     weaponVisual(shot.splash?'shock':'impact',shot.weapon||'basic',shot.x,shot.y,shot.splash||shot.r*2.3);
     challengeDamage(a,shot.damage,shot.x,shot.y);
-    sfx('attack');if(!g.challenge||scene!=='playing')return;
+    sfx('attack');if(g.challenge!==a||scene!=='playing')return;
    }
  }
  if(g.freezeTime>0||a.stun>0)return;
