@@ -1623,11 +1623,13 @@ function weaponVisual(kind,weapon,x,y,radius=0,points=null){
  fx.push({kind,weapon,x,y,radius,life:ttl,ttl,...(points?{points}:{})});
 }
 function damageHazard(h,power,stun=.35,weapon='basic'){
+ if(h.defeated)return;
  const max=Math.max(2,hardMode?4:3),original=h.hp??max;
  const hits=Math.max(1,Math.round(power/19));
  h.hp=original-hits;
  h.stun=Math.max(h.stun||0,stun);
- if(h.hp<=0){h.hp=max;h.stun=10;}
+ // Woodland defence attackers can be defeated, not endlessly resurrected.
+ if(h.hp<=0){if(h.woodlandDefender){h.hp=0;h.stun=10;}else{h.hp=max;h.stun=10;}}
  burst(h.x,h.y,WEAPON_COLORS[weapon]||'#aefaff',weapon==='charge'?18:9);weaponVisual('hit-confirm',weapon,h.x,h.y,19);
 }
 function splashWeapon(x,y,radius,damage,weapon,excluded=null){
@@ -1738,7 +1740,7 @@ function tickProjectiles(dt){if(!g||level===4)return;
   }
   let removed=false;
   for(let j=0;j<(g.hazards||[]).length;j++){
-   const h=g.hazards[j];if((p.hitIndices||[]).includes(j))continue;
+   const h=g.hazards[j];if(h.defeated||(p.hitIndices||[]).includes(j))continue;
    if(Math.hypot(p.x-h.x,p.y-h.y)<p.r+30){
     damageHazard(h,p.damage,p.weapon==='charge'?1.55:Math.max(.12,p.slow||.36),p.weapon||'basic');
     if(p.burn)h.burn=Math.max(h.burn||0,p.burn);
@@ -2198,6 +2200,19 @@ function tickAdventure(dt,motion){
    }
   }
  }
+ // Count enemies defeated by any of the four players, including special skills.
+ // Keep this on the authoritative game state so the objective can progress.
+ const current=A.next(m);
+ if(m.chapter===1&&m.wave===0&&current?.kind==='defend'&&current.active){
+  for(const enemy of g.hazards||[]){
+   if(enemy.woodlandDefender&&!enemy.defeated&&Number.isFinite(enemy.hp)&&enemy.hp<=0){
+    enemy.defeated=true;
+    current.enemiesDefeated=Math.min(2,(current.enemiesDefeated||0)+1);
+   }
+  }
+ }
+ if(g.hazards?.some(enemy=>enemy.defeated))
+  g.hazards=g.hazards.filter(enemy=>!enemy.defeated);
  const peers=[g];if(g.coopP2&&!g.coopP2.down)peers.push(g.coopP2);
  for(const event of A.update(m,dt,peers,motion,g.hazards||[],t)){
   if(event.type==='alarm'){
@@ -2218,8 +2233,13 @@ function interactAdventureMission(){
  if(out.started&&out.node?.kind==='defend'){
   const n=out.node,type=level===2?'jelly':level===5?'mine':'root';
   // Real enemies must be stunned to keep defending; no idle waiting wins.
-  g.hazards.push(hazard(n.x+125,n.y-32,33,46,1.7,n.id,type,true));
-  g.hazards.push(hazard(n.x-130,n.y+42,32,37,1.5,n.id+2,type,true));
+  const attackers=[
+   hazard(n.x+125,n.y-32,33,46,1.7,n.id,type,true),
+   hazard(n.x-130,n.y+42,32,37,1.5,n.id+2,type,true)
+  ];
+  // Chapter 2 woodland clearing: defeat both spawned root attackers to succeed.
+  if(level===1&&g.wave===0)for(const enemy of attackers)enemy.woodlandDefender=true;
+  g.hazards.push(...attackers);
  }
  if(out.completed){burst(out.node.x,out.node.y,'#a5f9db',25);sfx('win');}
  if(out.message)say(out.message+(out.completed?' · '+g.adventureMission.progress+'/'+g.adventureMission.nodes.length:''),2.5);
@@ -2440,7 +2460,7 @@ function tick(dt){t+=dt;if(toastLife>0)toastLife-=dt;for(let i=particles.length-
   say('NAUGHTY DELIVERED TO THE PRISON! NOW SEAL HIS CELL.',3);sfx('win');setupSub(1);return;
  }
  if(hardMode){if(g.freezeTime<=0)g.timer-=dt;if(g.timer<=0){die('TIME IS UP! Retry this checkpoint, move faster and use your powers.');return;}}else if(level===3){g.deadline-=dt;if(g.deadline<=0){die('The countdown reached zero. Restart from your latest checkpoint.');return;}}
- for(const h of g.hazards){h.stun=Math.max(0,h.stun-dt);if((g.freezeTime||0)>0)h.stun=Math.max(h.stun,dt+.16);if(h.stun<=0){
+ for(const h of g.hazards){if(h.defeated)continue;h.stun=Math.max(0,h.stun-dt);if((g.freezeTime||0)>0)h.stun=Math.max(h.stun,dt+.16);if(h.stun<=0){
  if(h.hunter&&Math.hypot(g.x-h.x,g.y-h.y)<(nightmare()?360:285)){const angle=Math.atan2(g.y-h.y,g.x-h.x);const chase=nightmare()?171:115;h.x=clamp(h.x+Math.cos(angle)*chase*dt,95,(g.runLength||W)-95);h.y=clamp(h.y+Math.sin(angle)*chase*dt,170,540);}
  else if(h.hunter){const tx=h.bx+Math.sin(t*h.rate+h.phase)*h.ax,ty=h.by+Math.cos(t*h.rate*.83+h.phase)*h.ay;h.x+=(tx-h.x)*Math.min(1,dt*1.3);h.y+=(ty-h.y)*Math.min(1,dt*1.3);}
  else{h.x=h.bx+Math.sin(t*h.rate+h.phase)*h.ax;h.y=h.by+Math.cos(t*h.rate*.83+h.phase)*h.ay;}}if(h.stun<=0&&Math.hypot(g.x-h.x,g.y-h.y)< (g.hero==='sub'?39:29))hit();if(scene!=='playing')return;}
@@ -2682,6 +2702,7 @@ function deluxeEnemy(h){
  c.restore();
 }
 function drawHazard(h){
+ if(h.defeated)return;
  c.save();c.translate(h.x,h.y);
  if(h.hunter){glow(0,0,75,'#fa646c38');c.strokeStyle='#ff9da0';c.lineWidth=2;c.setLineDash([6,7]);c.beginPath();c.arc(0,0,47+Math.sin(t*6)*2,0,TAU);c.stroke();c.setLineDash([]);}
  if(h.stun>0)c.globalAlpha=.68;
