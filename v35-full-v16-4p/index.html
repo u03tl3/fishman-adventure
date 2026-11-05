@@ -1627,7 +1627,10 @@ function damageHazard(h,power,stun=.35,weapon='basic'){
  const hits=Math.max(1,Math.round(power/19));
  h.hp=original-hits;
  h.stun=Math.max(h.stun||0,stun);
- if(h.hp<=0){h.hp=max;h.stun=10;}
+ if(h.hp<=0){
+  if(h.defenceGuard){h.hp=0;h.defeated=true;h.stun=10;}
+  else{h.hp=max;h.stun=10;}
+ }
  burst(h.x,h.y,WEAPON_COLORS[weapon]||'#aefaff',weapon==='charge'?18:9);weaponVisual('hit-confirm',weapon,h.x,h.y,19);
 }
 function splashWeapon(x,y,radius,damage,weapon,excluded=null){
@@ -1738,7 +1741,7 @@ function tickProjectiles(dt){if(!g||level===4)return;
   }
   let removed=false;
   for(let j=0;j<(g.hazards||[]).length;j++){
-   const h=g.hazards[j];if((p.hitIndices||[]).includes(j))continue;
+   const h=g.hazards[j];if(h.defeated||(p.hitIndices||[]).includes(j))continue;
    if(Math.hypot(p.x-h.x,p.y-h.y)<p.r+30){
     damageHazard(h,p.damage,p.weapon==='charge'?1.55:Math.max(.12,p.slow||.36),p.weapon||'basic');
     if(p.burn)h.burn=Math.max(h.burn||0,p.burn);
@@ -1753,6 +1756,8 @@ function tickProjectiles(dt){if(!g||level===4)return;
   }
   if(removed)continue;
  }
+ // Clearing attackers stay defeated; all ordinary enemies retain original stun/recovery rules.
+ if(g.hazards.some(h=>h.defeated))g.hazards=g.hazards.filter(h=>!h.defeated);
 }
 function drawRewardsAndShots(){if(!g)return;c.save();for(const a of g.weaponPickups||[])if(!a.got)drawWeaponModel(a.x,a.y,a.type);for(const crystal of g.skillCrystals||[]){if(crystal.got)continue;if(window.FishmanV29Art?.collect(c,'skill',crystal.x,crystal.y,t)||window.FishmanV26Art?.crystal(c,'skill_crystal',crystal.x,crystal.y,t)){txt('SKILL ✦',crystal.x,crystal.y-37,13,'#e7c2ff','center',900);continue;}glow(crystal.x,crystal.y,52,'#b88df970');c.save();c.translate(crystal.x,crystal.y+Math.sin(t*2.2)*5);c.rotate(t*.48);c.fillStyle='#d7a1ff';c.strokeStyle='#352260';c.lineWidth=3;c.beginPath();c.moveTo(0,-28);c.lineTo(21,-4);c.lineTo(0,26);c.lineTo(-21,-4);c.closePath();c.fill();c.stroke();c.restore();txt('SKILL ✦',crystal.x,crystal.y-43,13,'#e7c2ff','center',900);}for(const v of g.stars||[]){if(v.got)continue;if(window.FishmanV29Art?.collect(c,'star',v.x,v.y,t)||window.FishmanV26Art?.star(c,v.x,v.y,t))continue;glow(v.x,v.y,43,'#ffda6454');c.save();c.translate(v.x,v.y);c.rotate(t*.65);c.beginPath();for(let j=0;j<10;j++){const a=j*Math.PI/5-Math.PI/2,r=j%2===0?20:8;c.lineTo(Math.cos(a)*r,Math.sin(a)*r);}c.closePath();c.fillStyle='#ffd35a';c.fill();c.strokeStyle='#34292c';c.lineWidth=3;c.stroke();c.restore();}
  for(const a of g.awards||[]){if(a.got)continue;const pick={fish:'shield',kai:'rapid',roxy:'roxy_fire',humpty:'humpty_egg',gozilla:'gozilla_beam',sub:'sub_torpedo'}[a.hero]||'gold';if(window.FishmanV28Art?.weapon(c,pick,a.x,a.y,t,.82)||window.FishmanV26Art?.weapon(c,pick,a.x,a.y,t)){txt(heroNames[a.hero].toUpperCase(),a.x,a.y-49,12,'#ffe6a7','center',950);continue;}glow(a.x,a.y,58,'#d8ffac66');circle(a.x,a.y,27,'#fff4b1');txt(awardIcon(a.hero),a.x,a.y+12,30,'#ffffff','center',900);txt(heroNames[a.hero].toUpperCase(),a.x,a.y-39,12,'#ffe6a7','center',950);}
@@ -2198,7 +2203,13 @@ function tickAdventure(dt,motion){
    }
   }
  }
- const peers=[g];if(g.coopP2&&!g.coopP2.down)peers.push(g.coopP2);
+ const peers=[g];
+ // Local four-player missions must count every living hero, not only the host.
+ if(net()?.role==='local'&&!net()?.connected&&localCount>1){
+  for(let slot=1;slot<localCount;slot++){
+   const p=localTeam[slot];if(p&&!p.down&&p.hp>0)peers.push(p);
+  }
+ }else if(g.coopP2&&!g.coopP2.down)peers.push(g.coopP2);
  for(const event of A.update(m,dt,peers,motion,g.hazards||[],t)){
   if(event.type==='alarm'){
    const n=event.node;
@@ -2218,8 +2229,11 @@ function interactAdventureMission(){
  if(out.started&&out.node?.kind==='defend'){
   const n=out.node,type=level===2?'jelly':level===5?'mine':'root';
   // Real enemies must be stunned to keep defending; no idle waiting wins.
-  g.hazards.push(hazard(n.x+125,n.y-32,33,46,1.7,n.id,type,true));
-  g.hazards.push(hazard(n.x-130,n.y+42,32,37,1.5,n.id+2,type,true));
+  // Mark the two finite-wave attackers so they can be permanently defeated.
+  const left=hazard(n.x+125,n.y-32,33,46,1.7,n.id,type,true);
+  const right=hazard(n.x-130,n.y+42,32,37,1.5,n.id+2,type,true);
+  left.defenceGuard=true;right.defenceGuard=true;
+  g.hazards.push(left,right);
  }
  if(out.completed){burst(out.node.x,out.node.y,'#a5f9db',25);sfx('win');}
  if(out.message)say(out.message+(out.completed?' · '+g.adventureMission.progress+'/'+g.adventureMission.nodes.length:''),2.5);
