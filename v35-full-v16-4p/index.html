@@ -1964,7 +1964,9 @@ function tickChallenge(dt){
    if(Math.hypot(shot.x-a.x,shot.y-a.y)<a.r+shot.r){g.proj.splice(i,1);
     weaponVisual(shot.splash?'shock':'impact',shot.weapon||'basic',shot.x,shot.y,shot.splash||shot.r*2.3);
     challengeDamage(a,shot.damage,shot.x,shot.y);
-    sfx('attack');if(!g.challenge||scene!=='playing')return;
+    sfx('attack');
+    // challengeWin() replaces the boss and clears g.proj; never iterate the previous round's shots.
+    if(g.challenge!==a||scene!=='playing')return;
    }
  }
  if(g.freezeTime>0||a.stun>0)return;
