@@ -90,7 +90,7 @@ function interact(m,x,y){
   // Idempotent: repeat button presses from P1–P4 must not spawn another defence wave.
   if(n.active)return {handled:true,started:false,node:n,message:'OBJECTIVE ALREADY ACTIVE — KEEP GOING!'};
   n.active=true;
-  return {handled:true,started:true,node:n,message:n.kind==='escort'?'THE ESCORT HAS STARTED! STAY WITH YOUR FRIEND.':n.kind==='defend'?'DEFEND THE SAFE AREA! STUN THE ATTACKERS.':'BOMB DISARMING — STAY NEAR, KEEP ENEMIES AWAY!'};
+  return {handled:true,started:true,node:n,message:n.kind==='escort'?'THE ESCORT HAS STARTED! STAY WITH YOUR FRIEND.':n.kind==='defend'&&m.chapter===1&&m.wave===0?'DEFEAT THE TWO ROOT ATTACKERS TO PROTECT THE CLEARING!':n.kind==='defend'?'DEFEND THE SAFE AREA! STUN THE ATTACKERS.':'BOMB DISARMING — STAY NEAR, KEEP ENEMIES AWAY!'};
  }
  if(n.kind==='stealth'||n.kind==='disable'){
   if(m.alarm>.8)return {handled:true,message:'ALERT! STOP MOVING FAST AND WAIT FOR THE SENTRIES.'};
@@ -186,7 +186,7 @@ function message(m){
   shoot:'AIM + FIRE',hunt:'TRACK + FIRE',align:'PRESS B WHEN NEEDLE ENTERS GREEN ARC',
   sequence:'FIND THE GLOWING PAD · PRESS B',rescue:'PRESS B TO RESCUE',switch:'PRESS B OR USE ELECTRIC',
   escort:n.active?'STAY NEAR ESCORT':'PRESS B TO START ESCORT',
-  defend:n.active?'PROTECT FRIENDS · STUN ENEMIES':'PRESS B TO DEFEND',
+  defend:m.chapter===1&&m.wave===0?(n.active?'DEFEAT BOTH ROOT ATTACKERS · '+(n.enemiesDefeated||0)+'/2':'PRESS B TO PROTECT THE CLEARING'):n.active?'PROTECT FRIENDS · STUN ENEMIES':'PRESS B TO DEFEND',
   bomb:n.active?'DEFUSE · STAY NEAR':'PRESS B TO DISARM',
   ring:'STEER THROUGH THE RING',escape:'RUN / SWIM TO THE ESCAPE MARKER',
   stealth:'APPROACH QUIETLY · B',disable:n.active?'STAY STILL · DISABLE':'SNEAK NEAR · PRESS B'
