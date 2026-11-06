@@ -13,6 +13,8 @@ for (const [name, engine] of [['Chromium',chromium],['WebKit',webkit]]) {
   for (const [chapter,type] of [[1,'root'],[2,'jelly'],[5,'mine']]) {
    const state=await page.evaluate(({chapter,type})=>{
     fishmanTest.select('classic');fishmanTest.intro(chapter);fishmanTest.start(0);
+    // Allow the patrol to move from its spawn coordinates before firing.
+    fishmanTest.step(.15);
     const g=FishmanMultiplayerBridge.getG();
     const victim=g.hazards.find(h=>h.type===type&&h.enemyZone===0);
     if(!victim)throw Error('Missing '+type+' enemy in Chapter '+chapter);
@@ -45,7 +47,7 @@ for (const [name, engine] of [['Chromium',chromium],['WebKit',webkit]]) {
   }
   const coop=await page.evaluate(()=>{
    fishmanTest.select('classic');fishmanTest.intro(1);fishmanTest.start(0);
-   FishmanLocal.addPlayer();
+   FishmanLocal.addPlayer();fishmanTest.step(.15);
    const g=FishmanMultiplayerBridge.getG(),p2=FishmanV16Adapter.getPlayer(2);
    const h=g.hazards.find(h=>h.enemyZone===0);
    const id=h.enemyId;
