@@ -1545,7 +1545,62 @@ function die(why='Watch out for moving obstacles!'){
 }
 function pause(){if(scene==='playing'){resetStick();held={};keys={};scene='paused';showScreen(`<span class="tag">GAME PAUSED</span><div class="portrait">⏸️</div><h1>PAUSED</h1><p>Ready for the next move?</p><div class="buttonrow">${button('Resume','resume')}${button('Restart Chapter','play','secondary')}${button('Main Menu','menu','secondary')}</div>`);}else if(scene==='paused'){scene='playing';hideScreen();}}
 function item(x,y,type){return {x,y,type,got:false};}
-function hazard(x,y,ax,ay,rate,phase,type='root',hunter=false){return {x,y,bx:x,by:y,ax,ay,rate,phase,type,stun:0,hunter};}
+function hazard(x,y,ax,ay,rate,phase,type='root',hunter=false){
+ const maxHp=hardMode?4:3;
+ return {x,y,bx:x,by:y,ax,ay,rate,phase,type,stun:0,hunter,maxHp,hp:maxHp,defeated:false};
+}
+/* Enemy scene = one of the four scrolling zones. A defeated enemy stays absent
+   until every character leaves its zone and someone later re-enters. */
+function enemyZone(x){return clamp(Math.floor((Number(x)||0)/W),0,RUN_SECTORS-1);}
+function rememberEnemy(h){
+ if(!g?.enemyBlueprints||!h)return h;
+ const zone=enemyZone(h.bx??h.x);
+ h.enemyZone=zone;h.enemyId=++g.nextEnemyId;
+ h.maxHp=Math.max(1,Number(h.maxHp)||(hardMode?4:3));
+ h.hp=h.maxHp;h.defeated=false;
+ g.enemyBlueprints[zone].push({...h,x:h.bx??h.x,y:h.by??h.y,stun:0,defeated:false,burn:0});
+ return h;
+}
+function spawnEnemy(h){rememberEnemy(h);g.hazards.push(h);return h;}
+function startEnemyScenes(){
+ if(!g)return;
+ g.enemyBlueprints=Array.from({length:RUN_SECTORS},()=>[]);
+ g.nextEnemyId=0;
+ for(const h of g.hazards||[])rememberEnemy(h);
+ const zone=enemyZone(g.x);
+ g.enemyVisitedZones={[zone]:true};g.enemyOccupiedZones={[zone]:true};
+}
+function refreshEnemyZone(zone){
+ if(!g?.enemyBlueprints)return;
+ g.hazards=g.hazards.filter(h=>h.enemyZone!==zone);
+ for(const p of g.enemyBlueprints[zone]||[])
+  g.hazards.push({...p,hp:p.maxHp,stun:0,defeated:false,burn:0});
+}
+function updateEnemySceneVisits(){
+ if(!g?.enemyBlueprints||scene!=='playing'||g.challenge||level===4)return;
+ const players=[g];
+ if(net()?.role==='local'&&localCount>1)players.push(...localTeam.slice(1).filter(Boolean));
+ else if(net()?.connected&&g.coopP2&&!g.coopP2.down)players.push(g.coopP2);
+ const occupied={};
+ for(const p of players)if(Number.isFinite(p?.x))occupied[enemyZone(p.x)]=true;
+ for(const zone of Object.keys(occupied)){
+  if(!g.enemyOccupiedZones?.[zone]&&g.enemyVisitedZones?.[zone])refreshEnemyZone(Number(zone));
+  g.enemyVisitedZones[zone]=true;
+ }
+ g.enemyOccupiedZones=occupied;
+}
+function defeatEnemy(h,weapon='basic'){
+ if(!h||h.defeated)return false;
+ h.hp=0;h.defeated=true;h.stun=0;
+ burst(h.x,h.y,WEAPON_COLORS[weapon]||'#aefaff',17);
+ weaponVisual('shock',weapon,h.x,h.y,34);
+ return true;
+}
+function sweepDefeatedEnemies(){
+ if(!g?.hazards?.length)return;
+ for(const h of g.hazards)if(!h.defeated&&Number.isFinite(h.hp)&&h.hp<=0)defeatEnemy(h,'skill');
+ if(g.hazards.some(h=>h.defeated))g.hazards=g.hazards.filter(h=>!h.defeated);
+}
 function heroFor(n){return n===0?'fish':n===1?'kai':n===3||n===8?'roxy':n===5?'sub':'fish';}
 function itemType(n,w){if(n===0)return w?'crystal':'flask';if(n===1)return w?'seed':'seed';if(n===2)return w?'pearl':'shark';if(n===3)return 'bomb';if(n===6)return 'relic';if(n===7)return 'pearl';if(n===8)return w?'crystal':'seed';return 'lantern';}
 
@@ -1617,15 +1672,13 @@ function weaponVisual(kind,weapon,x,y,radius=0,points=null){
  fx.push({kind,weapon,x,y,radius,life:ttl,ttl,...(points?{points}:{})});
 }
 function damageHazard(h,power,stun=.35,weapon='basic'){
- const max=Math.max(2,hardMode?4:3),original=h.hp??max;
- const hits=Math.max(1,Math.round(power/19));
- h.hp=original-hits;
+ if(!h||h.defeated)return;
+ const initial=Number.isFinite(h.hp)?h.hp:h.maxHp||(hardMode?4:3);
+ h.hp=Math.max(0,initial-Math.max(1,Math.round(power/19)));
+ if(h.hp<=0){defeatEnemy(h,weapon);return;}
  h.stun=Math.max(h.stun||0,stun);
- if(h.hp<=0){
-  if(h.defenceGuard){h.hp=0;h.defeated=true;h.stun=10;}
-  else{h.hp=max;h.stun=10;}
- }
- burst(h.x,h.y,WEAPON_COLORS[weapon]||'#aefaff',weapon==='charge'?18:9);weaponVisual('hit-confirm',weapon,h.x,h.y,19);
+ burst(h.x,h.y,WEAPON_COLORS[weapon]||'#aefaff',weapon==='charge'?18:9);
+ weaponVisual('hit-confirm',weapon,h.x,h.y,19);
 }
 function splashWeapon(x,y,radius,damage,weapon,excluded=null){
  if(radius<=0)return;
