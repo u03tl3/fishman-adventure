@@ -216,12 +216,165 @@ html,body{background:#072a56}
 .mp-small{font-size:11px;color:#b3d4df}.mp-choice{background:#184357;border-radius:12px;padding:11px}
 @media (orientation:landscape) and (max-height:430px){.mp-panel{max-height:95dvh;padding:10px}.mp-panel h2{font-size:18px}.mp-panel p{font-size:12px;margin:4px 0}.mp-code{font-size:23px;margin:3px}.mp-panel button:not(.mp-close){min-height:37px;padding:7px 10px}}
 </style>
+<style id="fourPlayerBoardFix">
+.stage-wrap{position:relative!important;isolation:isolate}
+#onBoardControlDeck{z-index:100!important;grid-template-columns:repeat(var(--players),minmax(0,1fr))!important;pointer-events:none!important}
+#onBoardControlDeck #touchControl{display:flex!important;visibility:visible!important;opacity:1!important}
+#onBoardControlDeck #localTouchPlayers{display:contents!important;visibility:visible!important}
+#onBoardControlDeck .local-touch-panel{display:flex!important;visibility:visible!important;opacity:1!important}
+#onBoardControlDeck button,#onBoardControlDeck .local-touch-stick,#onBoardControlDeck .stick-base{touch-action:none!important}
+#multiplayerControlHeading{display:none!important}
+</style>
+<style id="fourLocalStyle">
+/* Same-screen 1–4P: all active players receive a dedicated pair of joysticks and A/B/S. */
+.local-add{border-color:#ffdb66!important;color:#fff3bd!important;background:#185474!important}
+.local-add:disabled{opacity:.65;cursor:default}
+#localControllerBoard{display:none}
+html.local-coop,html.local-coop body{min-height:100%!important;height:auto!important;width:100%!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:auto!important}
+html.local-coop .shell{
+ display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-items:unset!important;
+ width:100%!important;max-width:1160px!important;height:auto!important;min-height:0!important;max-height:none!important;
+ overflow:visible!important;margin:0 auto!important;padding:6px 9px 12px!important;gap:5px!important;
+}
+html.local-coop .head{position:relative!important;top:auto!important;right:auto!important;z-index:10!important;pointer-events:auto!important;
+ margin:0!important;padding:0 2px!important;display:flex!important;justify-content:flex-end!important;min-height:35px!important;flex:none!important}
+html.local-coop .head .brand{display:flex!important;margin-right:auto!important}
+html.local-coop .head .top-actions{pointer-events:auto!important}
+html.local-coop .stage-wrap{display:flex!important;align-items:center!important;justify-content:center!important;
+ grid-column:auto!important;grid-row:auto!important;align-self:auto!important;justify-self:auto!important;
+ width:min(100%,1080px)!important;max-width:100%!important;height:min(46dvh,460px)!important;
+ min-height:170px!important;max-height:460px!important;margin:0 auto!important;flex:none!important}
+html.local-coop .stage-wrap canvas{height:100%!important;width:100%!important;max-height:100%!important;object-fit:contain!important;aspect-ratio:auto!important}
+html.local-coop .hero-switch,html.local-coop #heroSwitch{position:relative!important;inset:auto!important;right:auto!important;bottom:auto!important;
+ z-index:8!important;transform:none!important;width:100%!important;max-width:1080px!important;max-height:none!important;
+ flex-direction:row!important;flex-wrap:wrap!important;justify-content:center!important;overflow:visible!important;margin:0 auto!important}
+html.local-coop .hero-switch button{width:auto!important;min-height:27px!important;flex:0 1 auto!important;padding:4px 8px!important}
+html.local-coop .under{display:none!important}
+html.local-coop #localControllerBoard{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;
+ width:min(100%,1080px);margin:0 auto;align-items:stretch}
+#localControllerBoard .local-pad{min-width:0;background:linear-gradient(110deg,#113854,#0d2a44);
+ border:2px solid var(--pad-color,#75d4e1);border-radius:12px;padding:5px 7px 8px;
+ box-shadow:inset 0 2px 10px #0004;touch-action:pan-y}
+#localControllerBoard .local-pad[hidden]{display:none!important}
+#localControllerBoard .pad-heading{display:flex;justify-content:space-between;align-items:center;gap:6px;
+ font-size:12px;font-weight:900;color:var(--pad-color,#b7f5ff);margin-bottom:4px;min-height:26px}
+#localControllerBoard .pad-heading select{min-width:0;max-width:152px;width:45%;padding:3px;border-radius:6px;
+ color:#fff7cb;background:#173e58;border:1px solid #619aac;font-size:12px}
+#localControllerBoard .pad-controls{display:flex;gap:8px;align-items:center;justify-content:space-around;min-width:0}
+#localControllerBoard .pad-stick-wrap{display:flex;align-items:center;flex-direction:column;gap:2px;flex:none;min-width:0}
+#localControllerBoard .pad-caption{font-size:9px;line-height:1.1;color:#c5deeb;font-weight:900;letter-spacing:.04em}
+#localControllerBoard .stick-base{grid-column:auto!important;grid-row:auto!important;position:relative!important;
+ flex:none!important;width:clamp(62px,7.8vw,90px)!important;height:clamp(62px,7.8vw,90px)!important;
+ min-width:62px!important;min-height:62px!important;max-width:none!important;max-height:none!important;
+ border-width:2px!important}
+#localControllerBoard .stick-knob{width:55%!important;height:55%!important;border-width:2px!important}
+#localControllerBoard .stick-arrows{inset:9px!important}
+#localControllerBoard .pad-buttons,#localControllerBoard .action-pair{display:flex!important;flex-direction:row!important;align-items:center!important;
+ justify-content:center!important;gap:4px!important;min-width:0!important;flex:none!important}
+#localControllerBoard .pad-button,#localControllerBoard .touch-right .joy-button{width:clamp(33px,4vw,47px)!important;height:clamp(33px,4vw,47px)!important;
+ min-width:33px!important;min-height:33px!important;max-width:47px!important;max-height:47px!important;
+ border-radius:50%!important;display:flex!important;flex-direction:column!important;align-items:center!important;
+ justify-content:center!important;gap:0!important;color:#ecfaff;background:radial-gradient(circle at 35% 25%,#3d8ea7,#113951)!important;
+ border:2px solid #6ca5c2!important;box-shadow:0 2px 0 #051a29!important;
+ padding:0!important;touch-action:none!important;user-select:none!important;font:900 18px system-ui!important}
+#localControllerBoard .pad-button span,#localControllerBoard .button-letter{font-size:17px!important;line-height:1!important}
+#localControllerBoard .pad-button small,#localControllerBoard .button-name{font-size:7px!important;line-height:1!important;font-weight:800!important}
+#localControllerBoard .pad-attack,#localControllerBoard .joy-button.action{background:radial-gradient(circle at 35% 25%,#ffe2a1,#bf7b34)!important;
+ color:#292422!important;border-color:#efbc67!important}
+#localControllerBoard .pad-button.down,#localControllerBoard .joy-button.down{transform:translateY(2px)}
+#localControllerBoard #touchControl{display:flex!important;flex:1!important;align-items:center!important;justify-content:space-around!important;
+ gap:7px!important;width:100%!important;height:auto!important;min-height:0!important;overflow:visible!important;
+ margin:0!important;padding:0!important;background:none!important;border:0!important;box-shadow:none!important}
+#localControllerBoard #touchControl .stick-unit{display:flex!important;grid-column:auto!important;grid-row:auto!important;
+ margin:0!important;min-width:0!important;gap:0!important;justify-self:auto!important}
+#localControllerBoard #touchControl .stick-caption{display:none!important}
+#localControllerBoard #touchControl .touch-right{display:flex!important;flex-direction:row!important;grid-column:auto!important;
+ grid-row:auto!important;align-items:center!important;gap:7px!important;padding:0!important;margin:0!important}
+#localControllerBoard .aim-mark{display:none!important}
+#localControllerBoard .skill-cooldown{font-size:6px!important}
+#localControllerBoard .local-pad.p1 .pad-heading{color:#a6f8ff}
+#localControllerBoard .local-pad.p2{--pad-color:#9effdf}
+#localControllerBoard .local-pad.p3{--pad-color:#ffdb91}
+#localControllerBoard .local-pad.p4{--pad-color:#edb2ff}
+@media(max-width:650px){html.local-coop .head .brand{display:none!important}html.local-coop .head .top-actions{width:100%;justify-content:flex-end;gap:4px}}
+@media(max-width:570px){html.local-coop #localControllerBoard{grid-template-columns:minmax(0,1fr)}}
+@media(orientation:landscape) and (max-height:470px){
+ html.local-coop .stage-wrap{height:43dvh!important;min-height:140px!important}
+ html.local-coop .shell{gap:2px!important}
+ html.local-coop #localControllerBoard{gap:3px}
+ #localControllerBoard .local-pad{padding:2px 5px 4px}
+ #localControllerBoard .pad-heading{min-height:18px;margin-bottom:1px;font-size:10px}
+ #localControllerBoard .stick-base{width:clamp(56px,8.5vh,76px)!important;height:clamp(56px,8.5vh,76px)!important;
+ min-width:56px!important;min-height:56px!important}
+ #localControllerBoard .pad-caption{font-size:8px}
+}
+@media(orientation:landscape) and (max-width:850px){#localControllerBoard .pad-controls{gap:3px!important}
+ #localControllerBoard .pad-controls .pad-stick-wrap{gap:0}
+ #localControllerBoard .pad-button,#localControllerBoard .touch-right .joy-button{width:35px!important;height:35px!important;min-width:35px!important;min-height:35px!important}
+ #localControllerBoard .pad-buttons,#localControllerBoard .action-pair{gap:2px!important}
+}
+</style>
+
+<style id="weaponPowersStyle">
+#localControllerBoard .pad-weapon{border-color:#a99bff!important;color:#f7e9ff!important;background:radial-gradient(circle at 35% 25%,#9473d1,#3f3067)!important}
+#localControllerBoard .pad-heading{gap:3px}
+#localControllerBoard .pad-buttons,#localControllerBoard .action-pair{flex-wrap:wrap;max-width:99px!important;gap:4px!important}
+#localControllerBoard .pad-button,#localControllerBoard .touch-right .joy-button{flex:0 0 auto!important}
+#localControllerBoard #touchControl .touch-right{min-width:0!important;gap:3px!important}
+#localControllerBoard .pad-controls{gap:2px!important}
+#localControllerBoard .pad-controls .pad-stick-wrap{flex:none}
+#localControllerBoard .pad-heading select{width:42%;max-width:148px}
+#localControllerBoard .pad-heading .pad-player-name{font-size:11px;white-space:nowrap}
+.touch-right .weapon-action{border-color:#a08fd4;background:radial-gradient(circle at 30% 20%,#b89cf3,#62509d 70%,#322654)}
+@media(min-width:900px){#localControllerBoard .pad-buttons,#localControllerBoard .action-pair{max-width:114px!important}}
+@media(max-width:670px){#localControllerBoard .pad-button,#localControllerBoard .touch-right .joy-button{width:32px!important;height:32px!important;min-width:32px!important;min-height:32px!important}
+ #localControllerBoard .pad-buttons,#localControllerBoard .action-pair{gap:2px!important;max-width:68px!important}}
+@media(orientation:landscape) and (max-height:470px){#localControllerBoard .pad-buttons,#localControllerBoard .action-pair{max-width:79px!important}}
+</style>
+
+<style id="fishmanCoopStability">
+#localControllerBoard .pad-loadout{display:block;color:#f9e3a0;font-size:10px;font-weight:850;line-height:1.3;
+ text-align:center;border-radius:6px;background:#041d32c9;padding:2px 3px;margin-bottom:4px;letter-spacing:.02em}
+@media(orientation:landscape) and (max-height:470px){
+ #localControllerBoard .pad-loadout{font-size:9px;margin-bottom:2px;padding:0 2px}
+}
+</style>
+
+<style id="fishmanCompactCouchMode">
+@media (min-width:350px) and (max-width:570px) and (orientation:portrait) {
+ html.local-coop #localControllerBoard{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:4px!important}
+ html.local-coop .stage-wrap{height:35dvh!important;min-height:130px!important}
+ #localControllerBoard .local-pad{padding:3px 4px 5px!important}
+ #localControllerBoard .pad-controls,#localControllerBoard #touchControl{gap:2px!important}
+ #localControllerBoard .stick-base{width:48px!important;height:48px!important;min-width:48px!important;min-height:48px!important}
+ #localControllerBoard .pad-button,#localControllerBoard .touch-right .joy-button{width:29px!important;height:29px!important;
+   min-width:29px!important;min-height:29px!important;max-width:29px!important;max-height:29px!important}
+ #localControllerBoard .pad-buttons,#localControllerBoard .action-pair{max-width:60px!important;gap:1px!important}
+ #localControllerBoard .pad-heading{font-size:9px;min-height:23px}
+ #localControllerBoard .pad-heading .pad-player-name{font-size:9px;overflow:hidden;text-overflow:ellipsis}
+ #localControllerBoard .pad-heading select{max-width:71px;font-size:9px;padding:2px}
+ #localControllerBoard .pad-caption{font-size:7px}
+ #localControllerBoard .pad-button span,#localControllerBoard .button-letter{font-size:13px!important}
+ #localControllerBoard .pad-loadout{font-size:8px!important}
+}
+</style>
+<style id="fishmanV23AbilityLabels">
+#localControllerBoard .pad-ability{color:#bca6ff;text-align:center;font-size:9px;line-height:1.3;
+ font-weight:850;letter-spacing:.02em;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:570px){#localControllerBoard .pad-ability{font-size:8px}}
+</style>
+<style id="heroSuperModeHUD">
+#localControllerBoard .pad-loadout.super-active{color:#fff5ac!important;background:#6c245d!important;
+ border:1px solid #ffdc88;box-shadow:0 0 12px #f28af4a0}
+#skillBtn.super-active{border-color:#fff3b3!important;background:radial-gradient(circle at 35% 22%,#fff0a6,#e26dcc 54%,#5c308d)!important;
+ box-shadow:0 0 16px #ffbcf3!important}
+</style>
 </head>
 <body>
 <main class="shell">
  <header class="head">
   <div class="brand"><div class="logo" aria-hidden="true">🐟</div><div><strong>FISHMAN <span style="color:var(--aqua)">ADVENTURE</span></strong><small>10 chapters · Enhanced art and collectible weapons</small></div></div>
-  <div class="top-actions"><button class="tiny-button" id="soundBtn" aria-label="Toggle game sound">♫ Music: Off</button><button class="tiny-button" id="menuBtn">☰ Menu</button><button class="tiny-button" id="mpOpen" aria-label="Open two player online room">👥 2P Online</button></div>
+  <div class="top-actions"><button class="tiny-button" id="soundBtn" aria-label="Toggle game sound">♫ Music: Off</button><button class="tiny-button" id="menuBtn">☰ Menu</button><button class="tiny-button local-add" id="addPlayerBtn" type="button" title="Press V to add a player; W removes a player" aria-label="V add player, W remove player">ⓥ V · ADD PLAYER</button><button class="tiny-button" id="mpOpen" aria-label="Open two player online room">👥 2P Online</button></div>
  </header>
  <section class="stage-wrap" aria-label="Fishman playable video game">
   <canvas id="game" width="1000" height="620">Your browser needs HTML5 Canvas to play this game.</canvas>
@@ -1208,6 +1361,69 @@ function skillStun(radius,duration,repel=0){for(const h of g.hazards){const dx=h
     burst(a.x,a.y,'#b8ecff',10);}
  }
  if(g.arena){for(let i=g.arena.orbs.length-1;i>=0;i--)if(Math.hypot(g.arena.orbs[i].x-g.x,g.arena.orbs[i].y-g.y)<radius){burst(g.arena.orbs[i].x,g.arena.orbs[i].y,'#c3edff',8);g.arena.orbs.splice(i,1);}}}
+
+/* Original-art skill expansion: six different gameplay mechanics, not sprite replacements. */
+function v35UniqueSkill(){
+ if(!g)return;
+ const h=g.hero,range=level===4||g.challenge?680:Math.max(700,g.runLength||1000);
+ const nearby=(r)=> (g.hazards||[]).filter(e=>Math.hypot(e.x-g.x,e.y-g.y)<r);
+ const damage=(e,n)=>{if(typeof damageHazard==='function')damageHazard(e,n,1.5,'skill');};
+ if(h==='fish'){
+   // Bubble vortex: suction pulls enemies together, then releases a shockwave.
+   g.uniqueVortex={x:g.x,y:g.y,ttl:3.4,r:240};g.shield=Math.max(g.shield,3.4);
+ }else if(h==='kai'){
+   // Alchemical chain: transmute nearby enemies into harmless stunned targets.
+   g.uniqueAlchemy={ttl:4.5,r:270};
+   for(const e of nearby(270)){e.stun=Math.max(e.stun||0,4.5);e.alchemy=4.5;}
+ }else if(h==='roxy'){
+   // Fire comet: persistent burning lane along the direction of attack.
+   const dir=g.lastAim||{x:1,y:0};
+   g.uniqueFlames=Array.from({length:7},(_,i)=>({x:clamp(g.x+dir.x*(55+i*60),50,range),y:clamp(g.y+dir.y*(55+i*60),175,530),ttl:4.4}));
+ }else if(h==='humpty'){
+   // Ricochet rampage: pinball dash bouncing between enemy targets.
+   const targets=nearby(390).sort((a,b)=>Math.hypot(a.x-g.x,a.y-g.y)-Math.hypot(b.x-g.x,b.y-g.y)).slice(0,5);
+   g.uniqueRicochet={ttl:2.5,targets,clock:0};g.inv=Math.max(g.inv,2.5);
+ }else if(h==='gozilla'){
+   // Gravity well: pulls enemies and enemy projectiles inward, then detonates.
+   g.uniqueGravity={x:g.x+85*(g.facing||1),y:g.y,ttl:4.1,r:280};
+ }else if(h==='sub'){
+   // Sonar echo: repeated expanding pulses that disable projectiles and mines.
+   g.uniqueSonar={ttl:4.2,pulse:0};
+ }
+}
+function v35UniqueTick(dt){
+ if(!g)return;
+ const actors=[g,...(localCount>1&&(!net()?.connected||net()?.role==='local')?localTeam.slice(1):[])].filter(Boolean);
+ for(const p of actors){
+  const near=(r)=> (g.hazards||[]).filter(e=>Math.hypot(e.x-p.x,e.y-p.y)<r);
+  if(p.uniqueVortex){
+   const v=p.uniqueVortex;v.ttl-=dt;
+   for(const e of near(v.r)){const dx=v.x-e.x,dy=v.y-e.y,d=Math.max(1,Math.hypot(dx,dy));e.x+=dx/d*105*dt;e.y+=dy/d*105*dt;e.stun=Math.max(e.stun||0,.15);if(v.ttl<.12)damageHazard(e,48,1.2,'skill');}
+   if(v.ttl<=0)p.uniqueVortex=null;
+  }
+  if(p.uniqueAlchemy){p.uniqueAlchemy.ttl-=dt;for(const e of near(p.uniqueAlchemy.r))e.stun=Math.max(e.stun||0,.3);if(p.uniqueAlchemy.ttl<=0)p.uniqueAlchemy=null;}
+  if(p.uniqueFlames){for(const f of p.uniqueFlames){f.ttl-=dt;for(const e of g.hazards||[])if(Math.hypot(e.x-f.x,e.y-f.y)<53){e.stun=Math.max(e.stun||0,.22);e.hp=(e.hp||30)-dt*19;}}p.uniqueFlames=p.uniqueFlames.filter(f=>f.ttl>0);}
+  if(p.uniqueRicochet){const v=p.uniqueRicochet;v.ttl-=dt;v.clock-=dt;if(v.clock<=0&&v.targets.length){const e=v.targets.shift();if(e){p.x=e.x-24;p.y=e.y;damageHazard(e,55,1.6,'skill');}v.clock=.35;}if(v.ttl<=0||!v.targets.length)p.uniqueRicochet=null;}
+  if(p.uniqueGravity){const v=p.uniqueGravity;v.ttl-=dt;for(const e of g.hazards||[]){const dx=v.x-e.x,dy=v.y-e.y,d=Math.hypot(dx,dy);if(d<v.r&&d>3){e.x+=dx/d*170*dt;e.y+=dy/d*170*dt;if(v.ttl<.12)damageHazard(e,65,1.6,'skill');}}if(v.ttl<=0)p.uniqueGravity=null;}
+  if(p.uniqueSonar){const v=p.uniqueSonar;v.ttl-=dt;v.pulse+=dt;for(const e of near(290))e.stun=Math.max(e.stun||0,.6);if(g.arena?.orbs)g.arena.orbs=g.arena.orbs.filter(o=>Math.hypot(o.x-p.x,o.y-p.y)>290);if(v.ttl<=0)p.uniqueSonar=null;}
+ }
+}
+function v35UniqueDraw(){
+ if(!g)return;
+ const actors=[g,...(localCount>1&&(!net()?.connected||net()?.role==='local')?localTeam.slice(1):[])].filter(Boolean);
+ c.save();if(!g.challenge&&level!==4)c.translate(-cameraX,0);
+ for(const p of actors){
+  const rings=[['uniqueVortex','#7ffff5',220],['uniqueAlchemy','#bca5ff',255],['uniqueGravity','#b4ff75',270],['uniqueSonar','#ffe78d',280]];
+  for(const [name,col,r] of rings)if(p[name]){
+   const x=name==='uniqueGravity'?p.uniqueGravity.x:p.x,y=name==='uniqueGravity'?p.uniqueGravity.y:p.y;
+   c.strokeStyle=col;c.lineWidth=4;c.globalAlpha=.48+.2*Math.sin(t*12);c.beginPath();c.arc(x,y,r*(.75+.1*Math.sin(t*5)),0,Math.PI*2);c.stroke();
+  }
+  if(p.uniqueFlames)for(const f of p.uniqueFlames){c.globalAlpha=Math.min(.85,f.ttl/2);c.fillStyle='#ff7b35';c.beginPath();c.arc(f.x,f.y,30+Math.sin(t*12+f.x)*9,0,Math.PI*2);c.fill();}
+  if(p.uniqueRicochet){c.globalAlpha=.8;c.strokeStyle='#fff2a4';c.lineWidth=6;c.beginPath();c.arc(p.x,p.y,38+Math.sin(t*16)*7,0,Math.PI*2);c.stroke();}
+ }
+ c.restore();
+}
+
 function useSpecialSkill(){if(net()?.role==='guest'){net()?.sendAction('skill');return true;}if(scene!=='playing'||!g)return false;
  const h=g.hero,L=heroSkillLevel(h),cd=g.skillCooldown||0;if(cd>0){say(skillNames[h]+' recharging: '+cd.toFixed(1)+'s',1.0);return false;}
  g.skillCooldown=skillRecharge(h);g.skillCooldowns[h]=g.skillCooldown;g.skillEffect=1.0+.14*L;g.skillKind=h;g.skillFlash=1.05;g.attackFlash=Math.max(g.attackFlash||0,.4);g.lastAim=aimVector();const power=1+(L-1)*.23;
@@ -1225,7 +1441,7 @@ function useSpecialSkill(){if(net()?.role==='guest'){net()?.sendAction('skill');
  }else if(h==='sub'){
   g.shield=Math.max(g.shield,1.9+L*.73);g.sonarTime=2.1+L*.62;g.skillEffect=g.sonarTime;skillStun(185+L*36,1.0+L*.43);burst(g.x,g.y,'#ffec93',30+L*3);
  }
- sfx('power');say('✦ '+skillNames[h].toUpperCase()+' Lv.'+L+'! S TO USE · '+Math.round(skillRecharge(h))+'s RECHARGE',2.7);updateSkillButton();return true;
+ v35UniqueSkill();sfx('power');say('✦ '+skillNames[h].toUpperCase()+' Lv.'+L+'! S TO USE · '+Math.round(skillRecharge(h))+'s RECHARGE',2.7);updateSkillButton();return true;
 }
 
 function maySelect(hero){if(!g||scene!=='playing'||!terrainHeroAllowed(hero,g.x))return false;if(net()?.role==='host'&&net()?.connected)return hero==='sub'?(level===5):['fish','kai','roxy','humpty','gozilla'].includes(hero)&&(hero!=='gozilla'||progress.godzilla);if(level===5)return hero==='sub';if(level===0)return hero==='fish'||hero==='kai';if(level===3)return hero==='roxy'||hero==='humpty';if(level>=4)return ['fish','kai','roxy','humpty'].includes(hero)||(hero==='gozilla'&&progress.godzilla);return hero===g.hero;}
@@ -1411,7 +1627,10 @@ function damageHazard(h,power,stun=.35,weapon='basic'){
  const hits=Math.max(1,Math.round(power/19));
  h.hp=original-hits;
  h.stun=Math.max(h.stun||0,stun);
- if(h.hp<=0){h.hp=max;h.stun=10;}
+ if(h.hp<=0){
+  if(h.defenceGuard){h.hp=0;h.defeated=true;h.stun=10;}
+  else{h.hp=max;h.stun=10;}
+ }
  burst(h.x,h.y,WEAPON_COLORS[weapon]||'#aefaff',weapon==='charge'?18:9);weaponVisual('hit-confirm',weapon,h.x,h.y,19);
 }
 function splashWeapon(x,y,radius,damage,weapon,excluded=null){
@@ -1522,7 +1741,7 @@ function tickProjectiles(dt){if(!g||level===4)return;
   }
   let removed=false;
   for(let j=0;j<(g.hazards||[]).length;j++){
-   const h=g.hazards[j];if((p.hitIndices||[]).includes(j))continue;
+   const h=g.hazards[j];if(h.defeated||(p.hitIndices||[]).includes(j))continue;
    if(Math.hypot(p.x-h.x,p.y-h.y)<p.r+30){
     damageHazard(h,p.damage,p.weapon==='charge'?1.55:Math.max(.12,p.slow||.36),p.weapon||'basic');
     if(p.burn)h.burn=Math.max(h.burn||0,p.burn);
@@ -1537,6 +1756,8 @@ function tickProjectiles(dt){if(!g||level===4)return;
   }
   if(removed)continue;
  }
+ // Clearing attackers stay defeated; all ordinary enemies retain original stun/recovery rules.
+ if(g.hazards.some(h=>h.defeated))g.hazards=g.hazards.filter(h=>!h.defeated);
 }
 function drawRewardsAndShots(){if(!g)return;c.save();for(const a of g.weaponPickups||[])if(!a.got)drawWeaponModel(a.x,a.y,a.type);for(const crystal of g.skillCrystals||[]){if(crystal.got)continue;if(window.FishmanV29Art?.collect(c,'skill',crystal.x,crystal.y,t)||window.FishmanV26Art?.crystal(c,'skill_crystal',crystal.x,crystal.y,t)){txt('SKILL ✦',crystal.x,crystal.y-37,13,'#e7c2ff','center',900);continue;}glow(crystal.x,crystal.y,52,'#b88df970');c.save();c.translate(crystal.x,crystal.y+Math.sin(t*2.2)*5);c.rotate(t*.48);c.fillStyle='#d7a1ff';c.strokeStyle='#352260';c.lineWidth=3;c.beginPath();c.moveTo(0,-28);c.lineTo(21,-4);c.lineTo(0,26);c.lineTo(-21,-4);c.closePath();c.fill();c.stroke();c.restore();txt('SKILL ✦',crystal.x,crystal.y-43,13,'#e7c2ff','center',900);}for(const v of g.stars||[]){if(v.got)continue;if(window.FishmanV29Art?.collect(c,'star',v.x,v.y,t)||window.FishmanV26Art?.star(c,v.x,v.y,t))continue;glow(v.x,v.y,43,'#ffda6454');c.save();c.translate(v.x,v.y);c.rotate(t*.65);c.beginPath();for(let j=0;j<10;j++){const a=j*Math.PI/5-Math.PI/2,r=j%2===0?20:8;c.lineTo(Math.cos(a)*r,Math.sin(a)*r);}c.closePath();c.fillStyle='#ffd35a';c.fill();c.strokeStyle='#34292c';c.lineWidth=3;c.stroke();c.restore();}
  for(const a of g.awards||[]){if(a.got)continue;const pick={fish:'shield',kai:'rapid',roxy:'roxy_fire',humpty:'humpty_egg',gozilla:'gozilla_beam',sub:'sub_torpedo'}[a.hero]||'gold';if(window.FishmanV28Art?.weapon(c,pick,a.x,a.y,t,.82)||window.FishmanV26Art?.weapon(c,pick,a.x,a.y,t)){txt(heroNames[a.hero].toUpperCase(),a.x,a.y-49,12,'#ffe6a7','center',950);continue;}glow(a.x,a.y,58,'#d8ffac66');circle(a.x,a.y,27,'#fff4b1');txt(awardIcon(a.hero),a.x,a.y+12,30,'#ffffff','center',900);txt(heroNames[a.hero].toUpperCase(),a.x,a.y-39,12,'#ffe6a7','center',950);}
@@ -1982,7 +2203,13 @@ function tickAdventure(dt,motion){
    }
   }
  }
- const peers=[g];if(g.coopP2&&!g.coopP2.down)peers.push(g.coopP2);
+ const peers=[g];
+ // Local four-player missions must count every living hero, not only the host.
+ if(net()?.role==='local'&&!net()?.connected&&localCount>1){
+  for(let slot=1;slot<localCount;slot++){
+   const p=localTeam[slot];if(p&&!p.down&&p.hp>0)peers.push(p);
+  }
+ }else if(g.coopP2&&!g.coopP2.down)peers.push(g.coopP2);
  for(const event of A.update(m,dt,peers,motion,g.hazards||[],t)){
   if(event.type==='alarm'){
    const n=event.node;
@@ -2002,8 +2229,11 @@ function interactAdventureMission(){
  if(out.started&&out.node?.kind==='defend'){
   const n=out.node,type=level===2?'jelly':level===5?'mine':'root';
   // Real enemies must be stunned to keep defending; no idle waiting wins.
-  g.hazards.push(hazard(n.x+125,n.y-32,33,46,1.7,n.id,type,true));
-  g.hazards.push(hazard(n.x-130,n.y+42,32,37,1.5,n.id+2,type,true));
+  // Mark the two finite-wave attackers so they can be permanently defeated.
+  const left=hazard(n.x+125,n.y-32,33,46,1.7,n.id,type,true);
+  const right=hazard(n.x-130,n.y+42,32,37,1.5,n.id+2,type,true);
+  left.defenceGuard=true;right.defenceGuard=true;
+  g.hazards.push(left,right);
  }
  if(out.completed){burst(out.node.x,out.node.y,'#a5f9db',25);sfx('win');}
  if(out.message)say(out.message+(out.completed?' · '+g.adventureMission.progress+'/'+g.adventureMission.nodes.length:''),2.5);
@@ -2632,7 +2862,7 @@ function createCoopPlayer(){
 function withCoopPlayer(fn){
  const p=g?.coopP2;if(!p)return;
  const saved={};for(const k of COOP_FIELDS){saved[k]=g[k];g[k]=p[k];}
- const savedAim=coopAimOverride;coopAimOverride=net()?.input?.aim||p.lastAim||{x:1,y:0};
+ const savedAim=coopAimOverride;coopAimOverride=(net()?.role==='local'?p.lastAim:net()?.input?.aim)||p.lastAim||{x:1,y:0};
  try{return fn();}finally{
   for(const k of COOP_FIELDS){p[k]=g[k];g[k]=saved[k];}coopAimOverride=savedAim;
  }
@@ -3190,7 +3420,193 @@ function pollXboxController(){
  if(pressed.includes('lb'))gamepadNextHero(-1);
  if(pressed.includes('view'))say('🎮 LEFT MOVE · RIGHT AIM · RT FIRE · A INTERACT/DODGE · B WEAPON · X SKILL · Y HERO · MENU PAUSE',4.0);
 }
-function drawFrame(now){const dt=Math.min(.033,((now-last)||16)/1000);last=now;pollXboxController();tickPolishFX(dt);if(net()?.role==='guest'){t+=dt*.33;}else if(scene==='playing'){tick(dt);if(scene==='playing')tickCoopSecond(dt);}else{t+=dt*.45;if(g){g.deathMotion=Math.max(0,(g.deathMotion||0)-dt);g.reviveMotion=Math.max(0,(g.reviveMotion||0)-dt);}}window.FishmanMusic?.update({scene,level,difficulty});if(Math.floor(now/140)!==Math.floor((now-16)/140))updateSkillButton();if(net()?.role==='host'&&net()?.connected)net().sendSnapshot(now);if(net()?.role==='guest')net().sendInput(now,{x:stick.x,y:stick.y,aim:rightStick.pointerId!==null?{x:rightStick.x,y:rightStick.y}:aim.manual?{x:aim.vx,y:aim.vy}:null,fire:held.action||keys.action||gamepadFire||(rightStick.pointerId!==null&&Math.hypot(rightStick.x,rightStick.y)>.13)});drawSyncedFrame(dt);requestAnimationFrame(drawFrame);}
+
+/* V35 LOCAL 1–4 PLAYER MODE: each additional player has independent movement,
+   weapons, HP, hero and controller. Original story engine stays authoritative. */
+let localCount=1,localTeam=[],localHeld={};
+const localControls=[
+ {up:'w',down:'s',left:'a',right:'d',fire:'f',skill:'g'},
+ {up:'i',down:'k',left:'j',right:'l',fire:'o',skill:'p'},
+ {up:'arrowup',down:'arrowdown',left:'arrowleft',right:'arrowright',fire:'enter',skill:'shift'}
+];
+function localCreate(slot){
+ const h=level===5?'sub':(window.FishmanNet?.players?.[slot+1]?.hero||['kai','roxy','humpty'][slot-1]);
+ const p={...freshWeaponState(),hero:h,x:g.x-45*slot,y:clamp(g.y+slot*48,180,520),
+ hp:g.maxHp,maxHp:g.maxHp,lives:g.maxLives,maxLives:g.maxLives,inv:2,shield:0,cool:0,
+ actionWave:0,skillCooldown:0,skillCooldowns:{fish:0,kai:0,roxy:0,humpty:0,gozilla:0,sub:0},
+ skillEffect:0,skillKind:null,skillFlash:0,freezeTime:0,sonarTime:0,speedBoost:0,
+ attackFlash:0,lastAim:{x:1,y:0},moveIntensity:0,stepPhase:0,lastDx:1,lastDy:0,
+ facing:1,poseFacing:1,poseAngle:0,poseRecoil:0,aimHold:false,lastTerrain:'land',
+ rollBoost:1,transformFrom:null,transformMotion:0,deathMotion:0,reviveMotion:1,
+ motionVX:0,motionVY:0,motionCharge:0,motionHero:h,motionTrail:[],motionTrailClock:0,
+ motionPassiveClock:0,motionPulse:0,down:false,localSlot:slot,localLevel:level};
+ return p;
+}
+function localPrepare(){
+ if(!g||scene!=='playing'){localTeam=[];return;}
+ for(let slot=1;slot<localCount;slot++){
+  if(!localTeam[slot]||localTeam[slot].localLevel!==level)
+   localTeam[slot]=localCreate(slot);
+ }
+ localTeam.length=localCount;
+}
+function localWith(p,fn){
+ const old=g.coopP2;g.coopP2=p;
+ try{return withCoopPlayer(fn);}finally{g.coopP2=old;}
+}
+function localTick(dt){
+ if(localCount<2||!g||scene!=='playing'||(net()?.connected&&net()?.role!=='local'))return;
+ localPrepare();
+ for(let slot=1;slot<localCount;slot++){
+  const p=localTeam[slot],map=localControls[slot-1],pad=navigator.getGamepads?.()?.[slot]||null;
+  const ax=pad&&Math.abs(pad.axes?.[0]||0)>.16?pad.axes[0]:Number(!!localHeld[map.right])-Number(!!localHeld[map.left]);
+  const ay=pad&&Math.abs(pad.axes?.[1]||0)>.16?pad.axes[1]:Number(!!localHeld[map.down])-Number(!!localHeld[map.up]);
+  const touch=window.FishmanNet?.players?.[slot+1]?.input||{x:0,y:0};const tx=Math.abs(touch.x)>.05?touch.x:ax,ty=Math.abs(touch.y)>.05?touch.y:ay;const mag=Math.max(1,Math.hypot(tx,ty)),vx=tx/mag,vy=ty/mag;
+  p.x=clamp(p.x+vx*235*dt,65,(g.challenge||level===4)?690:Math.max(700,(g.runLength||1000)-65));
+  p.y=clamp(p.y+vy*235*dt,180,530);
+  p.motionVX=vx*235;p.motionVY=vy*235;p.moveIntensity=Math.min(1,Math.hypot(vx,vy));
+  p.stepPhase=(p.stepPhase||0)+dt*p.moveIntensity*9;
+  if(Math.abs(vx)>.05){p.lastDx=vx;p.facing=Math.sign(vx);p.poseFacing=Math.sign(vx);}
+  if(Math.abs(vy)>.05)p.lastDy=vy;
+  p.lastAim=touch.aim&&Math.hypot(touch.aim.x,touch.aim.y)>.1?touch.aim:{x:p.facing||1,y:0};
+  p.cool=Math.max(0,(p.cool||0)-dt);p.inv=Math.max(0,(p.inv||0)-dt);
+  p.attackFlash=Math.max(0,(p.attackFlash||0)-dt);
+  p.skillCooldown=Math.max(0,(p.skillCooldown||0)-dt);
+  const fire=localHeld[map.fire]||touch.fire||pad?.buttons?.[7]?.pressed||pad?.buttons?.[0]?.pressed;
+  if(fire&&p.cool<=0)localWith(p,()=>weaponFire());
+  const skill=localHeld[map.skill]||touch.skill||pad?.buttons?.[2]?.pressed;
+  if(skill&&p.skillCooldown<=0)localWith(p,()=>useSpecialSkill());
+  if(touch.weapon){touch.weapon=false;localWith(p,()=>cycleWeapon());}
+  if(touch.interact){touch.interact=false;localWith(p,()=>interact());}
+  if(touch.hero&&touch.hero!==p.hero){p.transformFrom=p.hero;p.transformMotion=.75;p.hero=touch.hero;p.motionHero=touch.hero;}
+  // Each teammate can take hits independently and respawns at the checkpoint.
+  if(p.inv<=0&&(g.hazards||[]).some(h=>!h.stun&&Math.hypot(h.x-p.x,h.y-p.y)<32)){
+   p.hp--;p.inv=2.6;
+   if(p.hp<=0){p.lives--;p.hp=p.maxHp;p.x=g.x-35*slot;p.y=g.y+35*slot;p.inv=3;}
+  }
+ }
+}
+function localDraw(){
+ if(localCount<2||!g||scene!=='playing'||(net()?.connected&&net()?.role!=='local'))return;
+ for(let slot=1;slot<localCount;slot++){
+  const p=localTeam[slot];if(!p)continue;
+  c.save();if(!g.challenge&&level!==4)c.translate(-cameraX,0);
+  localWith(p,()=>{c.save();c.translate(p.x,p.y);c.scale(.8,.8);c.translate(-p.x,-p.y);drawPlayer();c.restore();});
+  roundRect(p.x-23,p.y-66,46,18,6,'#10364de8');
+  txt('P'+(slot+1),p.x,p.y-53,13,'#d2fff3','center',900);
+  roundRect(p.x-23,p.y-45,46,5,2,'#304253');
+  roundRect(p.x-23,p.y-45,46*Math.max(0,p.hp)/p.maxHp,5,2,'#71f8b6');
+  c.restore();
+ }
+}
+window.addEventListener('keydown',e=>{if(e.target?.matches?.('input,select,textarea'))return;localHeld[e.key.toLowerCase()]=true;
+ if(localCount>1&&localControls.slice(0,localCount-1).some(m=>Object.values(m).includes(e.key.toLowerCase())))e.preventDefault();});
+window.addEventListener('keyup',e=>{localHeld[e.key.toLowerCase()]=false;});
+
+/* Independent touch controls for players 2–4. */
+const localTouch={};
+
+// The selector is also mirrored directly above the original control deck.
+function localControlsHeading(){
+ let el=document.getElementById('multiplayerControlHeading');
+ if(!el){el=document.createElement('div');el.id='multiplayerControlHeading';
+ el.style.cssText='display:block!important;color:#fff;background:#125273;padding:12px;text-align:center;font-weight:900;font-size:20px;border:3px solid #7ef8e9;border-radius:12px;margin:8px';
+ document.querySelector('#touchControl')?.insertAdjacentElement('beforebegin',el);}
+ el.textContent='🎮 '+localCount+' PLAYER MODE · '+localCount+' INDEPENDENT CONTROL SET'+(localCount===1?'':'S');
+}
+function localTouchUI(){
+ localControlsHeading();
+ let wrap=document.getElementById('localTouchPlayers');
+ if(!wrap){
+  wrap=document.createElement('section');wrap.id='localTouchPlayers';
+  wrap.setAttribute('aria-label','Additional player controls');
+  wrap.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px;padding:10px;width:100%;max-width:1200px;margin:0 auto;position:relative;z-index:50;visibility:visible;opacity:1';
+  document.querySelector('#touchControl')?.insertAdjacentElement('afterend',wrap);
+ }
+ wrap.replaceChildren();
+ for(let slot=1;slot<localCount;slot++){
+  const state=localTouch[slot]||(localTouch[slot]={x:0,y:0,fire:false,skill:false,interact:false});
+  const panel=document.createElement('div');panel.className='local-touch-panel';
+  panel.style.cssText='border:3px solid #6eeadf;border-radius:18px;background:#0a314eea;padding:12px;color:white;display:flex;flex-direction:column;gap:10px;touch-action:none';
+  const title=document.createElement('strong');title.className='local-touch-title';title.textContent='PLAYER '+(slot+1)+' · MOVE / FIRE / POWER';panel.append(title);
+  const row=document.createElement('div');row.className='local-touch-row';row.style.cssText='display:flex;align-items:center;justify-content:space-around;gap:12px';
+  const stick=document.createElement('div');stick.className='local-touch-stick';stick.style.cssText='width:115px;height:115px;flex-shrink:0;border:3px solid #8cf9f0;border-radius:50%;background:radial-gradient(circle,#237b93,#0b2945);position:relative;touch-action:none;user-select:none';
+  const knob=document.createElement('div');knob.style.cssText='position:absolute;width:44px;height:44px;border-radius:50%;background:#b5fff0;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;box-shadow:0 0 12px #5ff';
+  stick.append(knob);
+  const update=e=>{const r=stick.getBoundingClientRect(),x=(e.clientX-r.left-r.width/2)/(r.width*.38),y=(e.clientY-r.top-r.height/2)/(r.height*.38),d=Math.max(1,Math.hypot(x,y));state.x=x/d;state.y=y/d;knob.style.left=(50+state.x*30)+'%';knob.style.top=(50+state.y*30)+'%';};
+  stick.addEventListener('pointerdown',e=>{e.preventDefault();stick.setPointerCapture(e.pointerId);update(e);});
+  stick.addEventListener('pointermove',e=>{if(stick.hasPointerCapture(e.pointerId))update(e);});
+  const reset=()=>{state.x=state.y=0;knob.style.left='50%';knob.style.top='50%';};
+  stick.addEventListener('pointerup',reset);stick.addEventListener('pointercancel',reset);stick.addEventListener('lostpointercapture',reset);
+  row.append(stick);
+  const buttons=document.createElement('div');buttons.className='local-touch-buttons';buttons.style.cssText='display:grid;grid-template-columns:repeat(2,65px);gap:9px';
+  for(const [name,label,color] of [['fire','A FIRE','#f4ad53'],['skill','S POWER','#bba3ff'],['interact','B USE','#78ddce']]){
+   const b=document.createElement('button');b.type='button';b.textContent=label;b.style.cssText='min-height:58px;border-radius:15px;border:2px solid white;background:'+color+';color:#092b40;font-weight:900;touch-action:none;user-select:none';
+   b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);state[name]=true;});
+   const release=()=>{state[name]=false;};b.addEventListener('pointerup',release);b.addEventListener('pointercancel',release);b.addEventListener('lostpointercapture',release);
+   buttons.append(b);
+  }
+  row.append(buttons);panel.append(row);wrap.append(panel);
+ }
+ wrap.style.setProperty('display',localCount>1?'contents':'none','important');wrap.style.setProperty('visibility','visible','important');
+}
+
+function localUI(){
+ const bar=document.body;if(!bar||document.getElementById('localCount'))return;
+ const label=document.createElement('label');label.style.cssText='position:fixed;z-index:10000;top:72px;right:12px;display:flex;align-items:center;gap:7px;color:white;font-weight:900;font-size:14px;background:#073450ee;padding:12px;border:3px solid #69e7e2;border-radius:14px;box-shadow:0 5px 25px #0009';
+ label.textContent='🎮 V35 FIXED · PLAYERS ';
+ const select=document.createElement('select');select.id='localCount';select.setAttribute('aria-label','Number of local players');
+ select.style.cssText='background:#0b3855;color:white;border:2px solid #69e7e2;border-radius:9px;padding:7px';
+ for(let i=1;i<=4;i++){const o=document.createElement('option');o.value=i;o.textContent=i+' player'+(i>1?'s':'');select.appendChild(o);}
+ select.value='4';select.onchange=()=>{localCount=Number(select.value);localTeam=[];if(g)localPrepare();localTouchUI();fitLocalControlDeck();};
+ label.appendChild(select);bar.appendChild(label);
+}
+
+/* Compact on-board control deck: four independent sets inside the canvas frame. */
+
+function fitLocalControlDeck(){
+ const stage=document.querySelector('.stage-wrap');
+ const main=document.getElementById('touchControl');
+ const extra=document.getElementById('localTouchPlayers');
+ if(!stage||!main||!extra)return;
+ let deck=document.getElementById('onBoardControlDeck');
+ if(!deck){
+  deck=document.createElement('section');
+  deck.id='onBoardControlDeck';
+  deck.setAttribute('aria-label','Compact controls for one to four players');
+  const toolbar=document.createElement('div');
+  toolbar.id='localControlToolbar';
+  deck.appendChild(toolbar);
+  const label=document.getElementById('localCount')?.parentElement;
+  if(label){label.firstChild.textContent='🎮 PLAYERS ';toolbar.appendChild(label);}
+  const heroes=document.getElementById('heroSwitch');
+  if(heroes)toolbar.appendChild(heroes);
+  deck.appendChild(main);deck.appendChild(extra);
+  stage.insertAdjacentElement('afterend',deck);
+  const st=document.createElement('style');
+  st.id='fishmanNonOverlappingControlsCSS';
+  st.textContent="\nhtml.fishman-compact-playing,html.fishman-compact-playing body{width:100%!important;height:100%!important;overflow:hidden!important}\nhtml.fishman-compact-playing .shell{position:relative!important;display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr) var(--fishman-deck-height,110px)!important;gap:3px!important;width:100%!important;max-width:none!important;height:100dvh!important;min-height:0!important;max-height:100dvh!important;overflow:hidden!important;align-items:stretch!important;margin:0!important;padding:3px!important}\nhtml.fishman-compact-playing .head{position:absolute!important;top:2px!important;right:3px!important;left:auto!important;margin:0!important;z-index:15!important;pointer-events:none!important}\nhtml.fishman-compact-playing .head .brand{display:none!important}\nhtml.fishman-compact-playing .head .top-actions{pointer-events:auto!important;gap:3px!important}\nhtml.fishman-compact-playing .head .tiny-button{font-size:10px!important;padding:2px 4px!important}\nhtml.fishman-compact-playing .under,html.fishman-compact-playing #multiplayerControlHeading{display:none!important}\nhtml.fishman-compact-playing .stage-wrap{grid-column:1!important;grid-row:1!important;position:relative!important;width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;min-width:0!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important;display:flex!important;align-items:center!important;justify-content:center!important}\nhtml.fishman-compact-playing .stage-wrap canvas{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important;aspect-ratio:auto!important;min-width:0!important;min-height:0!important}\nhtml.fishman-compact-playing #onBoardControlDeck{position:relative!important;inset:auto!important;grid-column:1!important;grid-row:2!important;z-index:2!important;display:grid!important;grid-template-columns:repeat(var(--cols,4),minmax(0,1fr))!important;grid-template-rows:22px repeat(var(--rows,1),minmax(0,1fr))!important;gap:3px!important;width:100%!important;height:100%!important;max-height:100%!important;min-height:0!important;overflow:hidden!important;box-sizing:border-box!important;margin:0!important;padding:2px!important;background:#061e30!important;border:1px solid #387b82!important;border-radius:8px!important;pointer-events:auto!important}\nhtml.fishman-compact-playing #localControlToolbar{grid-column:1/-1!important;grid-row:1!important;display:flex!important;align-items:center!important;justify-content:space-between!important;min-height:0!important;height:20px!important;gap:4px!important;overflow:hidden!important}\nhtml.fishman-compact-playing #localControlToolbar label{position:static!important;inset:auto!important;display:inline-flex!important;align-items:center!important;gap:4px!important;flex:0 0 auto!important;margin:0!important;padding:0 4px!important;font-size:10px!important;line-height:1!important;background:#17405b!important;border:1px solid #6fe3da!important;border-radius:5px!important;box-shadow:none!important}\nhtml.fishman-compact-playing #localCount{font-size:11px!important;height:18px!important;padding:0 3px!important;border-width:1px!important}\nhtml.fishman-compact-playing #localControlToolbar #heroSwitch{position:static!important;inset:auto!important;transform:none!important;display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:center!important;gap:2px!important;width:auto!important;max-width:66%!important;height:20px!important;margin:0!important;padding:0!important;overflow:hidden!important}\nhtml.fishman-compact-playing #localControlToolbar #heroSwitch button{flex:0 1 auto!important;min-width:0!important;min-height:0!important;width:auto!important;height:18px!important;margin:0!important;padding:1px 3px!important;font-size:9px!important;line-height:1!important;white-space:nowrap!important;overflow:hidden!important}\nhtml.fishman-compact-playing #onBoardControlDeck #touchControl{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-around!important;grid-row:auto!important;min-width:0!important;min-height:0!important;max-height:100%!important;width:100%!important;height:100%!important;margin:0!important;padding:2px!important;gap:2px!important;border-radius:6px!important;background:#123752de!important;overflow:hidden!important;box-shadow:none!important}\nhtml.fishman-compact-playing #onBoardControlDeck .stick-unit,html.fishman-compact-playing #onBoardControlDeck .touch-right{position:static!important;inset:auto!important;transform:none!important;display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;flex:0 1 auto!important;min-width:0!important;min-height:0!important;margin:0!important;padding:0!important;gap:2px!important}\nhtml.fishman-compact-playing #onBoardControlDeck .stick-base{flex:0 0 auto!important;width:clamp(32px,5.1vw,58px)!important;height:clamp(32px,5.1vw,58px)!important;min-width:0!important;min-height:0!important;max-width:100%!important;border-width:2px!important;box-shadow:none!important}\nhtml.fishman-compact-playing #onBoardControlDeck .stick-knob{width:38%!important;height:38%!important;border-width:1px!important}\nhtml.fishman-compact-playing #onBoardControlDeck .stick-arrows,html.fishman-compact-playing #onBoardControlDeck .stick-caption,html.fishman-compact-playing #onBoardControlDeck .aim-mark{display:none!important}\nhtml.fishman-compact-playing #onBoardControlDeck .action-pair{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:2px!important;min-width:0!important;min-height:0!important}\nhtml.fishman-compact-playing #onBoardControlDeck .joy-button{display:flex!important;align-items:center!important;justify-content:center!important;width:clamp(25px,3.1vw,35px)!important;height:clamp(25px,3.1vw,35px)!important;min-width:0!important;min-height:0!important;max-width:none!important;margin:0!important;padding:1px!important;border-radius:6px!important}\nhtml.fishman-compact-playing #onBoardControlDeck .joy-button .button-letter{font-size:clamp(11px,1.6vw,17px)!important;line-height:1!important}\nhtml.fishman-compact-playing #onBoardControlDeck .button-name,html.fishman-compact-playing #onBoardControlDeck .skill-cooldown{display:none!important}\nhtml.fishman-compact-playing #onBoardControlDeck #localTouchPlayers{display:contents!important;min-width:0!important;min-height:0!important;width:auto!important;margin:0!important;padding:0!important}\nhtml.fishman-compact-playing #onBoardControlDeck .local-touch-panel{display:flex!important;flex-direction:column!important;min-width:0!important;min-height:0!important;max-height:100%!important;margin:0!important;padding:2px!important;gap:2px!important;border:1px solid #5fd6d0!important;border-radius:6px!important;background:#123752de!important;overflow:hidden!important}\nhtml.fishman-compact-playing #onBoardControlDeck .local-touch-title{font-size:10px!important;line-height:1!important;text-align:center!important;white-space:nowrap!important}\nhtml.fishman-compact-playing #onBoardControlDeck .local-touch-row{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;flex:1!important;min-width:0!important;min-height:0!important;gap:3px!important}\nhtml.fishman-compact-playing #onBoardControlDeck .local-touch-stick{flex:0 0 auto!important;width:clamp(34px,5.3vw,61px)!important;height:clamp(34px,5.3vw,61px)!important;min-width:0!important;min-height:0!important;border-width:2px!important}\nhtml.fishman-compact-playing #onBoardControlDeck .local-touch-buttons{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:2px!important;min-width:0!important}\nhtml.fishman-compact-playing #onBoardControlDeck .local-touch-buttons button{width:clamp(28px,3.5vw,42px)!important;height:clamp(26px,3vw,34px)!important;min-width:0!important;min-height:0!important;margin:0!important;padding:1px!important;font-size:9px!important;border-width:1px!important;border-radius:6px!important}\n@media (orientation:portrait) and (max-width:700px){\n html.fishman-compact-playing #onBoardControlDeck .stick-base,html.fishman-compact-playing #onBoardControlDeck .local-touch-stick{width:clamp(42px,12vw,58px)!important;height:clamp(42px,12vw,58px)!important}\n html.fishman-compact-playing #onBoardControlDeck .joy-button{width:30px!important;height:30px!important}\n html.fishman-compact-playing #onBoardControlDeck .local-touch-buttons button{width:36px!important;height:29px!important}\n}\n@media (max-height:420px) and (orientation:landscape){\n html.fishman-compact-playing #onBoardControlDeck .local-touch-stick,html.fishman-compact-playing #onBoardControlDeck .stick-base{width:clamp(30px,4.5vw,46px)!important;height:clamp(30px,4.5vw,46px)!important}\n html.fishman-compact-playing #onBoardControlDeck .local-touch-buttons button{width:clamp(27px,3.4vw,36px)!important;height:25px!important}\n}\n";
+  document.head.appendChild(st);
+ }
+ const active=scene==='playing';
+ document.documentElement.classList.toggle('fishman-compact-playing',active);
+ const portrait=innerHeight>innerWidth&&innerWidth<=700;
+ const rows=portrait&&localCount>2?2:1;
+ const cols=portrait?Math.min(2,localCount):localCount;
+ const height=rows===2?'clamp(177px,29dvh,235px)':'clamp(100px,22dvh,132px)';
+ document.documentElement.style.setProperty('--fishman-deck-height',height);
+ deck.style.setProperty('--players',String(localCount));
+ deck.style.setProperty('--rows',String(rows));
+ deck.style.setProperty('--cols',String(cols));
+ deck.style.setProperty('display',active?'grid':'none','important');
+ deck.dataset.players=String(localCount);
+}
+
+/* v16 controller layout replaces v35's compact control deck. */
+window.FishmanLocalControls={refresh:localTouchUI,get count(){return localCount;}};
+
+
+function drawFrame(now){const dt=Math.min(.033,((now-last)||16)/1000);last=now;pollXboxController();tickPolishFX(dt);if(net()?.role==='guest'){t+=dt*.33;}else if(scene==='playing'){tick(dt);if(scene==='playing')tickCoopSecond(dt);}else{t+=dt*.45;if(g){g.deathMotion=Math.max(0,(g.deathMotion||0)-dt);g.reviveMotion=Math.max(0,(g.reviveMotion||0)-dt);}}window.FishmanMusic?.update({scene,level,difficulty});if(Math.floor(now/140)!==Math.floor((now-16)/140))updateSkillButton();if(net()?.role==='host'&&net()?.connected)net().sendSnapshot(now);if(net()?.role==='guest')net().sendInput(now,{x:stick.x,y:stick.y,aim:rightStick.pointerId!==null?{x:rightStick.x,y:rightStick.y}:aim.manual?{x:aim.vx,y:aim.vy}:null,fire:held.action||keys.action||gamepadFire||(rightStick.pointerId!==null&&Math.hypot(rightStick.x,rightStick.y)>.13)});localTick(dt);if(scene==='playing')v35UniqueTick(dt);drawSyncedFrame(dt);localDraw();if(scene==='playing')v35UniqueDraw();requestAnimationFrame(drawFrame);}
 function command(doit){if(net()?.role==='guest')return;switch(doit){case 'continue':intro(Math.max(0,unlock-1));break;case 'new':intro(0);break;case 'boss':intro(4);break;case 'submarine':intro(5);break;case 'bonus':intro(6);break;case 'play':start(0);break;case 'retry':if(g?.lives>0&&g.challenge)reviveArena();else if(g?.lives>0&&g.checkpointState)restoreRunCheckpoint();else if(g?.lives>0)start(g.wave||0,g.lives);else start(0);break;case 'next':intro(Math.min(N-1,level+1));break;case 'menu':menu();break;case 'difficulty':difficulty=difficulty==='classic'?'expert':difficulty==='expert'?'nightmare':'classic';hardMode=difficulty!=='classic';try{localStorage.setItem('fishmanDifficulty',difficulty);}catch{}menu();break;case 'resume':pause();break;}}
 screen.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.do)command(b.dataset.do);else if(b.dataset.start!==undefined)intro(+b.dataset.start);else if(b.dataset.diff){difficulty=b.dataset.diff;hardMode=difficulty!=='classic';try{localStorage.setItem('fishmanDifficulty',difficulty);}catch{}menu();}});
 document.getElementById('menuBtn').addEventListener('click',()=>{if(net()?.role==='guest'){document.getElementById('mpOpen').click();return;}scene==='playing'?pause():menu();});document.getElementById('soundBtn').addEventListener('click',e=>{soundOn=!soundOn;e.currentTarget.textContent=soundOn?'♫ Music: On':'♫ Music: Off';if(soundOn)sfx('collect');window.FishmanMusic?.toggle(soundOn,{scene,level,difficulty});});
@@ -3219,6 +3635,20 @@ cv.addEventListener('pointerdown',e=>{if(scene==='playing'){const rect=cv.getBou
 document.querySelectorAll('.touch [data-key]').forEach(b=>{const k=b.dataset.key;const down=e=>{e.preventDefault();try{b.setPointerCapture(e.pointerId);}catch{}b.classList.add('down');if(k==='action'){aim.pointer={id:e.pointerId,x:e.clientX,y:e.clientY};held.action=true;attack();}else if(k==='interact')interact();else if(k==='skill')useSpecialSkill();else held[k]=true;};const up=e=>{e.preventDefault();b.classList.remove('down');held[k]=false;if(k==='action')aim.pointer=null;};if(k==='action')b.addEventListener('pointermove',e=>{if(!aim.pointer||e.pointerId!==aim.pointer.id)return;const dx=e.clientX-aim.pointer.x,dy=e.clientY-aim.pointer.y,d=Math.hypot(dx,dy);if(d>13){aim.manual=true;aim.point=null;aim.vx=dx/d;aim.vy=dy/d;}});b.addEventListener('pointerdown',down);for(const event of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(event,up);});
 // Optional test diagnostics only on local ?test=1; not needed to play.
 if(new URLSearchParams(location.search).has('test'))window.fishmanTest={get:()=>({terrain:terrainAt(g?.x),movement:movementMode(g?.hero,g?.x),p2Terrain:g?.coopP2?terrainAt(g.coopP2.x):null,p2Movement:g?.coopP2?movementMode(g.coopP2.hero,g.coopP2.x):null,weapon:g?.weapon,weaponLevels:g?.weaponLevels,weaponsOwned:g?.weaponsOwned,weaponPickups:g?.weaponPickups,scene,level,wave:g?.wave,collect:g?.collect,total:g?.total,captured:g?.captured,hp:g?.hp,maxHp:g?.maxHp,lives:g?.lives,maxLives:g?.maxLives,boss:g?.boss,timer:g?.timer,hardMode,difficulty,strike:g?.strike,challenge:g?.challenge?{index:g.challenge.index,final:g.challenge.final,hp:g.challenge.hp,maxHp:g.challenge.maxHp,pattern:g.challenge.pattern?.kind,phase:g.challenge.phase,completed:g.challenge.completed,required:g.challenge.required,barrier:g.challenge.barrier,bossX:g.challenge.x,bossY:g.challenge.y,bullets:g.challenge.bullet.length}:null,arena:g?.arena?{phase:g.arena.phase,attack:g.arena.attack,shield:g.arena.shield,orbs:g.arena.orbs.length,dodgeCool:g.dodgeCool,rest:g.arena.rest}:null,hazards:g?.hazards,items:g?.items,gate:worldGate(),runLength:g?.runLength,checkpoint:g?.checkpointIndex,cameraX,rightStick:{x:rightStick.x,y:rightStick.y,active:rightStick.pointerId!==null},unlock,position:g&&{x:g.x,y:g.y},hero:g?.hero,stars:progress.stars,upgrades:progress.upgrades,skillUpgrades:progress.skillUpgrades,skillCooldown:g?.skillCooldown,freezeTime:g?.freezeTime,skillCrystals:g?.skillCrystals,starPickups:g?.stars,awardPickups:g?.awards,aim}),intro:(n)=>intro(n),completeChapter:()=>chapterDone(),showMenu:()=>menu(),start:(n)=>start(n),teleport:(x,y)=>{if(g){g.x=x;g.y=y;g.inv=3;}},interact,attack,skill:useSpecialSkill,skillLevelUp:(h)=>skillLevelUp(h,'TEST'),step:(seconds=1)=>{for(let i=0;i<Math.ceil(seconds/.025);i++)tick(.025);},steer:(x,y,fire=false)=>{stick.x=x;stick.y=y;held.action=fire;},select:(d)=>{difficulty=d;hardMode=d!=='classic';},selectHero:(h)=>switchHero(h),giveStars:(n=5)=>{for(let i=0;i<n;i++){progress.stars++;if(progress.stars%5===0&&g){g.hp=Math.min(g.maxHp,g.hp+2);skillLevelUp(g.hero,'STAR BONUS');}}saveProgress();},completeCity:()=>unlockGozilla(),terrainAt:(x)=>terrainAt(x),modeFor:(h,x)=>movementMode(h,x),hit:()=>hit(),startChapterArena:(n=level,final=false)=>{if(g)startChapterArena(final,n);},finishChallenge:()=>{if(g?.challenge){g.challenge.hp=1;const a=g.challenge;g.proj.push({x:a.x-60,y:a.y,vx:3000,vy:0,age:0,life:1,kind:g.hero,damage:999,r:19});}},finishBoss:()=>{if(g&&level===4){g.arena.shield=0;g.boss=1;attack();}}};
+// Public four-player adapter MUST live in the game IIFE, where g, scene and localTeam exist.
+window.FishmanV16Adapter={
+ setCount(count){
+  localCount=Math.max(1,Math.min(4,Math.trunc(Number(count)||1)));
+  localTeam.length=localCount;
+  if(scene==='playing')localPrepare();
+ },
+ getPlayer(slot){const i=Number(slot)-1;return i>=1&&i<localCount?localTeam[i]||null:null;},
+ setHero(slot,hero){
+  const p=localTeam[Number(slot)-1];
+  if(p){p.hero=hero;p.motionHero=hero;p.transformMotion=.75;}
+ },
+ get scene(){return scene;}
+};
 menu();updateSkillButton();requestAnimationFrame(drawFrame);
 })();
 </script>
@@ -3345,6 +3775,210 @@ roomInput.addEventListener('input',()=>roomInput.value=valid(roomInput.value));
 const q=new URLSearchParams(location.search),room=valid(q.get('room'));if(room){roomInput.value=room;show(true);state(`You've been invited to room ${room}. Tap Join room to play.`);}
 window.addEventListener('pagehide',()=>{try{n.connection?.close();n.peer?.destroy();}catch{}});
 updateUI();
+})();
+</script>
+<script id="fishmanLocalControllers">
+/* Same-device couch co-op: exactly one V button adds P2, P3 and P4 in order.
+   Each player has independent MOVE stick, AIM+FIRE stick, USE, ATTACK and SKILL buttons.
+   The existing P1 game controls are moved, not cloned, so original listeners keep working. */
+(()=>{'use strict';
+ const n=window.FishmanNet,btn=document.getElementById('addPlayerBtn'),openOnline=document.getElementById('mpOpen');
+ const shell=document.querySelector('.shell'),mainControls=document.getElementById('touchControl');
+ const heroes=[['fish','🐟 Fishman'],['kai','🧪 Kai'],['roxy','🦖 Roxy'],['humpty','🥚 Humpty'],['gozilla','🐲 Gozilla'],['sub','🚤 Submarine']];
+ const human={fish:'Fishman',kai:'Kai',roxy:'Roxy',humpty:'Humpty',gozilla:'Gozilla',sub:'Submarine'};
+ const icon={fish:'🐟',kai:'🧪',roxy:'🦖',humpty:'🥚',gozilla:'🐲',sub:'🚤'};
+ const colors={1:'#a6f8ff',2:'#9effdf',3:'#ffdb91',4:'#edb2ff'};
+ const board=document.createElement('section');board.id='localControllerBoard';board.setAttribute('aria-label','Individual gamepads for each active player');
+ mainControls.insertAdjacentElement('afterend',board);
+ let localCount=1,lastUpdate=0;
+ const sticks=new Map(),fireHeld=new Map();
+ const getG=()=>window.FishmanMultiplayerBridge?.getG?.();
+ function room(slot){return n.players?.[slot];}
+ function makeSelector(slot,value){
+  const sel=document.createElement('select');sel.setAttribute('aria-label','Player '+slot+' character');
+  for(const [id,name] of heroes){const o=document.createElement('option');o.value=id;o.textContent=name;sel.appendChild(o);}sel.value=value;return sel;
+ }
+ function makeStick(slot,type){
+  const wrap=document.createElement('div');wrap.className='pad-stick-wrap';
+  const base=document.createElement('div');base.className='stick-base local-stick'+(type==='aim'?' aim-stick':'');
+  base.setAttribute('role','group');base.setAttribute('aria-label','Player '+slot+' '+(type==='move'?'move':'aim and attack')+' joystick');
+  const arrows=document.createElement('div');arrows.className='stick-arrows';arrows.setAttribute('aria-hidden','true');
+  arrows.innerHTML='<span class="up">▲</span><span class="left">◀</span><span class="right">▶</span><span class="down">▼</span>';base.appendChild(arrows);
+  const knob=document.createElement('div');knob.className='stick-knob';knob.innerHTML='<span class="stick-grip"></span>';base.appendChild(knob);
+  const caption=document.createElement('span');caption.className='pad-caption';caption.textContent=type==='move'?'MOVE':'AIM + FIRE';
+  wrap.append(base,caption);
+  const state={pointer:null,x:0,y:0};
+  const update=(ev)=>{
+   const r=base.getBoundingClientRect(),dx=ev.clientX-r.left-r.width/2,dy=ev.clientY-r.top-r.height/2;
+   const len=Math.hypot(dx,dy),max=Math.max(22,r.width*.32),amt=Math.min(1,len/max),dead=.13;
+   const magnitude=amt<=dead?0:(amt-dead)/(1-dead),ux=len?dx/len:0,uy=len?dy/len:0;
+   state.x=ux*magnitude;state.y=uy*magnitude;
+   knob.style.transform='translate(-50%,-50%) translate('+(ux*amt*max).toFixed(1)+'px,'+(uy*amt*max).toFixed(1)+'px)';
+   const p=room(slot);if(!p)return;
+   if(type==='move'){p.input.x=state.x;p.input.y=state.y;}
+   else{p.input.aim=magnitude>.11?{x:ux,y:uy}:null;fireHeld.set(slot,magnitude>.11);p.input.fire=!!(fireHeld.get(slot)||p.input.buttonFire);}
+   p.lastInputAt=Date.now();
+  };
+  function end(ev){if(state.pointer===null||(ev&&ev.pointerId!==state.pointer))return;
+   state.pointer=null;state.x=state.y=0;knob.style.transform='translate(-50%,-50%)';base.classList.remove('active');
+   const p=room(slot);if(!p)return;
+   if(type==='move'){p.input.x=0;p.input.y=0;}else{p.input.aim=null;fireHeld.set(slot,false);p.input.fire=!!p.input.buttonFire;}
+   p.lastInputAt=Date.now();
+  }
+  base.addEventListener('pointerdown',ev=>{if(state.pointer!==null)return;ev.preventDefault();state.pointer=ev.pointerId;
+   try{base.setPointerCapture(ev.pointerId);}catch{}base.classList.add('active');update(ev);});
+  base.addEventListener('pointermove',ev=>{if(ev.pointerId!==state.pointer)return;ev.preventDefault();update(ev);});
+  for(const event of ['pointerup','pointercancel','lostpointercapture'])base.addEventListener(event,end);
+  sticks.set(slot+type,end);return wrap;
+ }
+ function makeButton(slot,key,label){
+  const button=document.createElement('button');button.type='button';
+  button.className='pad-button '+(key==='attack'?'pad-attack':key==='skill'?'pad-skill':key==='weapon'?'pad-weapon':'pad-use');
+  button.setAttribute('aria-label','Player '+slot+' '+(key==='attack'?'attack':key==='interact'?'use / dodge':key==='weapon'?'switch weapon':'special skill'));
+  button.innerHTML='<span>'+(key==='attack'?'A':key==='interact'?'B':key==='weapon'?'W':'S')+'</span><small>'+label+'</small>';
+  let activePointer=null;
+  button.addEventListener('pointerdown',ev=>{
+   if(activePointer!==null)return;ev.preventDefault();activePointer=ev.pointerId;
+   try{button.setPointerCapture(ev.pointerId);}catch{}
+   button.classList.add('down');const p=room(slot);if(!p)return;
+   if(key!=='attack'&&window.FishmanMultiplayerBridge?.getScene?.()!=='playing')return;
+   if(key==='attack'){p.input.buttonFire=true;p.input.fire=true;}
+   else if(key==='interact')p.input.interact=true;
+   else if(key==='weapon')p.input.weapon=true;
+   else p.input.skill=true;
+   p.lastInputAt=Date.now();
+  });
+  const up=ev=>{if(activePointer===null||(ev&&ev.pointerId!==activePointer))return;activePointer=null;
+   button.classList.remove('down');const p=room(slot);if(p&&key==='attack'){p.input.buttonFire=false;p.input.fire=!!fireHeld.get(slot);}};
+  for(const event of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(event,up);
+  return button;
+ }
+ function makePad(slot){
+  const pad=document.createElement('article');pad.className='local-pad p'+slot;
+  pad.dataset.player=slot;pad.style.setProperty('--pad-color',colors[slot]);
+  const heading=document.createElement('div');heading.className='pad-heading';
+  const title=document.createElement('strong');title.className='pad-player-name';title.textContent='PLAYER '+slot;
+  const select=makeSelector(slot,slot===1?n.localHero:room(slot).hero);
+  heading.append(title,select);pad.appendChild(heading);
+  const summary=document.createElement('div');summary.className='pad-loadout';summary.textContent='WEAPON · BASIC Lv.1';pad.appendChild(summary);
+  const ability=document.createElement('div');ability.className='pad-ability';ability.textContent='S · SPECIAL';pad.appendChild(ability);
+  select.addEventListener('change',()=>{
+   if(slot===1){n.localHero=select.value;window.FishmanMultiplayerBridge?.selectHero?.(select.value);}
+   else{const p=room(slot);if(!p)return;p.hero=select.value;p.input.hero=select.value;p.lastInputAt=Date.now();window.FishmanV16Adapter?.setHero(slot,select.value);}
+   syncHeadings();
+  });
+  if(slot===1){
+   pad.appendChild(mainControls);
+  }else{
+   const row=document.createElement('div');row.className='pad-controls';
+   row.append(makeStick(slot,'move'),makeStick(slot,'aim'));
+   const buttons=document.createElement('div');buttons.className='pad-buttons';
+   buttons.append(makeButton(slot,'interact','USE'),makeButton(slot,'attack','FIRE'),makeButton(slot,'skill','SKILL'),makeButton(slot,'weapon','SWAP'));
+   row.appendChild(buttons);pad.appendChild(row);
+  }
+  board.appendChild(pad);return pad;
+ }
+ function syncHeadings(){
+  for(const pad of board.querySelectorAll('.local-pad')){
+   const slot=+pad.dataset.player,p=slot===1?null:window.FishmanV16Adapter?.getPlayer(slot);
+   const hero=slot===1?(getG()?.hero||n.localHero):(p?.hero||room(slot)?.hero||'fish');
+   pad.querySelector('.pad-player-name').textContent='P'+slot+' · '+(icon[hero]||'🐟')+' '+(human[hero]||'Fishman')+(p?.down?' · DOWN':'');
+   const sel=pad.querySelector('select');if(document.activeElement!==sel&&sel.value!==hero)sel.value=hero;
+   const b=pad.querySelector('.pad-use small');if(b)b.textContent=getG()?.challenge||window.FishmanMultiplayerBridge?.getLevel?.()===4?'DODGE':'USE';
+   let info=pad.querySelector('.pad-weapon small');if(!info&&slot===1)info=pad.querySelector('.weapon-action .button-name');
+   if(info){const player=slot===1?getG():p,weapon=player?.weapon||'basic',owned=player?.weaponsOwned?.length||1;
+    info.textContent=owned>1?'Lv'+(player?.weaponLevels?.[weapon]||1):'LOCK';}
+   const currentPlayer=slot===1?getG():p;
+   const ability=pad.querySelector('.pad-ability');
+   if(ability){
+    const skills={fish:'🫧 BUBBLE STORM',kai:'❄ ICE NOVA',roxy:'🔥 FIRE METEORS',
+     humpty:'💥 SHELL EARTHQUAKE',gozilla:'⚡ LIGHTNING STORM',sub:'🚀 SONAR MISSILES'};
+    const cd=Math.max(0,currentPlayer?.skillCooldown||0),superTime=Math.max(0,currentPlayer?.skillEffect||0);
+    ability.textContent='S · '+(skills[hero]||'SPECIAL')+(superTime>.1?' · SUPER '+Math.ceil(superTime)+'s':cd>.1?' · '+Math.ceil(cd)+'s':' · READY');
+   }
+   const status=pad.querySelector('.pad-loadout');if(status){const currentWeapon=currentPlayer?.weapon||'basic',superTime=currentPlayer?.skillEffect||0;
+    status.textContent=superTime>.05?'⚡ SUPER MODE · '+superTime.toFixed(1)+'s':
+    '⚡ '+({basic:'BASIC',rapid:'RAPID',spread:'TRIPLE',charge:'CHARGE',homing:'HOMING',electric:'ELECTRIC'}[currentWeapon]||'BASIC')+' Lv.'+(currentPlayer?.weaponLevels?.[currentWeapon]||1)+(currentPlayer?.weaponShield>0?' · SHIELD':'')+(currentPlayer?.down?' · DOWN':'');
+    status.classList.toggle('super-active',superTime>.05);
+   }
+   const special=pad.querySelector('.pad-skill small');if(special&&slot!==1){const player=p,cd=player?.skillCooldown||0;special.textContent=cd>.1?Math.ceil(cd)+'s':'SKILL';}
+  }
+ }
+ // Starting local co-op from the menu must also start the game itself.
+ // Previously V only created controllers, leaving g=null and no heroes to draw.
+ function ensureLocalGameStarted(){
+  const bridge=window.FishmanMultiplayerBridge;
+  if(!bridge)return;
+  if(bridge.getScene?.()==='menu')
+   document.querySelector('#screen button[data-start="0"]:not([disabled])')?.click();
+  if(bridge.getScene?.()==='intro')
+   document.querySelector('#screen button[data-do="play"]')?.click();
+ }
+ function addPlayer(){
+  if(n.role!=='solo'&&n.role!=='local')return;
+  if(localCount>=4)return;
+  const firstJoin=n.role==='solo';
+  const onlineModal=document.getElementById('mpScreen');if(onlineModal&&!onlineModal.hidden)onlineModal.hidden=true;
+  if(n.role==='solo'){
+   n.role='local';n.connected=false;n.slot=1;n.players={};n.localHero=getG()?.hero||n.localHero||'fish';
+   document.documentElement.classList.add('local-coop');
+   makePad(1);openOnline.hidden=true;openOnline.disabled=true;
+  }
+  const slot=++localCount;
+  // Give local teammates different starting characters, while allowing manual selection.
+  const defaults={2:(n.localHero==='kai'?'fish':'kai'),3:'roxy',4:'humpty'};
+  n.players[slot]={connection:{open:true},hero:defaults[slot],
+   input:{x:0,y:0,aim:null,fire:false,buttonFire:false,skill:false,interact:false,weapon:false,hero:defaults[slot]},lastInputAt:Date.now()};
+  makePad(slot);
+  window.FishmanV16Adapter?.setCount(localCount);
+  if(firstJoin){
+   ensureLocalGameStarted();
+   // The menu-to-playing transition creates the world; now create all teammate actors.
+   window.FishmanV16Adapter?.setCount(localCount);
+  }
+  btn.textContent=localCount<4?'ⓥ V · ADD P'+(localCount+1):'✓ 4 / 4 PLAYERS';
+  btn.disabled=localCount>=4;
+  btn.title=localCount<4?'Press V to add Player '+(localCount+1):'All four players are here';
+  syncHeadings();
+  // Keep the battlefield visible when a teammate is added.
+ }
+ function removePlayer(){
+  if(n.role!=='local'||localCount<=1)return;
+  const slot=localCount;
+  const p=room(slot);if(p){p.input.x=0;p.input.y=0;p.input.fire=false;p.input.buttonFire=false;p.input.skill=false;p.input.interact=false;p.input.weapon=false;}
+  board.querySelector('.local-pad.p'+slot)?.remove();
+  delete n.players[slot];localCount--;
+  window.FishmanV16Adapter?.setCount(localCount);
+  if(localCount===1){
+    n.role='solo';n.connected=false;n.players={};
+    document.documentElement.classList.remove('local-coop');
+    board.querySelector('.local-pad.p1')?.remove();
+    document.querySelector('.stage-wrap')?.insertAdjacentElement('afterend',mainControls);
+    openOnline.hidden=false;openOnline.disabled=false;
+  }
+  btn.disabled=false;
+  btn.textContent='ⓥ V · ADD P'+(localCount+1);
+  btn.title='Press V to add Player '+(localCount+1);
+  syncHeadings();
+ }
+ btn.addEventListener('click',addPlayer);
+ window.addEventListener('keydown',ev=>{
+  if(!['v','w'].includes(ev.key?.toLowerCase())||ev.repeat||ev.ctrlKey||ev.altKey||ev.metaKey)return;
+  if(['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName))return;
+  ev.preventDefault();ev.stopImmediatePropagation();if(ev.key.toLowerCase()==='v')addPlayer();else removePlayer();
+ });
+ window.addEventListener('blur',()=>{
+  for(const slot of [2,3,4]){const p=room(slot);if(!p)continue;
+   p.input.x=0;p.input.y=0;p.input.fire=false;p.input.buttonFire=false;p.input.aim=null;fireHeld.set(slot,false);
+  }
+  for(const end of sticks.values())end();
+ });
+ window.addEventListener('pagehide',()=>{for(const slot of [2,3,4]){const p=room(slot);if(p){p.input.fire=false;p.input.x=0;p.input.y=0;}}});
+ setInterval(()=>{if(n.role!=='local'){
+   btn.disabled=n.role!=='solo';btn.title=n.role==='solo'?'Add another player on this device (V)':'Leave online mode before adding local players';
+  }if(n.role==='local')syncHeadings();
+ },350);
+ window.FishmanLocal={addPlayer,removePlayer,get count(){return localCount;},get players(){return n.players;}};
 })();
 </script>
 </body>
