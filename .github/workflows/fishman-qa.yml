@@ -50,6 +50,8 @@ jobs:
           sleep 2
       - name: Test all nine boss-gauntlet transitions with simultaneous projectiles
         run: node tests/fishman-boss-gauntlet-transition-v35.mjs
+      - name: Test enemy defeats persist until re-entering a scene, including co-op
+        run: node tests/fishman-enemy-scene-v35.mjs
       - name: Test v35 homepage v16 four-player controls and W remove button
         run: node tests/fishman-v35-w-remove.mjs
       - name: Test v35 four-player removal and keyboard W
