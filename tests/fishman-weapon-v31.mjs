@@ -60,11 +60,14 @@ for(const [label,engine] of [['chromium',chromium],['webkit',webkit]]){
    g.proj=[];g.weaponFX=[];
    g.hazards=[{x:405,y:320,bx:405,by:320,ax:0,ay:0,rate:0,phase:0,stun:0,hp:4},
     {x:448,y:320,bx:448,by:320,ax:0,ay:0,rate:0,phase:0,stun:0,hp:4}];
+   const secondary=g.hazards[1];
    fishmanTest.attack();
    fishmanTest.step(.24);
-   return {secondary:g.hazards[1].stun,fx:g.weaponFX.map(e=>e.kind)};
+   // A strong charge blast may eliminate the enemy rather than merely stun it.
+   return {secondaryStun:secondary.stun,secondaryDefeated:secondary.defeated===true||secondary.hp<=0,
+    fx:g.weaponFX.map(e=>e.kind)};
   });
-  assert.ok(projectileHit.secondary>0,'Charge cannon failed to damage/stun in its area');
+  assert.ok(projectileHit.secondaryStun>0||projectileHit.secondaryDefeated,'Charge cannon failed to damage or defeat its area target');
   assert.ok(projectileHit.fx.includes('shock'),'Plasma explosion VFX absent');
   console.log('PASS '+label+' area-of-effect damage and blast visuals');
 
