@@ -21,17 +21,18 @@ for (const [name, engine] of [['Chromium',chromium],['WebKit',webkit]]) {
     g.inv=10;g.proj.push({x:victim.x,y:victim.y,vx:0,vy:0,age:0,life:1,
      kind:g.hero,weapon:'basic',damage:1000,r:20});
     fishmanTest.step(.10);
-    const killed=!g.hazards.some(h=>h.enemyId===id);
+    const afterShot=g.hazards.find(h=>h.enemyId===id);const killed=!afterShot;const afterHp=afterShot?.hp;const afterX=afterShot?.x;const afterY=afterShot?.y;const shotCount=g.proj.length;
     fishmanTest.step(.7);
     const staysDead=!g.hazards.some(h=>h.enemyId===id);
     fishmanTest.teleport(1220,425);fishmanTest.step(.075);
     const absentAfterLeaving=!g.hazards.some(h=>h.enemyId===id);
     fishmanTest.teleport(300,425);fishmanTest.step(.075);
     const revived=g.hazards.find(h=>h.enemyId===id);
-    return {chapter,type,id,startingCount,killed,staysDead,absentAfterLeaving,
+    return {chapter,type,id,startingCount,killed,afterHp,afterX,afterY,shotCount,staysDead,absentAfterLeaving,
      restored:!!revived,fullHp:revived?.hp===revived?.maxHp,
      uniqueIds:new Set(g.hazards.map(h=>h.enemyId)).size===g.hazards.length};
    },{chapter,type});
+   console.log('ENEMY STATE',name,JSON.stringify(state));
    assert.equal(state.killed,true,name+' '+type+' was not defeated by its projectile');
    assert.equal(state.staysDead,true,name+' '+type+' respawned without leaving its scene');
    assert.equal(state.absentAfterLeaving,true,name+' '+type+' respawned before re-entering');
