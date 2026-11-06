@@ -52,6 +52,8 @@ jobs:
         run: node tests/fishman-boss-gauntlet-transition-v35.mjs
       - name: Test v35 homepage v16 four-player controls and W remove button
         run: node tests/fishman-v35-w-remove.mjs
+      - name: Test v35 four-player removal and keyboard W
+        run: node tests/fishman-v35-v16-remove.mjs
       - name: Test complete v16 couch co-op in v35 in Chromium and WebKit
         run: node tests/fishman-v35-v16-local.mjs
       - name: Test published v35 full four-player link draws all four heroes on joining
