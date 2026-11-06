@@ -17,6 +17,9 @@ for (const [name, engine] of [['Chromium',chromium],['WebKit',webkit]]) {
     const victim=g.hazards.find(h=>h.type===type&&h.enemyZone===0);
     if(!victim)throw Error('Missing '+type+' enemy in Chapter '+chapter);
     const id=victim.enemyId,startingCount=g.hazards.length;
+    // Stop patrol motion during the single-frame collision test; normal enemies
+    // patrol around their spawn centre, sometimes over 50 units per tick.
+    victim.stun=2;
     // An actual gameplay projectile, not a test-only damage hook.
     g.inv=10;g.proj.push({x:victim.x,y:victim.y,vx:0,vy:0,age:0,life:1,
      kind:g.hero,weapon:'basic',damage:1000,r:20});
@@ -46,6 +49,7 @@ for (const [name, engine] of [['Chromium',chromium],['WebKit',webkit]]) {
    const g=FishmanMultiplayerBridge.getG(),p2=FishmanV16Adapter.getPlayer(2);
    const h=g.hazards.find(h=>h.enemyZone===0);
    const id=h.enemyId;
+   h.stun=2;
    g.inv=10;g.proj.push({x:h.x,y:h.y,vx:0,vy:0,age:0,life:1,damage:1000,r:20,weapon:'basic'});
    fishmanTest.step(.075);
    const killed=!g.hazards.some(x=>x.enemyId===id);
