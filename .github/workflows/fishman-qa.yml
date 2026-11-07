@@ -42,6 +42,7 @@ jobs:
       - name: Check tougher enemies and every reward drop
         run: |
           node tests/fishman-enemy-rewards-v35.mjs
+          node tests/fishman-tracker-rewards-v35.mjs
           node tests/fishman-local-pickups-v35.mjs
       - name: Install browser tester
         run: |

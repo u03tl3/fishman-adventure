@@ -1607,7 +1607,13 @@ function defeatEnemy(h,weapon='basic'){
  dropEnemyRewards(h);
  return true;
 }
-// Every reward family is available from combat; only elites carry power rewards.
+// All tracking enemies drop a named, deterministic weapon core and hero ability.
+const TRACKER_REWARDS={
+ root:{name:'ROOT',weapon:'electric',ability:'VINE GUARD'},
+ jelly:{name:'JELLY',weapon:'homing',ability:'RIPTIDE DASH'},
+ mine:{name:'MINE',weapon:'charge',ability:'EMP PULSE'}
+};
+// The classic elite rotation remains available on non-tracker enemies.
 const ENEMY_POWER_LOOT=['rapid','spread','charge','homing','electric','shield','gold','skill','food'];
 function dropEnemyRewards(h){
  if(!g||h.lootDropped)return;
@@ -1615,7 +1621,24 @@ function dropEnemyRewards(h){
  const serial=g.enemyLootSerial=(g.enemyLootSerial||0)+1;
  const key='enemy-'+level+'-'+g.wave+'-'+serial+'-'+(g.enemyLootRun||(g.enemyLootRun=Date.now()));
  (g.stars||(g.stars=[])).push({x:h.x-22,y:h.y,key:key+'-star',type:'star',got:false});
- // Pickups remain in the world until claimed, using the existing shared collection rules.
+ const tracker=h.hunter?TRACKER_REWARDS[h.type]:null;
+ if(tracker){
+  // Core pickups are claimed by the first nearby player; abilities upgrade their hero.
+  (g.weaponPickups||(g.weaponPickups=[])).push({x:h.x+27,y:h.y-8,key:key+'-weapon',type:tracker.weapon,got:false});
+  (g.skillCrystals||(g.skillCrystals=[])).push({x:h.x-19,y:h.y+29,key:key+'-ability',hero:'any',trackerType:h.type,got:false});
+  if(h.elite){
+   // Keep the original rotating elite rewards as well as the named tracker rewards.
+   const index=g.eliteLootIndex||0;g.eliteLootIndex=index+1;
+   const type=ENEMY_POWER_LOOT[index%ENEMY_POWER_LOOT.length];
+   const hero=['fish','kai','roxy','humpty','gozilla','sub'][Math.floor(index/ENEMY_POWER_LOOT.length)%6];
+   if(type==='skill')(g.skillCrystals||(g.skillCrystals=[])).push({x:h.x+44,y:h.y,key:key+'-elite-skill',hero,got:false});
+   else if(type==='food')(g.awards||(g.awards=[])).push({x:h.x+44,y:h.y,key:key+'-elite-food',type:'award',hero,got:false});
+   else(g.weaponPickups||(g.weaponPickups=[])).push({x:h.x+44,y:h.y,key:key+'-elite-weapon',type,got:false});
+   (g.weaponPickups||(g.weaponPickups=[])).push({x:h.x+24,y:h.y+50,key:key+'-health',type:'health',got:false});
+  }
+  say(tracker.name+' TRACKER DEFEATED! '+tracker.weapon.toUpperCase()+' + '+tracker.ability+' SKILL CORE',3);
+  return;
+ }
  if(!h.elite){if(serial%3===0)(g.weaponPickups||(g.weaponPickups=[])).push({x:h.x+22,y:h.y,key:key+'-health',type:'health',got:false});return;}
  const index=g.eliteLootIndex||0;g.eliteLootIndex=index+1;
  const type=ENEMY_POWER_LOOT[index%ENEMY_POWER_LOOT.length];
@@ -1661,8 +1684,19 @@ function collectRewards(){if(!g)return;
  a.got=true;progress.picked[a.key]=true;levelUp(a.hero,'SPECIAL FOOD '+awardIcon(a.hero));
  }
  for(const crystal of g.skillCrystals||[]){if(crystal.got||Math.hypot(g.x-crystal.x,g.y-crystal.y)>54)continue;if(progress.picked[crystal.key]){crystal.got=true;continue;}
-  if(crystal.hero!==g.hero){if(g.notice!==crystal.key){say('✦ '+crystal.hero.toUpperCase()+' SKILL CORE — SWITCH HERO TO CLAIM',1.7);g.notice=crystal.key;}continue;}
-  crystal.got=true;progress.picked[crystal.key]=true;skillLevelUp(g.hero,'PURPLE SKILL CORE');
+  if(crystal.hero!=='any'&&crystal.hero!==g.hero){if(g.notice!==crystal.key){say('✦ '+crystal.hero.toUpperCase()+' SKILL CORE — SWITCH HERO TO CLAIM',1.7);g.notice=crystal.key;}continue;}
+  crystal.got=true;progress.picked[crystal.key]=true;
+  const reward=crystal.trackerType?TRACKER_REWARDS[crystal.trackerType]:null;
+  if(reward){
+   if(crystal.trackerType==='root')g.shield=Math.max(g.shield||0,7);
+   if(crystal.trackerType==='jelly')g.speedBoost=Math.max(g.speedBoost||0,8);
+   if(crystal.trackerType==='mine'){
+    g.weaponShield=Math.max(g.weaponShield||0,7);
+    for(const h of g.hazards||[])if(!h.defeated&&Math.hypot(h.x-g.x,h.y-g.y)<300)h.stun=Math.max(h.stun||0,3);
+   }
+   skillLevelUp(g.hero,reward.name+' TRACKER');
+   say('✦ '+reward.ability+' ACTIVATED! · '+skillNames[g.hero]+' UPGRADED',3.2);
+  }else skillLevelUp(g.hero,'PURPLE SKILL CORE');
  }
 }
 function aimVector(){if(coopAimOverride)return coopAimOverride;let dx=1,dy=0,tar=null;
@@ -2779,6 +2813,7 @@ function drawHazard(h){
  c.save();c.translate(h.x,h.y);
  if(h.elite){glow(0,0,66,'#ffd65d60');txt('★ '+h.combatRank,0,-67,12,'#ffe78b','center');}
  if(h.hunter){glow(0,0,75,'#fa646c38');c.strokeStyle='#ff9da0';c.lineWidth=2;c.setLineDash([6,7]);c.beginPath();c.arc(0,0,47+Math.sin(t*6)*2,0,TAU);c.stroke();c.setLineDash([]);}
+ if(h.hunter&&TRACKER_REWARDS[h.type])txt('TRACKER · '+TRACKER_REWARDS[h.type].weapon.toUpperCase()+' + '+TRACKER_REWARDS[h.type].ability,0,h.elite?-86:-68,10,'#fff2af','center',900);
  if(h.stun>0)c.globalAlpha=.68;
  {const gnd=c.createRadialGradient(0,31,2,0,31,55);gnd.addColorStop(0,terrainAt(h.x)==='water'?'#4ae9fe4b':'#09233575');gnd.addColorStop(1,'#00162a00');c.save();c.fillStyle=gnd;c.beginPath();c.ellipse(0,31,53,13,0,0,TAU);c.fill();c.restore();}
  if(window.FishmanV29Art?.enemy(c,h.type,level,t,terrainAt(h.x))){}else if(window.FishmanV26Art?.enemy(c,h.type,level,t,terrainAt(h.x))){}else deluxeEnemy(h);
