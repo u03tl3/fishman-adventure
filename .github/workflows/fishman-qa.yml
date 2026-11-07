@@ -43,6 +43,7 @@ jobs:
         run: |
           node tests/fishman-enemy-rewards-v35.mjs
           node tests/fishman-local-pickups-v35.mjs
+          node tests/fishman-multiplayer-powerups-v35.mjs
       - name: Install browser tester
         run: |
           npm install --no-save playwright@1.56.1
