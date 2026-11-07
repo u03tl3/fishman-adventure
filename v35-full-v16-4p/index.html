@@ -3561,6 +3561,16 @@ function localTick(dt){
   if(touch.weapon){touch.weapon=false;localWith(p,()=>cycleWeapon());}
   if(touch.interact){touch.interact=false;localWith(p,()=>interact());}
   if(touch.hero&&touch.hero!==p.hero){p.transformFrom=p.hero;p.transformMotion=.75;p.hero=touch.hero;p.motionHero=touch.hero;}
+  // Run pickup checks in this teammate's context, preserving shared world state.
+  localWith(p,()=>{
+   if(level!==3&&level!==4&&!g.challenge){for(const it of g.items||[]){
+    if(it.got||it.type==='naughty'||(it.type==='pass'&&!g.captured))continue;
+    if(Math.hypot(g.x-it.x,g.y-it.y)<(g.hero==='sub'?65:54)){
+     it.got=true;g.collect++;burst(it.x,it.y,'#aeffe2',12);sfx('collect');
+    }
+   }}
+   collectRewards();collectWeapons();
+  });
   // Each teammate can take hits independently and respawns at the checkpoint.
   if(p.inv<=0&&(g.hazards||[]).some(h=>!h.defeated&&!h.stun&&Math.hypot(h.x-p.x,h.y-p.y)<32)){
    p.hp--;p.inv=2.6;
