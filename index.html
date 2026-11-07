@@ -1338,16 +1338,24 @@ try{const old=JSON.parse(localStorage.getItem('fishmanV9')||'null');if(old&&type
 }}catch{}
 const aim={manual:false,point:null,vx:1,vy:0,pointer:null};const rightStick={x:0,y:0,pointerId:null};let cameraX=0;
 function saveProgress(){try{localStorage.setItem('fishmanV9',JSON.stringify(progress));}catch{}}
-function heroUpgrade(hero){return Math.max(1,progress.upgrades[hero]||1);}
-function heroSkillLevel(hero){return Math.max(1,progress.skillUpgrades[hero]||1);}
+const freshHeroLevels=()=>({fish:1,kai:1,roxy:1,humpty:1,gozilla:1,sub:1});
+function heroUpgrade(hero){return Math.max(1,(coopAimOverride!==null?g?.upgrades?.[hero]:progress.upgrades[hero])||1);}
+function heroSkillLevel(hero){return Math.max(1,(coopAimOverride!==null?g?.skillUpgrades?.[hero]:progress.skillUpgrades[hero])||1);}
 function skillRecharge(hero){const base={fish:13.0,kai:15.0,roxy:12.0,humpty:10.0,gozilla:15.5,sub:12.5}[hero]||12;return Math.max(5.2,base-(heroSkillLevel(hero)-1)*1.12);}
 function updateSkillButton(){const b=document.getElementById('skillBtn');if(!b)return;const key=g?.hero||heroFor(level),ready=scene==='playing'&&g&&(g.skillCooldown||0)<=0,cd=Math.max(0,g?.skillCooldown||0);
  const label=document.getElementById('skillName'),counter=document.getElementById('skillCooldown');
  label.textContent=skillShort[key]||'SKILL';counter.textContent=cd>.05?cd.toFixed(1)+'s':'Lv'+heroSkillLevel(key);
  b.classList.toggle('cooling',cd>.05);b.setAttribute('aria-label',`${skillNames[key]||'Special skill'} level ${heroSkillLevel(key)}. ${cd>.05?'Recharges in '+cd.toFixed(1)+' seconds':'Ready. Tap to activate.'}`);
  b.title=(skillNames[key]||'Skill')+' · Lv.'+heroSkillLevel(key)+(ready?' · READY':' · '+cd.toFixed(1)+'s');}
-function skillLevelUp(hero,reason){const was=heroSkillLevel(hero);if(was>=5){g.hp=Math.min(g.maxHp,g.hp+1);say(skillNames[hero]+' MASTERED! +1 HEALTH',2.5);return;}
- progress.skillUpgrades[hero]=Math.min(5,was+1);saveProgress();burst(g.x,g.y,'#c29aff',30);sfx('win');say('✦ '+skillNames[hero]+' SKILL Lv.'+progress.skillUpgrades[hero]+' — '+reason,3.6);updateSkillButton();}
+function skillLevelUp(hero,reason){
+ const was=heroSkillLevel(hero);
+ if(was>=5){g.hp=Math.min(g.maxHp,g.hp+1);say(skillNames[hero]+' MASTERED! +1 HEALTH',2.5);return;}
+ if(coopAimOverride!==null){g.skillUpgrades||=freshHeroLevels();g.skillUpgrades[hero]=Math.min(5,was+1);}
+ else{progress.skillUpgrades[hero]=Math.min(5,was+1);saveProgress();}
+ burst(g.x,g.y,'#c29aff',30);sfx('win');
+ say('✦ '+skillNames[hero]+' SKILL Lv.'+heroSkillLevel(hero)+' — '+reason,3.6);
+ if(coopAimOverride===null)updateSkillButton();
+}
 function skillStun(radius,duration,repel=0){for(const h of g.hazards){const dx=h.x-g.x,dy=h.y-g.y,d=Math.max(1,Math.hypot(dx,dy));if(d>radius)continue;h.stun=Math.max(h.stun,duration);if(repel){const shift=Math.min(repel,(radius-d)*.5);h.x=clamp(h.x+dx/d*shift,90,(g.runLength||W)-90);h.y=clamp(h.y+dy/d*shift,175,533);}}
  if(g.challenge){const a=g.challenge,d=Math.hypot(g.x-a.x,g.y-a.y);
    a.bullet=a.bullet.filter(o=>Math.hypot(g.x-o.x,g.y-o.y)>radius);
@@ -1478,11 +1486,14 @@ function createWeaponDrops(){if(!g)return;ensureWeaponState();g.weaponPickups=[]
   g.weaponPickups.push({x:base,y:235+(i%3)*98,key,type:arr[i],got:false});
  }}else if(g.challenge){g.weaponPickups=[{x:355,y:390,key:'arenaweapon-'+level+'-'+g.challenge.index+'-'+g.challenge.round,type:'gold',got:false}];}
 }
-function collectWeapons(player=g){if(!g?.weaponPickups||!player)return;ensureWeaponState(player);
+function collectWeapons(player=g){
+ if(!g?.weaponPickups||!player)return;ensureWeaponState(player);
  for(const pick of g.weaponPickups){
-  if(pick.got||Math.hypot(player.x-pick.x,player.y-pick.y)>48)continue;
-  pick.got=true;sfx('collect');burst(pick.x,pick.y,'#ffe7a8',24);
-  if(pick.type==='health'){player.hp=Math.min(player.maxHp,player.hp+2);if(player===g&&coopAimOverride===null)say('HEALTH DROP! +2 HEARTS',2);
+  if(Math.hypot(player.x-pick.x,player.y-pick.y)>48||!canClaimPickup(pick))continue;
+  claimPickup(pick);sfx('collect');burst(pick.x,pick.y,'#ffe7a8',24);
+  if(pick.type==='health'){
+   player.hp=Math.min(player.maxHp,player.hp+2);
+   if(player===g&&coopAimOverride===null)say('HEALTH DROP! +2 HEARTS',2);
   }else if(pick.type==='shield'){
    player.weaponShield=Math.max(player.weaponShield,7);player.shield=Math.max(player.shield,7);
    if(player===g&&coopAimOverride===null)say('SHIELD GENERATOR! 7s PROTECTION',2.5);
@@ -1492,9 +1503,11 @@ function collectWeapons(player=g){if(!g?.weaponPickups||!player)return;ensureWea
    if(!known)player.weaponsOwned.push(pick.type);
    player.weapon=pick.type;
    if(known)upgradeWeapon(player,'WEAPON CORE');
-   else{player.weaponLevels[pick.type]=Math.max(1,player.weaponLevels[pick.type]||1);
+   else{
+    player.weaponLevels[pick.type]=Math.max(1,player.weaponLevels[pick.type]||1);
     persistWeaponProgress(player);
-    if(player===g&&coopAimOverride===null)say('FOUND '+WEAPON_LABEL[pick.type]+' · '+WEAPON_POWER_INFO[pick.type],3);}
+    if(player===g&&coopAimOverride===null)say('FOUND '+WEAPON_LABEL[pick.type]+' · '+WEAPON_POWER_INFO[pick.type],3);
+   }
   }
  }
 }
@@ -1674,18 +1687,62 @@ function initRewards(w){
  }
 }
 function awardIcon(hero){return ({roxy:'🌶️',fish:'🫧',kai:'🧪',humpty:'🥚',gozilla:'⚡',sub:'🚀'})[hero]||'⭐';}
-function levelUp(hero,reason){const previous=heroUpgrade(hero);progress.upgrades[hero]=Math.min(5,previous+1);saveProgress();sfx('win');burst(g.x,g.y,'#ffe16a',34);say(progress.upgrades[hero]>previous?'UPGRADE! '+heroNames[hero]+' LEVEL '+progress.upgrades[hero]+' ('+reason+')':heroNames[hero]+' MAX LEVEL — '+reason,3.3);}
-function collectRewards(){if(!g)return;
- for(const s of g.stars){if(s.got||Math.hypot(g.x-s.x,g.y-s.y)>43)continue;s.got=true;if(progress.picked[s.key])continue;progress.picked[s.key]=true;progress.stars++;burst(s.x,s.y,'#ffe685',16);sfx('collect');saveProgress();
- if(progress.stars%5===0){g.hp=Math.min(g.maxHp,g.hp+2);skillLevelUp(g.hero,'5 STARS + 2 HEALTH');upgradeWeapon(g,'STAR REWARD');}else say('★ '+progress.stars+' STARS — '+(5-progress.stars%5)+' TO NEXT REWARD!',1.8);
+function levelUp(hero,reason){
+ const previous=heroUpgrade(hero),next=Math.min(5,previous+1);
+ if(coopAimOverride!==null){g.upgrades||=freshHeroLevels();g.upgrades[hero]=next;}
+ else{progress.upgrades[hero]=next;saveProgress();}
+ sfx('win');burst(g.x,g.y,'#ffe16a',34);
+ say(next>previous?'UPGRADE! '+heroNames[hero]+' LEVEL '+next+' ('+reason+')':heroNames[hero]+' MAX LEVEL — '+reason,3.3);
+}
+function pickupOwner(){
+ return coopAimOverride===null?'p1':'p'+((Number.isInteger(g.localSlot)?g.localSlot:1)+1);
+}
+function pickupPlayers(){
+ if(net()?.connected&&net()?.role==='host')return ['p1','p2'];
+ if(localCount>1&&(!net()?.connected||net()?.role==='local'))return Array.from({length:localCount},(_,i)=>'p'+(i+1));
+ return ['p1'];
+}
+function canClaimPickup(p){
+ if(!p||p.got||!p.key)return false;
+ const owner=pickupOwner();
+ if(p.claimedBy?.[owner])return false;
+ return owner==='p1'?!progress.picked[p.key]:!g.picked?.[p.key];
+}
+function claimPickup(p){
+ const owner=pickupOwner();
+ p.claimedBy||={};p.claimedBy[owner]=true;
+ if(owner==='p1'){progress.picked[p.key]=true;saveProgress();}
+ else{g.picked||={};g.picked[p.key]=true;}
+ p.got=pickupPlayers().every(id=>!!p.claimedBy[id]);
+}
+function collectRewards(){
+ if(!g)return;
+ for(const s of g.stars||[]){
+  if(Math.hypot(g.x-s.x,g.y-s.y)>43||!canClaimPickup(s))continue;
+  claimPickup(s);
+  const personal=coopAimOverride!==null;
+  if(personal)g.starsEarned=(g.starsEarned||0)+1;
+  else{progress.stars++;saveProgress();}
+  const count=personal?g.starsEarned:progress.stars;
+  burst(s.x,s.y,'#ffe685',16);sfx('collect');
+  if(count%5===0){g.hp=Math.min(g.maxHp,g.hp+2);skillLevelUp(g.hero,'5 STARS + 2 HEALTH');upgradeWeapon(g,'STAR REWARD');}
+  else say('★ '+count+' STARS — '+(5-count%5)+' TO NEXT REWARD!',1.8);
  }
- for(const a of g.awards){if(a.got||Math.hypot(g.x-a.x,g.y-a.y)>46)continue;if(progress.picked[a.key]){a.got=true;continue;}
- if(a.hero!==g.hero){if(g.notice!==a.key){say('EAT '+awardIcon(a.hero)+' WITH '+a.hero.toUpperCase()+' TO UPGRADE!',1.3);g.notice=a.key;}continue;}
- a.got=true;progress.picked[a.key]=true;levelUp(a.hero,'SPECIAL FOOD '+awardIcon(a.hero));
+ for(const a of g.awards||[]){
+  if(Math.hypot(g.x-a.x,g.y-a.y)>46||!canClaimPickup(a))continue;
+  if(a.hero!==g.hero&&coopAimOverride===null){
+   if(g.notice!==a.key){say('EAT '+awardIcon(a.hero)+' WITH '+a.hero.toUpperCase()+' TO UPGRADE!',1.3);g.notice=a.key;}
+   continue;
+  }
+  claimPickup(a);levelUp(g.hero,'SPECIAL FOOD '+awardIcon(a.hero));
  }
- for(const crystal of g.skillCrystals||[]){if(crystal.got||Math.hypot(g.x-crystal.x,g.y-crystal.y)>54)continue;if(progress.picked[crystal.key]){crystal.got=true;continue;}
-  if(crystal.hero!=='any'&&crystal.hero!==g.hero){if(g.notice!==crystal.key){say('✦ '+crystal.hero.toUpperCase()+' SKILL CORE — SWITCH HERO TO CLAIM',1.7);g.notice=crystal.key;}continue;}
-  crystal.got=true;progress.picked[crystal.key]=true;
+ for(const crystal of g.skillCrystals||[]){
+  if(Math.hypot(g.x-crystal.x,g.y-crystal.y)>54||!canClaimPickup(crystal))continue;
+  if(crystal.hero!=='any'&&crystal.hero!==g.hero&&coopAimOverride===null){
+   if(g.notice!==crystal.key){say('✦ '+crystal.hero.toUpperCase()+' SKILL CORE — SWITCH HERO TO CLAIM',1.7);g.notice=crystal.key;}
+   continue;
+  }
+  claimPickup(crystal);
   const reward=crystal.trackerType?TRACKER_REWARDS[crystal.trackerType]:null;
   if(reward){
    if(crystal.trackerType==='root')g.shield=Math.max(g.shield||0,7);
@@ -2964,17 +3021,22 @@ function drawSkillAnimation(h){if(!g||g.skillEffect<=0)return;const progressPuls
  if(h==='sub'){for(let i=0;i<3;i++){c.beginPath();c.arc(0,0,70+i*32+Math.sin(t*3+i)*5,0,TAU);c.stroke();}}
  c.globalAlpha=1;c.restore();}
 
-const COOP_FIELDS=['motionVX','motionVY','motionCharge','motionHero','motionTrail','motionTrailClock','motionPassiveClock','motionPulse','weapon','weaponLevels','weaponsOwned','weaponShield','x','y','hero','hp','maxHp','lives','maxLives','inv','shield','cool','actionWave','skillCooldown','skillCooldowns','skillEffect','skillKind','skillFlash','freezeTime','sonarTime','speedBoost','attackFlash','lastAim','moveIntensity','stepPhase','lastDx','lastDy','facing','poseFacing','poseAngle','poseRecoil','aimHold','lastTerrain','rollBoost','transformFrom','transformMotion','deathMotion','reviveMotion','dodge','dodgeCool'];
+const COOP_FIELDS=['motionVX','motionVY','motionCharge','motionHero','motionTrail','motionTrailClock','motionPassiveClock','motionPulse','weapon','weaponLevels','weaponsOwned','weaponShield','x','y','hero','hp','maxHp','lives','maxLives','inv','shield','cool','actionWave','skillCooldown','skillCooldowns','skillEffect','skillKind','skillFlash','freezeTime','sonarTime','speedBoost','attackFlash','lastAim','moveIntensity','stepPhase','lastDx','lastDy','facing','poseFacing','poseAngle','poseRecoil','aimHold','lastTerrain','rollBoost','transformFrom','transformMotion','deathMotion','reviveMotion','dodge','dodgeCool','localSlot','skillUpgrades','upgrades','picked','starsEarned','uniqueVortex','uniqueAlchemy','uniqueFlames','uniqueRicochet','uniqueGravity','uniqueSonar'];
 function coopHeroAvailable(h,x=g?.coopP2?.x??g?.x){if(!terrainHeroAllowed(h,x))return false;if(level===5)return h==='sub';return ['fish','kai','roxy','humpty','gozilla'].includes(h)&&(h!=='gozilla'||progress.godzilla);}
+let lastCoopAdvancement=null;
 function createCoopPlayer(){
  if(!g||scene!=='playing'||net()?.role!=='host'||!net()?.connected)return null;
  const h=coopHeroAvailable(net().remoteHero)?net().remoteHero:(level===5?'sub':g.hero==='fish'?'kai':'fish');
- const prev=g.coopP2;
+ const prev=g.coopP2||lastCoopAdvancement;
  const p={hero:h,x:Math.max(110,g.x-45),y:clamp(g.y+85,185,518),hp:prev?Math.max(1,Math.min(g.maxHp,prev.hp+1)):g.maxHp,maxHp:g.maxHp,lives:prev?prev.lives:g.maxLives,maxLives:g.maxLives,
   inv:2,shield:0,cool:0,actionWave:0,skillCooldown:0,skillCooldowns:{fish:0,kai:0,roxy:0,humpty:0,gozilla:0,sub:0},skillEffect:0,skillKind:null,skillFlash:0,freezeTime:0,sonarTime:0,speedBoost:0,
   attackFlash:0,lastAim:{x:1,y:0},moveIntensity:0,stepPhase:0,lastDx:1,lastDy:0,facing:1,poseFacing:1,poseAngle:0,poseRecoil:0,aimHold:false,lastTerrain:terrainAt(Math.max(110,g.x-45)),rollBoost:1,transformFrom:null,transformMotion:0,deathMotion:0,reviveMotion:1.0,
   motionVX:0,motionVY:0,motionCharge:0,motionHero:h,motionTrail:[],motionTrailClock:0,motionPassiveClock:0,motionPulse:0,...freshWeaponState(),zone:g.wave||0,chapter:level,arena:!!g.challenge||level===4,respawn:0,down:false};
- g.coopP2=p;return p;
+ p.skillUpgrades={...(prev?.skillUpgrades||freshHeroLevels())};
+ p.upgrades={...(prev?.upgrades||freshHeroLevels())};
+ p.picked={...(prev?.picked||{})};p.starsEarned=prev?.starsEarned||0;
+ if(prev?.weaponLevels){p.weaponLevels={...prev.weaponLevels};p.weaponsOwned=[...prev.weaponsOwned];p.weapon=prev.weapon;}
+ lastCoopAdvancement=p;g.coopP2=p;return p;
 }
 function withCoopPlayer(fn){
  const p=g?.coopP2;if(!p)return;
@@ -2999,7 +3061,7 @@ function tickCoopSecond(dt){
  if(p.chapter!==level||p.zone!==(g.wave||0)||p.arena!==(!!g.challenge||level===4))p=createCoopPlayer();
  if(!p)return;
  const keys=n.input||{},stale=(Date.now()-(n.lastInputAt||0)>1800),mx=stale?0:clamp(+keys.x||0,-1,1),my=stale?0:clamp(+keys.y||0,-1,1);
- p.inv=Math.max(0,p.inv-dt);p.cool=Math.max(0,p.cool-dt);p.shield=Math.max(0,p.shield-dt);p.deathMotion=Math.max(0,(p.deathMotion||0)-dt);p.poseRecoil=Math.max(0,(p.poseRecoil||0)-dt*3.1);p.transformMotion=Math.max(0,(p.transformMotion||0)-dt);p.skillEffect=Math.max(0,(p.skillEffect||0)-dt);p.attackFlash=Math.max(0,(p.attackFlash||0)-dt);p.reviveMotion=Math.max(0,(p.reviveMotion||0)-dt);p.skillFlash=Math.max(0,(p.skillFlash||0)-dt);
+ p.inv=Math.max(0,p.inv-dt);p.cool=Math.max(0,p.cool-dt);p.shield=Math.max(0,p.shield-dt);p.weaponShield=Math.max(0,(p.weaponShield||0)-dt);p.speedBoost=Math.max(0,(p.speedBoost||0)-dt);p.deathMotion=Math.max(0,(p.deathMotion||0)-dt);p.poseRecoil=Math.max(0,(p.poseRecoil||0)-dt*3.1);p.transformMotion=Math.max(0,(p.transformMotion||0)-dt);p.skillEffect=Math.max(0,(p.skillEffect||0)-dt);p.attackFlash=Math.max(0,(p.attackFlash||0)-dt);p.reviveMotion=Math.max(0,(p.reviveMotion||0)-dt);p.skillFlash=Math.max(0,(p.skillFlash||0)-dt);
  for(const h of Object.keys(p.skillCooldowns||{}))p.skillCooldowns[h]=Math.max(0,p.skillCooldowns[h]-dt);
  p.skillCooldown=p.skillCooldowns[p.hero]||0;
  if(p.down){if(p.respawn>0){p.respawn-=dt;if(p.respawn<=0)coopRevive('guest');}return;}
@@ -3557,6 +3619,11 @@ function localCreate(slot){
  rollBoost:1,transformFrom:null,transformMotion:0,deathMotion:0,reviveMotion:1,
  motionVX:0,motionVY:0,motionCharge:0,motionHero:h,motionTrail:[],motionTrailClock:0,
  motionPassiveClock:0,motionPulse:0,down:false,localSlot:slot,localLevel:level};
+ const previous=localTeam[slot];
+ p.skillUpgrades={...(previous?.skillUpgrades||freshHeroLevels())};
+ p.upgrades={...(previous?.upgrades||freshHeroLevels())};
+ p.picked={...(previous?.picked||{})};p.starsEarned=previous?.starsEarned||0;
+ if(previous?.weaponLevels){p.weaponLevels={...previous.weaponLevels};p.weaponsOwned=[...previous.weaponsOwned];p.weapon=previous.weapon;}
  return p;
 }
 function localPrepare(){
@@ -3589,6 +3656,11 @@ function localTick(dt){
   p.cool=Math.max(0,(p.cool||0)-dt);p.inv=Math.max(0,(p.inv||0)-dt);
   p.attackFlash=Math.max(0,(p.attackFlash||0)-dt);
   p.skillCooldown=Math.max(0,(p.skillCooldown||0)-dt);
+  p.shield=Math.max(0,(p.shield||0)-dt);
+  p.weaponShield=Math.max(0,(p.weaponShield||0)-dt);
+  p.speedBoost=Math.max(0,(p.speedBoost||0)-dt);
+  p.freezeTime=Math.max(0,(p.freezeTime||0)-dt);
+  p.sonarTime=Math.max(0,(p.sonarTime||0)-dt);
   const fire=localHeld[map.fire]||touch.fire||pad?.buttons?.[7]?.pressed||pad?.buttons?.[0]?.pressed;
   if(fire&&p.cool<=0)localWith(p,()=>weaponFire());
   const skill=localHeld[map.skill]||touch.skill||pad?.buttons?.[2]?.pressed;
@@ -3621,6 +3693,7 @@ function localDraw(){
   localWith(p,()=>{c.save();c.translate(p.x,p.y);c.scale(.8,.8);c.translate(-p.x,-p.y);drawPlayer();c.restore();});
   roundRect(p.x-23,p.y-66,46,18,6,'#10364de8');
   txt('P'+(slot+1),p.x,p.y-53,13,'#d2fff3','center',900);
+  txt('✦'+(p.skillUpgrades?.[p.hero]||1)+'  ⚡'+(p.weaponLevels?.[p.weapon]||1),p.x,p.y-81,11,'#e6ccff','center',900);
   roundRect(p.x-23,p.y-45,46,5,2,'#304253');
   roundRect(p.x-23,p.y-45,46*Math.max(0,p.hp)/p.maxHp,5,2,'#71f8b6');
   c.restore();
