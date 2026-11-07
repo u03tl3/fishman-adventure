@@ -13,7 +13,7 @@ for(const file of ['index.html','v35-full-v16-4p/index.html']){
  for(const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g))
   if(!/src=|application\//.test(match[1]))new vm.Script(match[2]);
  const combat=html.slice(html.indexOf('function hazard('),html.indexOf('function heroFor('));
- const pickups=html.slice(html.indexOf('function collectRewards()'),html.indexOf('function aimVector()'));
+ const pickups=html.slice(html.indexOf(file==='index.html'?'function pickupOwner(':'function collectRewards()'),html.indexOf('function aimVector()'));
  assert.ok(combat.includes('TRACKER_REWARDS'),'tracker table missing');
  for(const [kind,expected] of Object.entries(rewards)){
   const skillCalls=[];
@@ -22,7 +22,7 @@ for(const file of ['index.html','v35-full-v16-4p/index.html']){
     enemyBlueprints:[[],[],[],[]],nextEnemyId:0,hazards:[],stars:[],awards:[],skillCrystals:[],weaponPickups:[]},
    hardMode:true,nightmare:()=>false,level:1,RUN_SECTORS:4,W:1000,
    clamp:(n,a,b)=>Math.min(b,Math.max(a,n)),Date,Math,
-   progress:{picked:{},stars:0},skillNames:{fish:'BUBBLE VORTEX'},
+   progress:{picked:{},stars:0},coopAimOverride:null,localCount:1,net:()=>({role:'solo',connected:false}),skillNames:{fish:'BUBBLE VORTEX'},
    WEAPON_COLORS:{},WEAPON_LABEL:{electric:'Electric Arc',homing:'Homing Pod',charge:'Charge Cannon'},
    burst(){},weaponVisual(){},say(){},sfx(){},saveProgress(){},upgradeWeapon(){},
    skillLevelUp(hero,reason){skillCalls.push({hero,reason});},levelUp(){},awardIcon(){return '';}
