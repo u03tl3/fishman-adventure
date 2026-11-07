@@ -468,4 +468,102 @@ window.addEventListener('skycraft:render',onRefresh);
 renderKid();
 // Enhanced read-aloud has no microphone, tracking, external calls or account dependency.
 })();
-</script></body></html>
+</script><style id="skycraft-gear-style">
+#wheel-junior-entry{border:1px solid #65b4e0;background:linear-gradient(115deg,#174e70,#1b3659);color:#fff}
+#gear-workshop{position:fixed;inset:0;background:#03101de9;z-index:99999;padding:14px;overflow:auto;display:none;align-items:flex-start;justify-content:center}
+#gear-workshop.open{display:flex}
+#gear-workshop *{box-sizing:border-box}
+#gear-workshop .gw-panel{width:min(1020px,100%);margin:auto;background:#10233c;color:#ecf6ff;border:1px solid #517ba2;border-radius:19px;box-shadow:0 32px 100px #0009;overflow:hidden;font-family:system-ui,sans-serif}
+#gear-workshop .gw-header{padding:18px 18px 14px;background:linear-gradient(120deg,#1d527a,#102844);display:flex;align-items:center;justify-content:space-between;gap:12px}
+#gear-workshop h2{margin:0;color:white;font-size:clamp(19px,3vw,27px);font-weight:950}
+#gear-workshop .gw-muted{font-size:12px;line-height:1.5;color:#b5d1eb}
+#gear-workshop .gw-close{border:1px solid #8bbbd7;color:#fff;background:#ffffff19;padding:11px 15px;border-radius:11px;font-weight:900;font-size:14px}
+#gear-workshop .gw-layout{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr)}
+#gear-workshop .gw-preview{padding:13px;background:#102c4e}
+#gear-workshop .gw-screen{background:linear-gradient(140deg,#a6dffb,#eff9ff);border-radius:13px;position:relative;overflow:hidden}
+#gear-workshop .gw-screen svg{width:100%;height:auto;display:block}
+#gear-workshop .gw-label{position:absolute;top:12px;left:12px;background:#10365f;color:#fff;padding:7px 10px;border-radius:9px;font-size:12px;font-weight:900;max-width:80%}
+#gear-workshop .gw-views{display:flex;gap:6px;margin:10px 0}
+#gear-workshop .gw-btn{border:1px solid #77a7c9;background:#153d65;color:#e7f5ff;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:850;cursor:pointer}
+#gear-workshop .gw-btn.active{background:#82dafa;color:#092544;border-color:#82dafa}
+#gear-workshop .gw-btn:focus-visible,#gear-workshop input:focus-visible{outline:3px solid #ffce73;outline-offset:2px}
+#gear-workshop .gw-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:12px 0}
+#gear-workshop .gw-fact{background:#fff;color:#214970;border-radius:9px;text-align:center;padding:10px 4px}
+#gear-workshop .gw-fact b{display:block;font-size:17px}
+#gear-workshop .gw-fact small{color:#647e9c;font-size:10px}
+#gear-workshop .gw-status{border-radius:9px;padding:11px;font-size:13px;line-height:1.6;background:#e9f9ed;color:#185d3a}
+#gear-workshop .gw-status.warn{background:#fff1d9;color:#7d4e09}
+#gear-workshop .gw-edit{padding:16px;max-height:min(740px,83vh);overflow:auto;background:#f6faff;color:#1b3552}
+#gear-workshop .gw-edit h3{font-size:16px;margin:6px 0 8px;color:#17385a}
+#gear-workshop .gw-small{font-size:12px;color:#557391;margin:0 0 14px;line-height:1.5}
+#gear-workshop .gw-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#gear-workshop .gw-card{background:white;border:2px solid #cbddeb;border-radius:12px;padding:12px 9px;color:#173b5e;text-align:left;font-size:12px;font-weight:800;min-height:97px;display:flex;align-items:center;gap:8px;cursor:pointer}
+#gear-workshop .gw-card.selected{border-color:#177fe5;background:#e8f3ff;box-shadow:0 0 0 1px #177fe5}
+#gear-workshop .gw-card b{display:block;font-size:13px;margin-bottom:4px}
+#gear-workshop .gw-card small{display:block;font-size:11px;color:#65829b;font-weight:600}
+#gear-workshop .gw-card svg{height:39px;min-width:45px}
+#gear-workshop .gw-row{display:flex;flex-wrap:wrap;gap:7px;margin:7px 0 14px}
+#gear-workshop .gw-pill{border:1px solid #abcbe3;background:white;color:#235780;border-radius:9px;padding:10px 11px;font-size:12px;font-weight:800;cursor:pointer}
+#gear-workshop .gw-pill.selected{background:#1c78d6;color:white;border-color:#1c78d6}
+#gear-workshop .gw-section{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.3px;margin:14px 0 7px;color:#4a6c89}
+#gear-workshop .gw-footer{background:#132a46;padding:13px 18px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+#gear-workshop .gw-cta{background:#ffcd62;border:0;color:#634001;border-radius:10px;padding:12px 18px;font-weight:950;font-size:14px;cursor:pointer}
+#gear-workshop .gw-cta:disabled{opacity:.5;cursor:not-allowed}
+#gear-workshop .gw-result{background:white;border:1px solid #a6d5e5;border-radius:10px;color:#173b5e;padding:12px;margin-top:9px;font-size:12px;line-height:1.5}
+#gear-workshop .gw-kid-note{margin-top:10px;background:#dff2ff;padding:11px;border-radius:10px;color:#1c5378;font-size:12px;line-height:1.5}
+@media(max-width:700px){#gear-workshop{padding:5px}#gear-workshop .gw-panel{border-radius:10px}#gear-workshop .gw-layout{grid-template-columns:1fr}#gear-workshop .gw-edit{max-height:none}#gear-workshop .gw-grid{grid-template-columns:1fr 1fr}}
+@media(prefers-reduced-motion:reduce){#gear-workshop *{animation:none!important;transition:none!important}}
+</style>
+<script>
+/* SKYCRAFT Junior Landing Gear Workshop: offline-friendly, no tracking, original graphics. */
+(()=>{
+'use strict';
+const api=window.skycraftJuniorAPI;if(!api||document.getElementById('gear-workshop'))return;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+const SETS=[
+{id:'light',label:'Light Gear',main:2,description:'Small experimental jets',icon:'🛩️'},
+{id:'standard',label:'Standard Gear',main:4,description:'Single-aisle airliners',icon:'✈️'},
+{id:'heavy',label:'Heavy Gear',main:8,description:'Large long-haul jets',icon:'🛫'},
+{id:'jumbo',label:'777-Style Gear',main:12,description:'Six wheels per main bogie',icon:'🏆'},
+{id:'super',label:'Super-Jumbo Gear',main:16,description:'Experimental giant aircraft',icon:'🚀'}];
+const SIZES=[{id:'small',label:'Small',diam:1.0,limit:18},{id:'medium',label:'Medium',diam:1.2,limit:25},{id:'large',label:'Large',diam:1.4,limit:34},{id:'xl',label:'Huge',diam:1.6,limit:43}];
+const BRAKES=[{id:'normal',label:'Standard',bonus:0},{id:'carbon',label:'Carbon brakes',bonus:10},{id:'smart',label:'Smart brakes',bonus:15}];
+let view='side',surface='dry',lastFocus=null;
+function state(){return api.state();}
+function active(){const g=state();return g.models.find(x=>x.id===g.active)||g.models[0];}
+function frozen(p){return p.launched||p.certified||p.test!==null||p.stage>0;}
+function gear(p){p.custom=p.custom||{};if(!p.custom.wheelWorkshop)p.custom.wheelWorkshop={set:p.segment==='single'?'standard':p.segment==='wide'?'jumbo':'super',size:p.segment==='single'?'medium':'large',brakes:'carbon',tyre:'allweather',extended:true,best:0,tries:0};return p.custom.wheelWorkshop;}
+function values(p){const x=gear(p),s=SETS.find(z=>z.id===x.set)||SETS[2],size=SIZES.find(z=>z.id===x.size)||SIZES[2],br=BRAKES.find(z=>z.id===x.brakes)||BRAKES[0];const pax=Object.values(p.cabins||{}).reduce((n,c)=>n+(Number(c.seats)||0),0);const empty=({single:43,wide:124,jumbo:176}[p.segment]||124);const mass=empty+(Number(p.fuel)||0)+pax*.105+(p.nEngines===4?7:0);const load=mass*.92/s.main;const max=size.limit;let stability=Math.round(Math.max(0,Math.min(100,100-Math.max(0,(load/max-1))*94-(x.tyre==='quiet'?3:0))));const price=Math.round(s.main*1.9+(size.diam-1)*17+(br.bonus)*.8);const stop=Math.round((surface==='wet'?1700:1120)*(mass/280)**.28*(x.tyre==='allweather'?.90:x.tyre==='quiet'?1.05:1)*(1-br.bonus/95)*(stability<60?1.2:1));return{x,s,size,br,mass,load,stability,price,stop,ok:stability>=72&&x.extended};}
+function wheelIcon(n){let circles='';for(let i=0;i<Math.min(8,n/2);i++){const x=10+(i%4)*16,y=12+Math.floor(i/4)*17;circles+=`<circle cx="${x}" cy="${y}" r="6" fill="#1a3047" stroke="#86b5d5" stroke-width="2"/><circle cx="${x}" cy="${y}" r="2" fill="#accce4"/>`;}return `<svg viewBox="0 0 75 50" aria-hidden="true">${circles}</svg>`;}
+function wheel(cx,cy,r){return `<g><circle cx="${cx}" cy="${cy}" r="${r+3}" fill="#111927" stroke="#52677c" stroke-width="3"/><circle cx="${cx}" cy="${cy}" r="${r*.54}" fill="#738aa0" stroke="#e0ebf3" stroke-width="2"/><circle cx="${cx}" cy="${cy}" r="${r*.20}" fill="#d1dce7"/><path d="M${cx-r*.7} ${cy}h${r*1.4}M${cx} ${cy-r*.7}v${r*1.4}" stroke="#203d59" stroke-width="2"/></g>`;}
+function preview(p,v){const g=v.x;const R=17+SIZES.findIndex(z=>z.id===g.size)*3.2;let tyres='',struts='';const axles=v.s.main/2;const gap=axles<=2?50:Math.min(29,145/Math.max(3,axles-1));if(view==='front'){
+const per=Math.ceil(axles/2),ys=[285,285];for(let i=0;i<2;i++){const base=i===0?214:486;for(let j=0;j<per;j++){let xx=base+(j-(per-1)/2)*gap;tyres+=wheel(xx,ys[i],R);}}
+struts=`<path d="M250 190L235 254M450 190L465 254M347 170v82" fill="none" stroke="#7a8ea5" stroke-width="9"/>`;
+}else if(view==='bottom'){
+for(let i=0;i<axles;i++){let yy=155+i*(171/Math.max(1,axles-1));tyres+=wheel(238,yy,R*.62)+wheel(462,yy,R*.62);}
+struts=`<path d="M238 141v185M462 141v185" stroke="#607990" stroke-width="12"/>`;
+}else{
+for(let i=0;i<axles;i++){const xx=404+(i-(axles-1)/2)*gap;tyres+=wheel(xx,298,R);}
+struts=`<path d="M400 189l30 80M280 204l-7 68" stroke="#839cb2" stroke-width="9"/>`;
+}
+const nose=view==='front'?wheel(343,297,R*.59)+wheel(359,297,R*.59):view==='bottom'?wheel(340,70,R*.52)+wheel(360,70,R*.52):wheel(282,301,R*.66);
+const plane=view==='front'?`<path d="M350 56Q430 70 420 198Q350 253 280 198Q270 70 350 56Z" fill="${p.livery||'#f4f7ff'}" stroke="#497b9e" stroke-width="4"/><path d="M290 132L55 158l-16 33 242-14M410 132l235 26 16 33-242-14" fill="#9abed9" stroke="#5a84a3" stroke-width="4"/><path d="M314 125Q350 88 386 125Z" fill="#1c4f76"/>`:view==='bottom'?`<path d="M350 19Q390 30 391 95L382 374Q350 413 318 374L309 95Q310 30 350 19Z" fill="${p.livery||'#f4f7ff'}" stroke="#5e84a3" stroke-width="4"/><path d="M320 184L36 272l19 30 265-48M380 184l284 88-19 30-265-48" fill="#b5d0e4" stroke="#7098b8" stroke-width="4"/>`:`<path d="M40 157Q72 129 139 126H525Q600 132 630 159L652 178Q635 205 571 215H96Q51 215 40 157Z" fill="${p.livery||'#f4f7ff'}" stroke="#5d81a1" stroke-width="4"/><path d="M452 136L550 63l20 7-53 81M570 150l40-92 15 6-2 111" fill="#90b4ce" stroke="#507d9e" stroke-width="3"/><path d="M70 154l59-14-4 34-62-5" fill="#224d70"/>`;
+return `<svg viewBox="0 0 700 365" role="img" aria-label="${esc(view)} view of ${esc(p.name)} with ${v.s.main} main landing gear wheels and two nose wheels"><defs><linearGradient id="wheel-ground" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#c6ebff"/><stop offset="1" stop-color="#e9f6fd"/></linearGradient></defs><rect width="700" height="365" fill="url(#wheel-ground)"/><path d="M0 341H700" stroke="#819bb0" stroke-width="7"/><path d="M20 345h670" stroke="white" stroke-width="3" stroke-dasharray="27 18"/>${plane}${g.extended?`${struts}${tyres}${nose}`:'<text x="350" y="302" font-size="17" font-weight="900" text-anchor="middle" fill="#1a6096">🛞 WHEELS RETRACTED</text>'}<rect x="10" y="8" width="295" height="34" rx="8" fill="#133c61e9"/><text x="22" y="30" font-size="15" fill="white" font-weight="900">${esc(p.name)} · ${v.s.main+2} TOTAL WHEELS</text></svg>`;
+}
+const root=document.createElement('div');root.id='gear-workshop';root.setAttribute('role','dialog');root.setAttribute('aria-modal','true');root.setAttribute('aria-label','Landing Gear Workshop');root.innerHTML='<div class="gw-panel"><header class="gw-header"><div><h2>🛞 Landing Gear Workshop</h2><div class="gw-muted">Choose exactly which wheels go on your aircraft!</div></div><button id="gw-close" class="gw-close" type="button">✕ Close</button></header><div class="gw-layout"><section class="gw-preview"><div class="gw-screen"><div class="gw-label">🔧 LIVE WHEEL PREVIEW</div><div id="gw-art"></div></div><div class="gw-views"><button class="gw-btn" data-view="side">Side view</button><button class="gw-btn" data-view="front">Front view</button><button class="gw-btn" data-view="bottom">Underneath</button></div><div class="gw-facts" id="gw-facts"></div><div class="gw-status" id="gw-status" aria-live="polite"></div><div id="gw-result" class="gw-result" style="display:none" aria-live="polite"></div></section><section class="gw-edit"><h3>1 · Pick your wheel set</h3><p class="gw-small">Big airplanes need more wheels to share their weight. The nose has 2 wheels; choose the main wheels below.</p><div class="gw-grid" id="gw-sets"></div><div class="gw-section">2 · Wheel size</div><div class="gw-row" id="gw-sizes"></div><div class="gw-section">3 · Pick your tyre type</div><div class="gw-row" id="gw-tyres"></div><div class="gw-section">4 · Pick your brakes</div><div class="gw-row" id="gw-brakes"></div><div class="gw-section">5 · Landing gear controls</div><div class="gw-row"><button class="gw-pill" id="gw-toggle">🛞 Lower wheels</button></div><div class="gw-kid-note" id="gw-nova">🤖 NOVA: Welcome! Let’s make sure your airplane has the right wheels.</div></section></div><footer class="gw-footer"><div class="gw-muted">🧪 CHALLENGE: Can your wheels handle a wet runway?</div><div class="gw-row" style="margin:0"><button class="gw-btn" data-surface="dry">☀️ Dry</button><button class="gw-btn" data-surface="wet">🌧️ Wet</button><button id="gw-test" class="gw-cta">🛬 TEST LANDING</button></div></footer></div>';
+document.body.appendChild(root);
+function render(){const p=active(),v=values(p),g=v.x,lock=frozen(p);$('#gw-art').innerHTML=preview(p,v);$('#gw-sets').innerHTML=SETS.map(s=>`<button type="button" class="gw-card ${g.set===s.id?'selected':''}" data-set="${s.id}" ${lock?'disabled':''} aria-pressed="${g.set===s.id}">${wheelIcon(s.main)}<span><b>${esc(s.label)}</b><small>${s.main} main + 2 nose = ${s.main+2} wheels</small><small>${esc(s.description)}</small></span></button>`).join('');$('#gw-sizes').innerHTML=SIZES.map(x=>`<button class="gw-pill ${g.size===x.id?'selected':''}" data-size="${x.id}" ${lock?'disabled':''}>${x.label} · ${x.diam} m</button>`).join('');$('#gw-tyres').innerHTML=[['allweather','🌦️ All-weather'],['normal','☀️ Standard'],['quiet','🤫 Low-noise']].map(([id,t])=>`<button class="gw-pill ${g.tyre===id?'selected':''}" data-tyre="${id}" ${lock?'disabled':''}>${t}</button>`).join('');$('#gw-brakes').innerHTML=BRAKES.map(x=>`<button class="gw-pill ${g.brakes===x.id?'selected':''}" data-brakes="${x.id}" ${lock?'disabled':''}>${x.label}</button>`).join('');$('#gw-toggle').textContent=g.extended?'🔼 Retract wheels':'🔽 Lower wheels';$('#gw-toggle').disabled=lock;$('#gw-facts').innerHTML=`<div class="gw-fact"><b>${v.s.main+2}</b><small>Total wheels</small></div><div class="gw-fact"><b>${Math.round(v.stability)}/100</b><small>Gear strength</small></div><div class="gw-fact"><b>${v.stop.toLocaleString()} m</b><small>Game stop distance</small></div>`;$('#gw-status').className='gw-status'+(!v.ok?' warn':'');$('#gw-status').innerHTML=v.ok?`✅ <b>READY TO LAND!</b> Each main wheel carries about ${v.load.toFixed(1)} tonnes in the game.`:`⚠️ <b>Check your gear:</b> ${!g.extended?'Lower your wheels before landing.':`This setup may be too weak. Each wheel carries ${v.load.toFixed(1)} tonnes; its game limit is ${v.size.limit} tonnes.`}`;$('#gw-nova').textContent=lock?'🤖 NOVA: This aircraft is already in testing or for sale. Make a new variant in the hangar to change its wheels.':v.ok?'🤖 NOVA: Great engineering! You spread the airplane’s weight across enough wheels. Try a wet-runway landing!':'🤖 NOVA: Try choosing a wheel set with more tyres, or larger tyres. Bigger airplanes are much heavier.';root.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));root.querySelectorAll('[data-surface]').forEach(b=>b.classList.toggle('active',b.dataset.surface===surface));}
+function nav(){const n=$('#nav');if(!n)return;if(!$('#wheel-junior-entry')){const b=document.createElement('button');b.type='button';b.id='wheel-junior-entry';b.className='nav-btn';b.innerHTML='<span class="ico">🛞</span>Landing Gear Workshop';const prev=n.querySelector('[data-tab="engines"]');if(prev)prev.insertAdjacentElement('afterend',b);else n.appendChild(b);}}
+function open(){lastFocus=document.activeElement;nav();root.classList.add('open');render();$('#gw-close').focus();}
+function close(){root.classList.remove('open');if(lastFocus?.focus)lastFocus.focus();api.navigate(state().tab);}
+function save(){const g=state();api.navigate(g.tab);}
+function test(){const p=active(),v=values(p);const score=Math.round(Math.max(0,Math.min(100,v.stability-(surface==='wet'?15:0)+(v.x.tyre==='allweather'?8:0)+v.br.bonus*.45)));const pass=v.x.extended&&score>=70;v.x.tries++;if(pass)v.x.best=Math.max(v.x.best,score);$('#gw-result').style.display='block';$('#gw-result').innerHTML=pass?`<b>🏆 GREAT LANDING! ${score}/100</b><p>Your ${esc(p.name)} stopped safely in the game! You earned a landing star. Try another wheel set!</p>`:`<b>⚠️ LANDING CHALLENGE FAILED — ${score}/100</b><p>${!v.x.extended?'You forgot to lower the wheels.':`Try more or bigger wheels, better brakes or all-weather tyres. Wet runways are tougher!`}</p>`;render();save();}
+root.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;e.preventDefault();e.stopPropagation();if(b.id==='gw-close'){close();return;}if(b.dataset.view){view=b.dataset.view;render();return;}if(b.dataset.surface){surface=b.dataset.surface;render();return;}if(b.id==='gw-test'){test();return;}const p=active();if(frozen(p))return;const g=gear(p);if(b.dataset.set)g.set=b.dataset.set;if(b.dataset.size)g.size=b.dataset.size;if(b.dataset.tyre)g.tyre=b.dataset.tyre;if(b.dataset.brakes)g.brakes=b.dataset.brakes;if(b.id==='gw-toggle')g.extended=!g.extended;$('#gw-result').style.display='none';render();save();});
+document.addEventListener('click',e=>{if(e.target.closest('#wheel-junior-entry')){e.preventDefault();e.stopImmediatePropagation();open();}},true);
+root.addEventListener('click',e=>{if(e.target===root)close();});
+document.addEventListener('keydown',e=>{if(root.classList.contains('open')){if(e.key==='Escape'){e.preventDefault();close();}if(e.key==='Tab'){const focusable=[...root.querySelectorAll('button:not([disabled])')];const first=focusable[0],last=focusable[focusable.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}}},true);
+window.addEventListener('skycraft:render',nav);nav();
+})();
+</script>
+</body></html>
