@@ -1482,7 +1482,8 @@ function collectWeapons(player=g){if(!g?.weaponPickups||!player)return;ensureWea
  for(const pick of g.weaponPickups){
   if(pick.got||Math.hypot(player.x-pick.x,player.y-pick.y)>48)continue;
   pick.got=true;sfx('collect');burst(pick.x,pick.y,'#ffe7a8',24);
-  if(pick.type==='shield'){
+  if(pick.type==='health'){player.hp=Math.min(player.maxHp,player.hp+2);if(player===g&&coopAimOverride===null)say('HEALTH DROP! +2 HEARTS',2);
+  }else if(pick.type==='shield'){
    player.weaponShield=Math.max(player.weaponShield,7);player.shield=Math.max(player.shield,7);
    if(player===g&&coopAimOverride===null)say('SHIELD GENERATOR! 7s PROTECTION',2.5);
   }else if(pick.type==='gold')upgradeWeapon(player,'GOLD CORE');
@@ -1497,9 +1498,10 @@ function collectWeapons(player=g){if(!g?.weaponPickups||!player)return;ensureWea
   }
  }
 }
-function drawWeaponModel(x,y,type){if(window.FishmanV29Art?.weapon(c,type,x,y,t,1.16)){c.save();c.textAlign='center';c.font='900 12px system-ui';c.lineWidth=3.5;c.strokeStyle='#08314b';const lab=(WEAPON_LABEL[type]||({gold:'GOLD UPGRADE',shield:'SHIELD CORE'})[type]||type).toUpperCase();c.strokeText(lab,x,y-49);c.fillStyle='#fffbde';c.fillText(lab,x,y-49);c.restore();return;}if(window.FishmanV28Art?.weapon(c,type,x,y,t,type==='gold'||type==='shield'?1.05:1.14)){c.save();c.textAlign='center';c.lineJoin='round';c.font='900 12px system-ui';c.lineWidth=3.4;c.strokeStyle='#092438';const lab=(WEAPON_LABEL[type]||({gold:'GOLD UPGRADE',shield:'SHIELD CORE'})[type]||type).toUpperCase();c.strokeText(lab,x,y-52);c.fillStyle='#fff8d6';c.fillText(lab,x,y-52);c.restore();return;}if(window.FishmanV26Art?.weapon(c,type,x,y,t,type==='gold'||type==='shield'?1.08:1.20)){c.save();c.textAlign='center';c.lineJoin='round';c.font='800 11px system-ui';c.strokeStyle='#062638';c.lineWidth=3.5;const label=(WEAPON_LABEL[type]||({gold:'GOLD UPGRADE',shield:'SHIELD CORE'})[type]||type).toUpperCase();c.strokeText(label,x,y-43);c.fillStyle='#fff6d5';c.fillText(label,x,y-43);c.restore();return;}if(window.FishmanV25Art?.weapon(c,type,x,y,t)){c.save();c.textAlign='center';c.font='900 12px system-ui';c.lineWidth=3;c.strokeStyle='#092538';c.strokeText((WEAPON_LABEL[type]||'SHIELD').toUpperCase(),x,y-43);c.fillStyle='#fff9dc';c.fillText((WEAPON_LABEL[type]||'SHIELD').toUpperCase(),x,y-43);c.restore();return;}const col=WEAPON_COLORS[type]||'#fff4b1';c.save();c.translate(x,y+Math.sin(t*2.4+x*.01)*4);
+function drawWeaponModel(x,y,type){if(window.FishmanV29Art?.weapon(c,type,x,y,t,1.16)){c.save();c.textAlign='center';c.font='900 12px system-ui';c.lineWidth=3.5;c.strokeStyle='#08314b';const lab=(WEAPON_LABEL[type]||({gold:'GOLD UPGRADE',shield:'SHIELD CORE',health:'HEALTH +2'})[type]||type).toUpperCase();c.strokeText(lab,x,y-49);c.fillStyle='#fffbde';c.fillText(lab,x,y-49);c.restore();return;}if(window.FishmanV28Art?.weapon(c,type,x,y,t,type==='gold'||type==='shield'?1.05:1.14)){c.save();c.textAlign='center';c.lineJoin='round';c.font='900 12px system-ui';c.lineWidth=3.4;c.strokeStyle='#092438';const lab=(WEAPON_LABEL[type]||({gold:'GOLD UPGRADE',shield:'SHIELD CORE',health:'HEALTH +2'})[type]||type).toUpperCase();c.strokeText(lab,x,y-52);c.fillStyle='#fff8d6';c.fillText(lab,x,y-52);c.restore();return;}if(window.FishmanV26Art?.weapon(c,type,x,y,t,type==='gold'||type==='shield'?1.08:1.20)){c.save();c.textAlign='center';c.lineJoin='round';c.font='800 11px system-ui';c.strokeStyle='#062638';c.lineWidth=3.5;const label=(WEAPON_LABEL[type]||({gold:'GOLD UPGRADE',shield:'SHIELD CORE',health:'HEALTH +2'})[type]||type).toUpperCase();c.strokeText(label,x,y-43);c.fillStyle='#fff6d5';c.fillText(label,x,y-43);c.restore();return;}if(window.FishmanV25Art?.weapon(c,type,x,y,t)){c.save();c.textAlign='center';c.font='900 12px system-ui';c.lineWidth=3;c.strokeStyle='#092538';c.strokeText((WEAPON_LABEL[type]||'SHIELD').toUpperCase(),x,y-43);c.fillStyle='#fff9dc';c.fillText((WEAPON_LABEL[type]||'SHIELD').toUpperCase(),x,y-43);c.restore();return;}const col=WEAPON_COLORS[type]||'#fff4b1';c.save();c.translate(x,y+Math.sin(t*2.4+x*.01)*4);
  c.shadowBlur=18;c.shadowColor=col;c.fillStyle='#062a4ae0';c.strokeStyle=col;c.lineWidth=3.5;c.beginPath();c.roundRect(-32,-29,64,58,15);c.fill();c.stroke();c.shadowBlur=0;
- if(type==='gold'){c.fillStyle='#ffd65d';c.beginPath();for(let i=0;i<10;i++){const a=i*Math.PI/5-Math.PI/2,r=i%2?9:23;c.lineTo(Math.cos(a)*r,Math.sin(a)*r);}c.closePath();c.fill();c.stroke();}
+ if(type==='health'){c.fillStyle='#ff8fa4';c.font='900 32px system-ui';c.textAlign='center';c.fillText('♥',0,12);}
+ else if(type==='gold'){c.fillStyle='#ffd65d';c.beginPath();for(let i=0;i<10;i++){const a=i*Math.PI/5-Math.PI/2,r=i%2?9:23;c.lineTo(Math.cos(a)*r,Math.sin(a)*r);}c.closePath();c.fill();c.stroke();}
  else if(type==='shield'){c.strokeStyle=col;c.lineWidth=5;c.beginPath();c.arc(0,0,18,-2.2,2.2);c.stroke();c.fillStyle='#ffeaffaa';c.beginPath();c.arc(0,0,9,0,Math.PI*2);c.fill();}
  else{c.fillStyle=col;c.fillRect(-18,-6,35,14);c.fillStyle='#d8faff';c.fillRect(12,-3,12,8);c.fillStyle='#123754';c.fillRect(-9,7,12,14);
  if(type==='spread'){for(let v=-1;v<=1;v++){c.fillStyle='#ffd9ad';c.fillRect(14,v*8-3,14,6);}}
@@ -1546,7 +1548,7 @@ function die(why='Watch out for moving obstacles!'){
 function pause(){if(scene==='playing'){resetStick();held={};keys={};scene='paused';showScreen(`<span class="tag">GAME PAUSED</span><div class="portrait">⏸️</div><h1>PAUSED</h1><p>Ready for the next move?</p><div class="buttonrow">${button('Resume','resume')}${button('Restart Chapter','play','secondary')}${button('Main Menu','menu','secondary')}</div>`);}else if(scene==='paused'){scene='playing';hideScreen();}}
 function item(x,y,type){return {x,y,type,got:false};}
 function hazard(x,y,ax,ay,rate,phase,type='root',hunter=false){
- const maxHp=hardMode?4:3;
+ const maxHp=nightmare()?10:hardMode?8:6;
  return {x,y,bx:x,by:y,ax,ay,rate,phase,type,stun:0,hunter,maxHp,hp:maxHp,defeated:false};
 }
 /* Enemy scene = one of the four scrolling zones. A defeated enemy stays absent
@@ -1556,6 +1558,14 @@ function rememberEnemy(h){
  if(!g?.enemyBlueprints||!h)return h;
  const zone=enemyZone(h.bx??h.x);
  h.enemyZone=zone;h.enemyId=++g.nextEnemyId;
+ // Promote existing spawns: no extra crowding or duplicate reinforcements.
+ if(!h.combatRank){
+  const rank=(h.enemyId-1)%4===0?['GUARDIAN','RAIDER','WARDEN'][Math.floor((h.enemyId-1)/4)%3]:null;
+  h.combatRank=rank||'PATROL';h.elite=!!rank;
+  h.maxHp=Math.max(Number(h.maxHp)||3,nightmare()?10:hardMode?8:6)*(rank?3:1);
+  if(rank==='RAIDER')h.hunter=true;
+  if(rank==='WARDEN')h.rate*=1.2;
+ }
  h.maxHp=Math.max(1,Number(h.maxHp)||(hardMode?4:3));
  h.hp=h.maxHp;h.defeated=false;
  g.enemyBlueprints[zone].push({...h,x:h.bx??h.x,y:h.by??h.y,stun:0,defeated:false,burn:0});
@@ -1594,7 +1604,27 @@ function defeatEnemy(h,weapon='basic'){
  h.hp=0;h.defeated=true;h.stun=0;
  burst(h.x,h.y,WEAPON_COLORS[weapon]||'#aefaff',17);
  weaponVisual('shock',weapon,h.x,h.y,34);
+ dropEnemyRewards(h);
  return true;
+}
+// Every reward family is available from combat; only elites carry power rewards.
+const ENEMY_POWER_LOOT=['rapid','spread','charge','homing','electric','shield','gold','skill','food'];
+function dropEnemyRewards(h){
+ if(!g||h.lootDropped)return;
+ h.lootDropped=true;
+ const serial=g.enemyLootSerial=(g.enemyLootSerial||0)+1;
+ const key='enemy-'+level+'-'+g.wave+'-'+serial+'-'+(g.enemyLootRun||(g.enemyLootRun=Date.now()));
+ (g.stars||(g.stars=[])).push({x:h.x-22,y:h.y,key:key+'-star',type:'star',got:false});
+ // Pickups remain in the world until claimed, using the existing shared collection rules.
+ if(!h.elite){if(serial%3===0)(g.weaponPickups||(g.weaponPickups=[])).push({x:h.x+22,y:h.y,key:key+'-health',type:'health',got:false});return;}
+ const index=g.eliteLootIndex||0;g.eliteLootIndex=index+1;
+ const type=ENEMY_POWER_LOOT[index%ENEMY_POWER_LOOT.length];
+ const hero=['fish','kai','roxy','humpty','gozilla','sub'][Math.floor(index/ENEMY_POWER_LOOT.length)%6];
+ if(type==='skill')(g.skillCrystals||(g.skillCrystals=[])).push({x:h.x+24,y:h.y,key,hero,got:false});
+ else if(type==='food')(g.awards||(g.awards=[])).push({x:h.x+24,y:h.y,key,type:'award',hero,got:false});
+ else(g.weaponPickups||(g.weaponPickups=[])).push({x:h.x+24,y:h.y,key,type,got:false});
+ (g.weaponPickups||(g.weaponPickups=[])).push({x:h.x,y:h.y+38,key:key+'-health',type:'health',got:false});
+ say('ELITE DEFEATED! REWARDS DROPPED',2);
 }
 function sweepDefeatedEnemies(){
  if(!g?.hazards?.length)return;
@@ -2747,6 +2777,7 @@ function deluxeEnemy(h){
 function drawHazard(h){
  if(h.defeated)return;
  c.save();c.translate(h.x,h.y);
+ if(h.elite){glow(0,0,66,'#ffd65d60');txt('★ '+h.combatRank,0,-67,12,'#ffe78b','center');}
  if(h.hunter){glow(0,0,75,'#fa646c38');c.strokeStyle='#ff9da0';c.lineWidth=2;c.setLineDash([6,7]);c.beginPath();c.arc(0,0,47+Math.sin(t*6)*2,0,TAU);c.stroke();c.setLineDash([]);}
  if(h.stun>0)c.globalAlpha=.68;
  {const gnd=c.createRadialGradient(0,31,2,0,31,55);gnd.addColorStop(0,terrainAt(h.x)==='water'?'#4ae9fe4b':'#09233575');gnd.addColorStop(1,'#00162a00');c.save();c.fillStyle=gnd;c.beginPath();c.ellipse(0,31,53,13,0,0,TAU);c.fill();c.restore();}
