@@ -1626,7 +1626,16 @@ function dropEnemyRewards(h){
   // Core pickups are claimed by the first nearby player; abilities upgrade their hero.
   (g.weaponPickups||(g.weaponPickups=[])).push({x:h.x+27,y:h.y-8,key:key+'-weapon',type:tracker.weapon,got:false});
   (g.skillCrystals||(g.skillCrystals=[])).push({x:h.x-19,y:h.y+29,key:key+'-ability',hero:'any',trackerType:h.type,got:false});
-  if(h.elite)(g.weaponPickups||(g.weaponPickups=[])).push({x:h.x+24,y:h.y+50,key:key+'-health',type:'health',got:false});
+  if(h.elite){
+   // Keep the original rotating elite rewards as well as the named tracker rewards.
+   const index=g.eliteLootIndex||0;g.eliteLootIndex=index+1;
+   const type=ENEMY_POWER_LOOT[index%ENEMY_POWER_LOOT.length];
+   const hero=['fish','kai','roxy','humpty','gozilla','sub'][Math.floor(index/ENEMY_POWER_LOOT.length)%6];
+   if(type==='skill')(g.skillCrystals||(g.skillCrystals=[])).push({x:h.x+44,y:h.y,key:key+'-elite-skill',hero,got:false});
+   else if(type==='food')(g.awards||(g.awards=[])).push({x:h.x+44,y:h.y,key:key+'-elite-food',type:'award',hero,got:false});
+   else(g.weaponPickups||(g.weaponPickups=[])).push({x:h.x+44,y:h.y,key:key+'-elite-weapon',type,got:false});
+   (g.weaponPickups||(g.weaponPickups=[])).push({x:h.x+24,y:h.y+50,key:key+'-health',type:'health',got:false});
+  }
   say(tracker.name+' TRACKER DEFEATED! '+tracker.weapon.toUpperCase()+' + '+tracker.ability+' SKILL CORE',3);
   return;
  }
