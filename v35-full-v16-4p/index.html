@@ -1627,7 +1627,7 @@ function dropEnemyRewards(h){
   (g.weaponPickups||(g.weaponPickups=[])).push({x:h.x+27,y:h.y-8,key:key+'-weapon',type:tracker.weapon,got:false});
   (g.skillCrystals||(g.skillCrystals=[])).push({x:h.x-19,y:h.y+29,key:key+'-ability',hero:'any',trackerType:h.type,got:false});
   if(h.elite)(g.weaponPickups||(g.weaponPickups=[])).push({x:h.x+24,y:h.y+50,key:key+'-health',type:'health',got:false});
-  say(tracker.name+' TRACKER DEFEATED! '+WEAPON_LABEL[tracker.weapon]+' + '+tracker.ability+' SKILL CORE',3);
+  say(tracker.name+' TRACKER DEFEATED! '+tracker.weapon.toUpperCase()+' + '+tracker.ability+' SKILL CORE',3);
   return;
  }
  if(!h.elite){if(serial%3===0)(g.weaponPickups||(g.weaponPickups=[])).push({x:h.x+22,y:h.y,key:key+'-health',type:'health',got:false});return;}
