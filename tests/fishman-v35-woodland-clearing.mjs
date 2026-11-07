@@ -42,9 +42,12 @@ for(const [name,driver] of [['Chromium',chromium],['WebKit',webkit]]){
    const g=FishmanMultiplayerBridge.getG(),m=g.adventureMission,n=m.nodes[1];
    // Give each attacker a real hit from the normal projectile collision path.
    for(const h of g.hazards.filter(x=>x.defenceGuard)){
-    g.proj.push({x:h.x,y:h.y,vx:0,vy:0,r:20,age:0,life:1,
-      damage:160,weapon:'basic',hitIndices:[]});
-    fishmanTest.step(.025);
+    // Some guards are elite (3x health); keep firing until they are actually defeated.
+    for(let attempt=0;attempt<10&&!h.defeated;attempt++){
+     g.proj.push({x:h.x,y:h.y,vx:0,vy:0,r:20,age:0,life:1,
+       damage:160,weapon:'basic',hitIndices:[]});
+     fishmanTest.step(.025);
+    }
    }
    const guardsAfter=g.hazards.filter(h=>h.defenceGuard).length;
    // A wandering enemy does not count as one of the wave attackers.
