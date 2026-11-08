@@ -6,6 +6,15 @@ for(const path of ['index.html','v35-full-v16-4p/index.html']){
  const s=fs.readFileSync(path,'utf8');
  for(const m of s.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g))if(!/src=|application\//.test(m[1]))new vm.Script(m[2]);
  const modern=path==='index.html';
+ if(modern){
+  // Saved historical unlock flags must not hide collectibles from a new run.
+  const seeded={g:{stars:[],awards:[],skillCrystals:[]},level:1,
+   progress:{picked:{'star-1-0-0':true,'skill-core-1-0-kai':true,'award-1-0-kai':true}}};
+  vm.createContext(seeded);vm.runInContext(fn(s,'initRewards')+'\ninitRewards(0);',seeded);
+  assert.ok(seeded.g.stars.some(x=>x.key==='star-1-0-0'),'old star history should not hide a new star');
+  assert.ok(seeded.g.skillCrystals.some(x=>x.key==='skill-core-1-0-kai'),'old skill history should not hide a new skill core');
+  assert.ok(seeded.g.awards.some(x=>x.key==='award-1-0-kai'),'old food history should not hide new food');
+ }
  for(let slot=1;slot<=3;slot++){
   const p={x:400,y:300,localSlot:slot,hero:'kai',hp:3,maxHp:9,inv:10,cool:1,shield:0,weapon:'basic',weaponLevels:{basic:1},weaponsOwned:['basic'],lastAim:{x:1,y:0}};
   const host={...p,x:100,y:250,hero:'fish',hp:8,weaponLevels:{basic:1},weaponsOwned:['basic'],items:[{x:400,y:300,type:'seed'}],collect:0,stars:[{x:400,y:300,key:'s'}],awards:[{x:400,y:300,key:'a',hero:'kai'}],skillCrystals:[{x:400,y:300,key:'c',hero:'kai'}],weaponPickups:[{x:400,y:300,key:'w',type:'rapid'},{x:400,y:300,key:'h',type:'health'}],hazards:[],runLength:4000};
@@ -23,6 +32,22 @@ for(const path of ['index.html','v35-full-v16-4p/index.html']){
    assert.equal(ctx.progress.picked.s,undefined,'P1 has not collected the teammate reward');
   }
   ctx.localTick(.025);assert.equal(host.collect,1);assert.equal(ctx.progress.stars,modern?0:1);assert.equal(ctx.food,1);assert.equal(ctx.skills,1);
+  if(modern){
+   // Regression: legacy P1 saved history must not stop P1 reclaiming current-run
+   // stars, character food, skill cores, tracker rewards or weapon pickups.
+   ctx.progress.picked={s:true,a:true,c:true,w:true,h:true};
+   host.x=400;host.y=300;host.hero='kai';
+   vm.runInContext('collectRewards();collectWeapons();',ctx);
+   assert.equal(ctx.progress.stars,1,'P1 should collect a current-run star even with old saved flags');
+   assert.equal(host.weapon,'rapid','P1 should receive a weapon after P2 claimed its copy');
+   assert.equal(host.hp,9,'P1 should receive the health pickup');
+   assert.equal(ctx.food,2,'P1 should receive food independently of P2–P4');
+   assert.equal(ctx.skills,2,'P1 should receive their skill crystal');
+   assert.equal(p.weapon,'rapid','P2–P4 weapon should stay independent');
+   vm.runInContext('collectRewards();collectWeapons();',ctx);
+   assert.equal(ctx.progress.stars,1,'P1 must not re-collect the same pickup within a run');
+   assert.equal(ctx.food,2);assert.equal(ctx.skills,2);
+  }
  }
  console.log('PASS '+path+': P2–P4 collect objectives, stars, food, skill cores, weapons and health once; P1 state preserved');
 }
