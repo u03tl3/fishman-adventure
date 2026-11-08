@@ -1675,15 +1675,15 @@ function initRewards(w){
  const st=[[186,205],[360,482],[570,254],[773,483],[665,345]];
  for(let i=0;i<st.length;i++){
   const key='star-'+level+'-'+w+'-'+i;
-  if(!progress.picked[key])g.stars.push({x:st[i][0]+w*11,y:st[i][1]-w*12,key,type:'star'});
+  g.stars.push({x:st[i][0]+w*11,y:st[i][1]-w*12,key,type:'star'});
  }
  const awards={0:['kai'],1:['kai'],2:['fish'],3:['roxy','humpty'],4:['fish','kai','roxy','gozilla'],5:['sub'],6:['fish','gozilla'],7:['fish','gozilla'],8:['roxy','gozilla'],9:['fish','roxy']};
  const kinds=awards[level]||['fish'];
  const starter={0:['kai'],1:['kai'],2:['fish'],3:['roxy','humpty'],4:['fish','kai','roxy','humpty','gozilla'],5:['sub'],6:['fish'],7:['fish'],8:['roxy','gozilla'],9:['fish','gozilla']}[level]||['fish'];
- for(let i=0;i<starter.length;i++){const hero=starter[i],key='skill-core-'+level+'-'+w+'-'+hero;if(!progress.picked[key])g.skillCrystals.push({x:level===4?240+(i%3)*130:665+i*115,y:level===4?225+Math.floor(i/3)*155:325+(i%2)*75,key,hero,got:false});}
+ for(let i=0;i<starter.length;i++){const hero=starter[i],key='skill-core-'+level+'-'+w+'-'+hero;g.skillCrystals.push({x:level===4?240+(i%3)*130:665+i*115,y:level===4?225+Math.floor(i/3)*155:325+(i%2)*75,key,hero,got:false});}
  for(let i=0;i<kinds.length;i++){
   const key='award-'+level+'-'+w+'-'+kinds[i];
-  if(!progress.picked[key])g.awards.push({x:455+(i%3)*125,y:380+(i%2)*86-w*36,key,type:'award',hero:kinds[i]});
+  g.awards.push({x:455+(i%3)*125,y:380+(i%2)*86-w*36,key,type:'award',hero:kinds[i]});
  }
 }
 function awardIcon(hero){return ({roxy:'🌶️',fish:'🫧',kai:'🧪',humpty:'🥚',gozilla:'⚡',sub:'🚀'})[hero]||'⭐';}
@@ -1703,10 +1703,9 @@ function pickupPlayers(){
  return ['p1'];
 }
 function canClaimPickup(p){
- if(!p||p.got||!p.key)return false;
- const owner=pickupOwner();
- if(p.claimedBy?.[owner])return false;
- return owner==='p1'?!progress.picked[p.key]:!g.picked?.[p.key];
+ // A saved pickup is a record of earlier progress, NOT a lock on future runs.
+ // Only a claim on this particular world pickup prevents duplicate collection.
+ return !!(p&&p.key&&!p.got&&!p.claimedBy?.[pickupOwner()]);
 }
 function claimPickup(p){
  const owner=pickupOwner();
@@ -2304,10 +2303,10 @@ function makeLongRun(){
    g.items.push({...it,x:it.x+sector*W,got:false});}
   for(const h of oldHazards){g.hazards.push({...h,x:h.x+sector*W,bx:h.bx+sector*W,stun:0});}
   for(const st of oldStars){const key=st.key+'-run'+sector;
-   if(!progress.picked[key])g.stars.push({...st,x:st.x+sector*W,key,got:false});}
+   g.stars.push({...st,x:st.x+sector*W,key,got:false,claimedBy:{}});}
   for(const aw of oldAwards){const key=aw.key+'-run'+sector;
-   if(!progress.picked[key])g.awards.push({...aw,x:aw.x+sector*W,key,got:false});}
-  for(const sk of oldSkills){const key=sk.key+'-run'+sector;if(!progress.picked[key])g.skillCrystals.push({...sk,x:sk.x+sector*W,key,got:false});}
+   g.awards.push({...aw,x:aw.x+sector*W,key,got:false,claimedBy:{}});}
+  for(const sk of oldSkills){const key=sk.key+'-run'+sector;g.skillCrystals.push({...sk,x:sk.x+sector*W,key,got:false,claimedBy:{}});}
  }
  g.total=g.items.length;
  // Extra ambushes in the middle of the journey; all can be stunned with weapons.
