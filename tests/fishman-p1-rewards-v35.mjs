@@ -44,9 +44,10 @@ assert.equal(g.weapon,'rapid','P1 must receive weapon cores even if previously c
 vm.runInContext('collectWeapons()',ctx);
 assert.equal(counts.weapon,0,'P1 must not collect the same core twice in one run');
 
+const beforeReplay=ctx.progress.stars;
 vm.runInContext('initRewards(0)',ctx);
 g.x=186;g.y=205;vm.runInContext('collectRewards()',ctx);
-assert.equal(ctx.progress.stars,2,'P1 must receive rewards again on the next run');
+assert.equal(ctx.progress.stars,beforeReplay+1,'P1 must receive rewards again on the next run');
 g.weaponPickups=[{x:400,y:300,key:'weapon-1-0-0',type:'rapid',got:false}];
 g.x=400;g.y=300;vm.runInContext('collectWeapons()',ctx);
 assert.equal(counts.weapon,1,'P1 must be able to upgrade a weapon on a repeat run');
@@ -54,11 +55,12 @@ assert.equal(counts.weapon,1,'P1 must be able to upgrade a weapon on a repeat ru
 // When P2–P4 claimed first, P1 still gets an independent claim.
 const shared={x:400,y:300,key:'new-star',got:false,claimedBy:{p2:true,p3:true,p4:true}};
 g.stars=[shared];g.awards=[];g.skillCrystals=[];
+const beforeShared=ctx.progress.stars;
 vm.runInContext('collectRewards()',ctx);
-assert.equal(ctx.progress.stars,3,'P1 must claim after teammates');
+assert.equal(ctx.progress.stars,beforeShared+1,'P1 must claim after teammates');
 assert.equal(shared.got,true,'pickup hides only after all four players claim');
 vm.runInContext('collectRewards()',ctx);
-assert.equal(ctx.progress.stars,3,'pickup must not be claimed twice in the same run');
+assert.equal(ctx.progress.stars,beforeShared+1,'pickup must not be claimed twice in the same run');
 assert.match(html,/g\.stars\.push\(\{\.\.\.st,x:st\.x\+sector\*W,key,got:false,claimedBy:\{\}\}\)/,
  'scrolling-zone rewards must not be blocked by old P1 saves');
 console.log('PASS P1 repeat-run stars, food, skill crystals, weapon cores, tracker ownership and P2–P4 coexistence');
