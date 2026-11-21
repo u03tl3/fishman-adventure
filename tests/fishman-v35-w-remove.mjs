@@ -27,6 +27,31 @@ for(const [name, engine] of [['Chromium',chromium],['WebKit',webkit]]){
   assert.equal(await page.evaluate(()=>new Set([FishmanMultiplayerBridge.getG()?.hero,
     ...[2,3,4].map(i=>FishmanV16Adapter.getPlayer(i)?.hero)]).size),4,'four distinct heroes');
 
+  const pickup=await page.evaluate(async()=>{
+   const g=FishmanMultiplayerBridge.getG(),p4=FishmanV16Adapter.getPlayer(4);
+   const drop=g.weaponPickups.find(p=>p.type==='rapid');
+   const frame=()=>new Promise(requestAnimationFrame);
+   const drawWeapon=FishmanV29Art.weapon;
+   let draws=0;
+   FishmanV29Art.weapon=function(ctx,type,x,y,...rest){
+    if(type===drop.type && x===drop.x && y===drop.y)draws++;
+    return drawWeapon.call(this,ctx,type,x,y,...rest);
+   };
+   try{
+    await frame();
+    const visible=draws>0;
+    draws=0;p4.x=drop.x;p4.y=drop.y;
+    await frame();
+    const hidden=draws===0;
+    g.x=drop.x;g.y=drop.y;
+    await frame();await frame();
+    return {visible,hidden,kept:p4.weaponsOwned.includes('rapid')&&p4.weapon==='rapid',
+     p1Claimed:g.weaponsOwned.includes('rapid'),level:p4.weaponLevels.rapid};
+   }finally{FishmanV29Art.weapon=drawWeapon;}
+  });
+  assert.deepEqual(pickup,{visible:true,hidden:true,kept:true,p1Claimed:true,level:1},
+   'P4 picking up a weapon hides the artwork immediately and preserves independent rewards');
+
   for(let n=3;n>=1;n--){
    await page.locator('#removePlayerBtn').click();
    await page.waitForFunction(count=>FishmanLocal.count===count,n);
