@@ -1930,8 +1930,20 @@ function tickProjectiles(dt){if(!g||level===4)return;
  // All enemies remain defeated until their scene is vacated and revisited.
  sweepDefeatedEnemies();
 }
-function drawRewardsAndShots(){if(!g)return;c.save();for(const a of g.weaponPickups||[])if(!a.got)drawWeaponModel(a.x,a.y,a.type);for(const crystal of g.skillCrystals||[]){if(crystal.got)continue;if(window.FishmanV29Art?.collect(c,'skill',crystal.x,crystal.y,t)||window.FishmanV26Art?.crystal(c,'skill_crystal',crystal.x,crystal.y,t)){txt('SKILL ✦',crystal.x,crystal.y-37,13,'#e7c2ff','center',900);continue;}glow(crystal.x,crystal.y,52,'#b88df970');c.save();c.translate(crystal.x,crystal.y+Math.sin(t*2.2)*5);c.rotate(t*.48);c.fillStyle='#d7a1ff';c.strokeStyle='#352260';c.lineWidth=3;c.beginPath();c.moveTo(0,-28);c.lineTo(21,-4);c.lineTo(0,26);c.lineTo(-21,-4);c.closePath();c.fill();c.stroke();c.restore();txt('SKILL ✦',crystal.x,crystal.y-43,13,'#e7c2ff','center',900);}for(const v of g.stars||[]){if(v.got)continue;if(window.FishmanV29Art?.collect(c,'star',v.x,v.y,t)||window.FishmanV26Art?.star(c,v.x,v.y,t))continue;glow(v.x,v.y,43,'#ffda6454');c.save();c.translate(v.x,v.y);c.rotate(t*.65);c.beginPath();for(let j=0;j<10;j++){const a=j*Math.PI/5-Math.PI/2,r=j%2===0?20:8;c.lineTo(Math.cos(a)*r,Math.sin(a)*r);}c.closePath();c.fillStyle='#ffd35a';c.fill();c.strokeStyle='#34292c';c.lineWidth=3;c.stroke();c.restore();}
- for(const a of g.awards||[]){if(a.got)continue;const pick={fish:'shield',kai:'rapid',roxy:'roxy_fire',humpty:'humpty_egg',gozilla:'gozilla_beam',sub:'sub_torpedo'}[a.hero]||'gold';if(window.FishmanV28Art?.weapon(c,pick,a.x,a.y,t,.82)||window.FishmanV26Art?.weapon(c,pick,a.x,a.y,t)){txt(heroNames[a.hero].toUpperCase(),a.x,a.y-49,12,'#ffe6a7','center',950);continue;}glow(a.x,a.y,58,'#d8ffac66');circle(a.x,a.y,27,'#fff4b1');txt(awardIcon(a.hero),a.x,a.y+12,30,'#ffffff','center',900);txt(heroNames[a.hero].toUpperCase(),a.x,a.y-39,12,'#ffe6a7','center',950);}
+function pickupIsVisible(pickup){
+ if(pickup.got)return false;
+ const network=net();
+ if(network?.connected && (network.role==='host'||network.role==='guest')){
+  const guest=network.role==='guest';
+  const viewer=guest?g.coopP2:g;
+  return !pickup.claimedBy?.[guest?'p2':'p1'] && !viewer?.picked?.[pickup.key];
+ }
+ // Couch co-op shares a screen. A teammate may still claim their own copy.
+ // Player records also cover drops restored from an earlier checkpoint.
+ return !pickup.claimedBy && !g.picked?.[pickup.key] && !localTeam.some(p=>p?.picked?.[pickup.key]);
+}
+function drawRewardsAndShots(){if(!g)return;c.save();for(const a of g.weaponPickups||[])if(pickupIsVisible(a))drawWeaponModel(a.x,a.y,a.type);for(const crystal of g.skillCrystals||[]){if(!pickupIsVisible(crystal))continue;if(window.FishmanV29Art?.collect(c,'skill',crystal.x,crystal.y,t)||window.FishmanV26Art?.crystal(c,'skill_crystal',crystal.x,crystal.y,t)){txt('SKILL ✦',crystal.x,crystal.y-37,13,'#e7c2ff','center',900);continue;}glow(crystal.x,crystal.y,52,'#b88df970');c.save();c.translate(crystal.x,crystal.y+Math.sin(t*2.2)*5);c.rotate(t*.48);c.fillStyle='#d7a1ff';c.strokeStyle='#352260';c.lineWidth=3;c.beginPath();c.moveTo(0,-28);c.lineTo(21,-4);c.lineTo(0,26);c.lineTo(-21,-4);c.closePath();c.fill();c.stroke();c.restore();txt('SKILL ✦',crystal.x,crystal.y-43,13,'#e7c2ff','center',900);}for(const v of g.stars||[]){if(!pickupIsVisible(v))continue;if(window.FishmanV29Art?.collect(c,'star',v.x,v.y,t)||window.FishmanV26Art?.star(c,v.x,v.y,t))continue;glow(v.x,v.y,43,'#ffda6454');c.save();c.translate(v.x,v.y);c.rotate(t*.65);c.beginPath();for(let j=0;j<10;j++){const a=j*Math.PI/5-Math.PI/2,r=j%2===0?20:8;c.lineTo(Math.cos(a)*r,Math.sin(a)*r);}c.closePath();c.fillStyle='#ffd35a';c.fill();c.strokeStyle='#34292c';c.lineWidth=3;c.stroke();c.restore();}
+ for(const a of g.awards||[]){if(!pickupIsVisible(a))continue;const pick={fish:'shield',kai:'rapid',roxy:'roxy_fire',humpty:'humpty_egg',gozilla:'gozilla_beam',sub:'sub_torpedo'}[a.hero]||'gold';if(window.FishmanV28Art?.weapon(c,pick,a.x,a.y,t,.82)||window.FishmanV26Art?.weapon(c,pick,a.x,a.y,t)){txt(heroNames[a.hero].toUpperCase(),a.x,a.y-49,12,'#ffe6a7','center',950);continue;}glow(a.x,a.y,58,'#d8ffac66');circle(a.x,a.y,27,'#fff4b1');txt(awardIcon(a.hero),a.x,a.y+12,30,'#ffffff','center',900);txt(heroNames[a.hero].toUpperCase(),a.x,a.y-39,12,'#ffe6a7','center',950);}
  for(const p of g.proj||[]){
   if(window.FishmanWeaponVisuals?.shot?.(c,p,t))continue;
   glow(p.x,p.y,p.r*2,WEAPON_COLORS[p.weapon]||'#6af1ff');

@@ -2,6 +2,18 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
 function fn(src,name){const start=src.indexOf('function '+name+'('),end=src.indexOf('\nfunction ',start+1);assert.ok(start>=0);return src.slice(start,end);}
+function drawnPickups(ctx){
+ const icons=[];
+ const record=(_canvas,type)=>{icons.push(type);return true;};
+ ctx.c={save(){},restore(){}};
+ ctx.t=0;ctx.txt=()=>{};ctx.heroNames={kai:'Kai'};
+ ctx.window.FishmanV29Art={collect:record};
+ ctx.window.FishmanV28Art={weapon:record};
+ ctx.drawWeaponModel=(_x,_y,type)=>icons.push(type);
+ const scene=ctx.scene;
+ try{ctx.scene='paused';ctx.drawRewardsAndShots();}finally{ctx.scene=scene;}
+ return icons.sort();
+}
 for(const path of ['index.html','v35-full-v16-4p/index.html']){
  const s=fs.readFileSync(path,'utf8');
  for(const m of s.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g))if(!/src=|application\//.test(m[1]))new vm.Script(m[2]);
@@ -21,10 +33,27 @@ for(const path of ['index.html','v35-full-v16-4p/index.html']){
   const fields=s.match(/const COOP_FIELDS=(\[[^;]+);/)[1];
   const ctx={g:host,scene:'playing',localCount:slot+1,localTeam:Array.from({length:slot+1},(_,i)=>i===slot?p:{...p,x:50,y:500}),localControls:Array.from({length:3},()=>({})),localHeld:{},navigator:{getGamepads:()=>[]},window:{FishmanNet:{players:{}}},net:()=>({role:'local'}),level:1,localPrepare(){},clamp:(n,a,b)=>Math.min(b,Math.max(a,n)),burst(){},sfx(){},say(){},awardIcon(){return '*';},saveProgress(){},persistWeaponProgress(){},weaponVisual(){},WEAPON_LABEL:{rapid:'Rapid'},WEAPON_POWER_INFO:{rapid:'Rapid'},ensureWeaponState(){},coopAimOverride:null,progress:{picked:{},stars:0},levelUp(){ctx.food=(ctx.food||0)+1;},skillLevelUp(){ctx.skills=(ctx.skills||0)+1;}};
   vm.createContext(ctx);vm.runInContext('const COOP_FIELDS='+fields+';'+(modern?['withCoopPlayer','localWith','pickupOwner','pickupPlayers','canClaimPickup','claimPickup','collectRewards','collectWeapons','localTick']:['withCoopPlayer','localWith','collectRewards','collectWeapons','localTick']).map(n=>fn(s,n)).join('\n'),ctx);
+  const icons=['health','rapid','rapid','skill','star'];
+  if(modern){
+   vm.runInContext(fn(s,'pickupIsVisible')+'\n'+fn(s,'drawRewardsAndShots'),ctx);
+   assert.deepEqual(drawnPickups(ctx),icons,'unclaimed reward artwork should be visible');
+  }
   ctx.localTick(.025);
   assert.equal(host.collect,1);assert.equal(p.weapon,'rapid');assert.equal(p.hp,5);assert.equal(host.weapon,'basic');assert.equal(host.hp,8);assert.equal(host.x,100);
   assert.equal(ctx.progress.stars,modern?0:1);assert.equal(ctx.food,1);assert.equal(ctx.skills,1);
   if(modern){
+   assert.deepEqual(drawnPickups(ctx),[],'the first claim hides each reward on the shared screen');
+   if(slot===1){
+    host.coopP2=p;
+    ctx.net=()=>({connected:true,role:'guest'});
+    assert.deepEqual(drawnPickups(ctx),[],'online P2 has collected these rewards');
+    ctx.net=()=>({connected:true,role:'host'});
+    assert.deepEqual(drawnPickups(ctx),icons,'online P1 can still see their own rewards');
+    ctx.net=()=>({role:'local'});
+   }
+   const restored={key:'s'};
+   assert.equal(ctx.pickupIsVisible(restored),false,'restoring a checkpoint must not redraw a collected star');
+   assert.equal(ctx.pickupIsVisible({key:'new-star'}),true,'fresh drops still appear');
    assert.equal(p.starsEarned,1,'the teammate owns their own star');
    assert.equal(p.picked.s,true,'the teammate owns the star pickup');
    assert.equal(p.picked.c,true,'the teammate owns the ability pickup');
